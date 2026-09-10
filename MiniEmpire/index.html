@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Mini Empire</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ============ START SCREEN ============ -->
+<section id="start-screen" class="screen">
+  <div class="start-content">
+    <h1 class="game-title">🏰 MINI EMPIRE</h1>
+    <p class="tagline">Baue dein Dorf. Manage deine Ressourcen. Erschaffe dein Imperium.</p>
+    <div class="start-buttons">
+      <button id="btn-new-game" class="btn btn-primary btn-large">Spiel starten</button>
+      <button id="btn-load-game" class="btn btn-secondary btn-large" hidden>Spielstand laden</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ GAME SCREEN ============ -->
+<section id="game-screen" class="screen" hidden>
+
+  <header class="statusbar">
+    <div class="status-item" id="statitem-gold" title="Gold">
+      <span class="icon">💰</span><span class="value" id="stat-gold">0</span>
+    </div>
+    <div class="status-item" id="statitem-wood" title="Holz">
+      <span class="icon">🪵</span><span class="value" id="stat-wood">0</span>
+    </div>
+    <div class="status-item" id="statitem-food" title="Nahrung">
+      <span class="icon">🌾</span><span class="value" id="stat-food">0</span>
+    </div>
+    <div class="status-item" id="statitem-stone" title="Stein">
+      <span class="icon">🪨</span><span class="value" id="stat-stone">0</span>
+    </div>
+    <div class="status-item" title="Bevölkerung">
+      <span class="icon">👥</span><span class="value" id="stat-population">0/0</span>
+    </div>
+    <div class="status-item" title="Arbeiter (eingesetzt/gesamt)">
+      <span class="icon">👷</span><span class="value" id="stat-workers">0/0</span>
+    </div>
+    <div class="status-item" title="Tag">
+      <span class="icon">📅</span><span class="value" id="stat-day">1</span>
+    </div>
+  </header>
+
+  <div class="village-banner">
+    <span class="village-badge" id="village-level-badge">Level 1</span>
+    <span class="village-name" id="village-level-name">Kleines Dorf</span>
+    <span class="morale-display" id="morale-display">😊 Moral: 70%</span>
+  </div>
+
+  <main class="game-main">
+    <section class="panel">
+      <h2 class="panel-title">🏗️ Gebäude</h2>
+      <div class="buildings-grid" id="buildings-grid"></div>
+    </section>
+
+    <section class="panel" id="upgrades-panel" hidden>
+      <h2 class="panel-title">🔬 Upgrades</h2>
+      <div class="upgrades-grid" id="upgrades-grid"></div>
+    </section>
+  </main>
+
+  <footer class="action-bar">
+    <button id="btn-next-day" class="btn btn-primary btn-large">☀️ Nächsten Tag starten</button>
+    <button id="btn-reset" class="btn btn-ghost">Spielstand zurücksetzen</button>
+  </footer>
+</section>
+
+<!-- ============ TOASTS ============ -->
+<div id="toast-container"></div>
+
+<!-- ============ EVENT MODAL ============ -->
+<div id="event-modal-overlay" class="modal-overlay" hidden>
+  <div class="modal event-modal">
+    <div class="modal-icon" id="event-icon">📜</div>
+    <h2 id="event-title"></h2>
+    <p id="event-description"></p>
+    <div class="modal-actions" id="event-actions"></div>
+  </div>
+</div>
+
+<!-- ============ CONFIRM MODAL ============ -->
+<div id="confirm-modal-overlay" class="modal-overlay" hidden>
+  <div class="modal">
+    <h2>Bist du sicher?</h2>
+    <p id="confirm-message"></p>
+    <div class="modal-actions">
+      <button id="btn-confirm-yes" class="btn btn-danger">Ja, fortfahren</button>
+      <button id="btn-confirm-no" class="btn btn-secondary">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ VICTORY MODAL ============ -->
+<div id="victory-modal-overlay" class="modal-overlay" hidden>
+  <div class="modal victory-modal">
+    <div class="victory-trophy">🏆</div>
+    <h2>DU HAST DEIN IMPERIUM AUFGEBAUT!</h2>
+    <div class="victory-stats" id="victory-stats"></div>
+    <button id="btn-new-game-after-win" class="btn btn-primary btn-large">Neues Spiel starten</button>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,13 +1,8 @@
 # Roadmap
 
-Stand: Phase 1 abgeschlossen. Alles, was noch nicht umgesetzt ist, steht hier als `TODO:`. Im Code markieren `TODO(Phase N)`-Kommentare und die Admin-Menüpunkte mit „P2/P3/P5“ dieselben Stellen.
+Stand: Phase 2 abgeschlossen. Alles, was noch nicht umgesetzt ist, steht hier als `TODO:`. Im Code markieren `TODO(Phase N)`-Kommentare und die Admin-Menüpunkte mit „P2/P3/P5“ dieselben Stellen.
 
-## Phase 2 – Preis-Engine & Admin-Modul „Preise“
-- TODO: `resolvePrice(product, customer, qty, date, channel)` in `packages/core/src/pricing.ts` inkl. Begründung (Regel-Trace) – vollständige Unit-Tests **vor** der UI
-- TODO: Rundungsregeln B2C (`RoundingRule`), Margenschutz (`minMarginBps`) mit Bestätigung
-- TODO: Admin „Preise“: Preislisten, Gruppen, Staffeln, Sonderpreise, Kategorie-Rabatte, Aktionen, Historie, Preisvorschau
-- TODO: CSV/Excel-Import/Export mit Vorschau, Massenänderung „Kategorie X um Y %“, vorgeplante Preise (Job für `ScheduledPriceChange`)
-- TODO: Angebote (Anfrage durch Kunden, Bearbeitung durch Vertrieb, Annahme)
+## Phase 2 – erledigt (siehe CHANGELOG 0.2.0)
 
 ## Phase 3 – Katalog & Shop
 - TODO: Produktverwaltung (Varianten, EAN, Einheiten, Bilder, AR/EN, Sichtbarkeit pro Kanal), Import/Export
@@ -16,7 +11,7 @@ Stand: Phase 1 abgeschlossen. Alles, was noch nicht umgesetzt ist, steht hier al
 - TODO: Warenkorb, Checkout (Liefergebiet/Gebühr, Mindestbestellwert, Zahlungsart, Kreditlimit, Liefertag), Bestellungen, Lagerreservierung in Transaktion
 - TODO: B2B-Extras: Schnellbestellung (SKU/CSV), „Letzte Bestellung wiederholen“, Bestelllisten
 - TODO: Dashboard: Umsatz/Marge B2B vs. B2C, Mindestbestand
-- TODO: Seed: 30 Beispielprodukte in 6 Kategorien, Bestellungen in allen Status
+- TODO: Seed: Beispielbestellungen in allen Status (30 Produkte sind seit Phase 2 vorhanden)
 - TODO: Kundenkonto: Bestellübersicht mit Statusverlauf, SMS/WhatsApp-Bestätigung (Log-Adapter)
 
 ## Phase 4 – A4-Dokumente (`packages/pdf`)

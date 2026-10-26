@@ -11,6 +11,7 @@
 import { hash } from "@node-rs/argon2";
 import { SYSTEM_ROLES, normalizePhone } from "@sa/core";
 import { PrismaClient, type Channel, type PaymentMethod } from "@prisma/client";
+import { DEMO_CATEGORIES, DEMO_PRODUCTS, demoEan } from "./demo-catalog";
 
 const prisma = new PrismaClient();
 const ARGON = { memoryCost: 19_456, timeCost: 2, parallelism: 1 } as const;
@@ -280,6 +281,156 @@ async function seedDemo() {
   log(`demo customers: ${DEMO_CUSTOMERS.length}`);
 }
 
+async function seedRounding() {
+  if ((await prisma.roundingRule.count()) > 0) return;
+  // B2C-Aktionspreise enden auf ,90 (Basispreise bleiben wie gepflegt)
+  await prisma.roundingRule.create({
+    data: { channel: "B2C", mode: "END_90", minAgorot: 0, appliesToPromotions: true, appliesToBasePrices: false, active: true, sortOrder: 10 },
+  });
+}
+
+async function seedDemoCatalog() {
+  if (await prisma.product.findFirst({ where: { isDemo: true } })) {
+    log("demo catalog already present");
+    return;
+  }
+  const units = Object.fromEntries((await prisma.unitOfMeasure.findMany()).map((u) => [u.code, u.id]));
+  const warehouse = await prisma.warehouse.findUniqueOrThrow({ where: { code: "MAIN" } });
+  const categories: Record<string, string> = {};
+  for (const [i, c] of DEMO_CATEGORIES.entries()) {
+    const cat = await prisma.category.upsert({
+      where: { slug: c.slug },
+      update: {},
+      create: { slug: c.slug, nameAr: c.nameAr, nameEn: c.nameEn, sortOrder: (i + 1) * 10 },
+    });
+    categories[c.slug] = cat.id;
+  }
+  let ean = 1;
+  for (const p of DEMO_PRODUCTS) {
+    const brand = p.brand ? await prisma.brand.upsert({ where: { name: p.brand }, update: {}, create: { name: p.brand } }) : null;
+    const bin = await prisma.bin.upsert({
+      where: { warehouseId_code: { warehouseId: warehouse.id, code: p.bin } },
+      update: {},
+      create: { warehouseId: warehouse.id, code: p.bin, sortKey: Number(p.bin.replace(/\D/g, "")) || 0 },
+    });
+    const variants = [
+      { sku: p.sku, nameAr: null as string | null, nameEn: null as string | null, cost: p.cost, b2c: p.b2c, b2b: p.b2b, stock: p.stock },
+      ...(p.variants ?? []).map((v) => ({ sku: `${p.sku}-${v.suffix}`, nameAr: v.nameAr, nameEn: v.nameEn, cost: v.cost, b2c: v.b2c, b2b: v.b2b, stock: Math.round(p.stock / 2) })),
+    ];
+    await prisma.product.create({
+      data: {
+        slug: p.sku.toLowerCase(),
+        nameAr: `${p.nameAr} (مثال)`,
+        nameEn: `${p.nameEn} (demo)`,
+        descriptionAr: "منتج تجريبي لأغراض العرض.",
+        descriptionEn: "Sample product for demonstration.",
+        categoryId: categories[p.category]!,
+        brandId: brand?.id,
+        isDemo: true,
+        variants: {
+          create: variants.map((v, i) => ({
+            sku: v.sku,
+            barcode: demoEan(ean++),
+            nameAr: v.nameAr,
+            nameEn: v.nameEn,
+            costPrice: v.cost,
+            b2cPrice: v.b2c,
+            b2bBasePrice: v.b2b,
+            minStock: p.minStock,
+            defaultBinId: bin.id,
+            sortOrder: i,
+            units: {
+              create: [
+                { unitId: units.PIECE!, factor: 1 },
+                { unitId: units.CARTON!, factor: p.carton },
+                ...(p.pack ? [{ unitId: units.PACK!, factor: p.pack }] : []),
+              ],
+            },
+            channelRules: {
+              create: [
+                { channel: "B2C", defaultUnitId: units.PIECE!, allowedUnitIds: [units.PIECE!], minQtyBase: 1, qtyStepBase: 1 },
+                {
+                  channel: "B2B",
+                  defaultUnitId: units.CARTON!,
+                  allowedUnitIds: [units.CARTON!, units.PIECE!],
+                  minQtyBase: p.carton * (p.minCartons ?? 1),
+                  qtyStepBase: p.carton,
+                },
+              ],
+            },
+            stockLevels: { create: { warehouseId: warehouse.id, onHand: v.stock } },
+            stockMovements: {
+              create: { warehouseId: warehouse.id, binId: bin.id, type: "RECEIPT", qtyBase: v.stock, unitCost: v.cost, note: "Anfangsbestand (Demo)" },
+            },
+          })),
+        },
+      },
+    });
+  }
+  log(`demo catalog: ${DEMO_PRODUCTS.length} products`);
+  await seedDemoPricing(categories);
+}
+
+async function seedDemoPricing(categories: Record<string, string>) {
+  const v = async (sku: string) => (await prisma.productVariant.findUniqueOrThrow({ where: { sku } })).id;
+  const gold = await prisma.customerGroup.findUniqueOrThrow({ where: { code: "GOLD" } });
+  const goldCustomer = await prisma.customer.findFirst({ where: { isDemo: true, groupId: gold.id } });
+  const now = new Date();
+  const in30 = new Date(now.getTime() + 30 * 86_400_000);
+
+  await prisma.tierPrice.createMany({
+    data: [
+      { variantId: await v("CL-001"), minQtyBase: 48, priceNet: 890 },
+      { variantId: await v("CL-001"), minQtyBase: 120, priceNet: 850 },
+      { variantId: await v("PA-002"), minQtyBase: 20, priceNet: 3190 },
+      { variantId: await v("FO-001"), groupId: gold.id, minQtyBase: 48, priceNet: 3690 },
+    ],
+  });
+  await prisma.categoryDiscount.create({ data: { categoryId: categories.cleaning!, groupId: gold.id, discountBps: 300 } });
+  if (goldCustomer) {
+    await prisma.customerPrice.create({
+      data: { customerId: goldCustomer.id, variantId: await v("CL-002"), priceNet: 3490, isFixed: true, note: "اتفاق سنوي (مثال)" },
+    });
+  }
+  await prisma.promotion.create({
+    data: {
+      nameAr: "خصم 10% على مواد التنظيف (مثال)",
+      nameEn: "10% off cleaning (demo)",
+      channel: "B2C",
+      type: "PERCENT",
+      percentBps: 1000,
+      startsAt: now,
+      endsAt: in30,
+      targets: { create: { categoryId: categories.cleaning! } },
+    },
+  });
+  await prisma.promotion.create({
+    data: {
+      nameAr: "زيت زيتون بسعر خاص للتجار (مثال)",
+      nameEn: "Olive oil special price for businesses (demo)",
+      channel: "B2B",
+      type: "FIXED_PRICE",
+      startsAt: now,
+      endsAt: in30,
+      targets: { create: { variantId: await v("FO-001"), fixedPrice: 3790 } },
+    },
+  });
+  await prisma.promotion.create({
+    data: {
+      nameAr: "اشترِ 10 واحصل على 1 مجاناً – شاي (مثال)",
+      nameEn: "Buy 10 get 1 free – tea (demo)",
+      channel: "BOTH",
+      type: "BUY_X_GET_Y",
+      buyQty: 10,
+      getQty: 1,
+      startsAt: now,
+      endsAt: in30,
+      targets: { create: { variantId: await v("FO-004") } },
+    },
+  });
+  log("demo pricing rules");
+}
+
 async function main() {
   await seedCompany();
   await seedTax();
@@ -291,7 +442,11 @@ async function main() {
   await seedOwner();
   await seedWarehouse();
   await seedGroups();
-  if (env("SEED_DEMO_DATA", "false") === "true") await seedDemo();
+  await seedRounding();
+  if (env("SEED_DEMO_DATA", "false") === "true") {
+    await seedDemo();
+    await seedDemoCatalog();
+  }
   log("done");
 }
 

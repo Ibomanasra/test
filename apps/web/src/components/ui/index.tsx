@@ -1,9 +1,11 @@
 import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
 import { formatMoney } from "@sa/core";
 
+/** Klassen zusammenführen; spätere Tailwind-Klassen überschreiben frühere (z. B. w-auto statt w-full). */
 export function cn(...args: Parameters<typeof clsx>) {
-  return clsx(...args);
+  return twMerge(clsx(...args));
 }
 
 type Variant = "primary" | "secondary" | "danger" | "ghost";

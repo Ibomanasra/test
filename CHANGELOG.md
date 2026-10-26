@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.0] – 2026-10-26 – Phase 2: Preis-Engine & Preisverwaltung
+
+### Hinzugefügt
+- `resolvePrice(product, customer, qty, date, channel)` in `packages/core/src/pricing.ts`: B2B-Kette (Preisliste/Gruppenrabatt → Staffel → Kategorie-Rabatt) im Wettbewerb mit Sonderpreis, Aktion und Angebot; fixe Angebote/Sonderpreise gewinnen; B2C mit Aktion und Rundungsregeln; „Kaufe X, bekomme Y“; vollständige Begründung (Trace) – 50 neue Unit-Tests.
+- Mengenregeln (`checkQuantity`), Margenschutz (`minimumPriceNet`, `isBelowMargin`), Massenpreisänderung (`bulkAdjust`).
+- Admin-Menü **Preise**: Übersicht mit Marge und Warnung, Gruppen, Preislisten, Staffeln, Sonderpreise, Kategorie-Rabatte, Aktionen, Rundung, geplante Preise, Massenänderung mit Vorschau (sofort oder geplant), CSV-/Excel-Import mit Vorschau und Export, Preis-Historie, Preisvorschau mit Regel-Erklärung.
+- Margenschutz: Preise unter Einkauf + Mindestmarge nur mit bewusster Bestätigung (eigenes Recht), protokolliert.
+- **Angebote**: Admin erstellt/bearbeitet/versendet, Händler fordert an, nimmt an oder lehnt ab; Ablauf-Job.
+- Hintergrundjobs (`instrumentation.ts`): geplante Preise, abgelaufene Angebote.
+- Demo-Katalog: 30 Produkte in 6 Kategorien mit Einheiten, Lagerplätzen, Anfangsbestand und Preisregeln.
+
 ## [0.1.0] – 2026-10-26 – Phase 1: Grundgerüst
 
 ### Hinzugefügt

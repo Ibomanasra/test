@@ -22,7 +22,13 @@ async function main() {
     // Abhängige Belege zuerst (ab Phase 3 vorhanden)
     await tx.order.deleteMany({ where: { OR: [{ isDemo: true }, { customerId: { in: customerIds } }] } });
     await tx.customer.deleteMany({ where: { id: { in: customerIds } } });
+    const demoVariants = (await tx.productVariant.findMany({ where: { product: { isDemo: true } }, select: { id: true } })).map((v) => v.id);
+    await tx.stockMovement.deleteMany({ where: { variantId: { in: demoVariants } } });
+    await tx.stockLevel.deleteMany({ where: { variantId: { in: demoVariants } } });
+    await tx.priceHistory.deleteMany({ where: { variantId: { in: demoVariants } } });
+    await tx.promotion.deleteMany({ where: { nameEn: { endsWith: "(demo)" } } });
     await tx.product.deleteMany({ where: { isDemo: true } });
+    await tx.category.deleteMany({ where: { products: { none: {} }, slug: { in: ["cleaning", "kitchen", "plastic", "paper", "bath", "food"] } } });
     await tx.supplier.deleteMany({ where: { isDemo: true } });
     const demoStaff = await tx.user.findMany({ where: { kind: "STAFF", name: { contains: "(مثال)" } }, select: { id: true } });
     const allUsers = [...userIds, ...demoStaff.map((u) => u.id)];

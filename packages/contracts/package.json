@@ -1,0 +1,21 @@
+{
+  "name": "@sa/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@sa/core": "workspace:*",
+    "zod": "^4.3.0"
+  },
+  "devDependencies": {
+    "@sa/config": "workspace:*",
+    "vitest": "^4.1.12"
+  }
+}

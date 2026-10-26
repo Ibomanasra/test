@@ -1,0 +1,1790 @@
+// =============================================================================
+// Sholat Aljanoub – Prisma-Schema (ENTWURF v0.1, noch nicht migriert)
+//
+// Konventionen
+//   * Geld:      Int in Agorot (1 ₪ = 100). Suffix "Agorot" bzw. Felder net/vat/gross.
+//                Aggregationen in Berichten laufen per SQL als BIGINT.
+//   * Prozent:   Int in Basispunkten (1600 = 16,00 %). Suffix "Bps".
+//   * Mengen:    Int in BASISEINHEIT (Stück). Verkaufseinheit + Faktor wird an
+//                der Position als Snapshot mitgespeichert.
+//   * Texte:     zweisprachig als *Ar / *En Spaltenpaar (kein JSON), damit
+//                Suche/Sortierung per Index möglich ist.
+//   * Snapshots: Belege (Bestellung, Rechnung, …) kopieren Namen, Preise,
+//                Steuersätze und Adressen – spätere Stammdatenänderungen
+//                verändern keine historischen Belege.
+//   * isDemo:    Seed-Datensätze sind markiert und per Skript entfernbar.
+// =============================================================================
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets   = ["native", "linux-musl-openssl-3.0.x", "debian-openssl-3.0.x"]
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pg_trgm]
+}
+
+// -----------------------------------------------------------------------------
+// ENUMS
+// -----------------------------------------------------------------------------
+
+enum Locale {
+  ar
+  en
+}
+
+enum Channel {
+  B2C
+  B2B
+}
+
+enum ChannelScope {
+  B2C
+  B2B
+  BOTH
+}
+
+enum UserKind {
+  STAFF
+  CUSTOMER
+}
+
+enum SessionClient {
+  WEB
+  MOBILE
+}
+
+enum OtpPurpose {
+  LOGIN
+  REGISTER
+  CHANGE_PHONE
+}
+
+enum CustomerType {
+  B2C
+  B2B
+}
+
+enum CustomerStatus {
+  ACTIVE
+  PENDING_APPROVAL // B2B: sieht bis zur Freigabe B2C-Preise
+  REJECTED
+  BLOCKED
+}
+
+enum CustomerMemberRole {
+  OWNER
+  BUYER
+}
+
+enum GroupPricingMode {
+  DISCOUNT_PERCENT // b2bBasePrice − discountBps
+  PRICE_LIST // feste Preise aus PriceList
+}
+
+enum PriceField {
+  COST
+  B2C
+  B2B_BASE
+  PRICE_LIST_ITEM
+  TIER
+  CUSTOMER_PRICE
+}
+
+enum PriceChangeSource {
+  MANUAL
+  CSV_IMPORT
+  BULK_PERCENT
+  SCHEDULED
+  GOODS_RECEIPT // costPrice durch Wareneingang
+}
+
+enum PromotionType {
+  PERCENT
+  FIXED_PRICE
+  BUY_X_GET_Y
+}
+
+enum RoundingMode {
+  NONE
+  END_90 // 12,34 → 12,90
+  END_00 // 12,34 → 13,00
+  END_50_OR_00 // 12,34 → 12,50 ; 12,70 → 13,00
+  NEAREST_10 // auf 10 Agorot
+}
+
+enum PriceRule {
+  // Ergebnis von resolvePrice() – wird an jeder Position gespeichert
+  QUOTE
+  CUSTOMER_PRICE
+  PROMOTION
+  GROUP_PRICE_LIST
+  GROUP_DISCOUNT
+  BASE_PRICE
+  TIER_PRICE
+  CATEGORY_DISCOUNT
+  B2C_PRICE
+  MANUAL_OVERRIDE
+}
+
+enum QuoteStatus {
+  REQUESTED // vom Kunden angefragt
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  CONVERTED // in Bestellung übernommen
+}
+
+enum OrderStatus {
+  NEW
+  CONFIRMED
+  PICKING
+  READY
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH_ON_DELIVERY
+  BANK_TRANSFER
+  CARD_GATEWAY
+  ON_ACCOUNT // B2B Kauf auf Rechnung
+}
+
+enum PaymentStatus {
+  UNPAID
+  PENDING // z. B. Überweisung angekündigt / Gateway läuft
+  PARTIALLY_PAID
+  PAID
+  REFUNDED
+}
+
+enum StockMovementType {
+  RECEIPT
+  SALE
+  RETURN
+  ADJUSTMENT
+  STOCKTAKE
+  TRANSFER_IN
+  TRANSFER_OUT
+}
+
+enum ReservationStatus {
+  ACTIVE
+  RELEASED
+  CONSUMED
+}
+
+enum StocktakeStatus {
+  OPEN
+  COUNTING
+  CLOSED
+  CANCELLED
+}
+
+enum PurchaseOrderStatus {
+  DRAFT
+  ORDERED
+  PARTIALLY_RECEIVED
+  RECEIVED
+  CANCELLED
+}
+
+enum ShipmentStatus {
+  PENDING
+  LOADED
+  DELIVERED
+  FAILED
+  CANCELLED
+}
+
+enum TourStatus {
+  PLANNED
+  LOADED
+  ON_ROUTE
+  COMPLETED
+  CLOSED
+}
+
+enum TourStopStatus {
+  PENDING
+  DELIVERED
+  FAILED
+  SKIPPED
+}
+
+enum CashClosingStatus {
+  OPEN
+  SUBMITTED
+  APPROVED
+}
+
+enum InvoiceStatus {
+  ISSUED
+  PARTIALLY_PAID
+  PAID
+  CREDITED // vollständig per Gutschrift storniert
+}
+
+enum ReturnStatus {
+  REQUESTED
+  RECEIVED
+  CLOSED
+  REJECTED
+}
+
+enum LedgerEntryType {
+  INVOICE
+  CREDIT_NOTE
+  PAYMENT
+  REFUND
+  DUNNING_FEE
+  OPENING_BALANCE
+  ADJUSTMENT
+}
+
+enum DocType {
+  QUOTE // QT
+  ORDER_CONFIRMATION // OC
+  PICK_LIST // PL
+  DELIVERY_NOTE // DN
+  INVOICE // INV  (lückenlos)
+  RECEIPT // RC
+  CREDIT_NOTE // CN   (lückenlos)
+  TOUR_SHEET // TR
+  CASH_CLOSING // CC
+  ACCOUNT_STATEMENT // ST
+  DUNNING // DU
+  PURCHASE_ORDER // PO
+  GOODS_RECEIPT // GR
+  PRICE_LIST // PRL
+  STOCKTAKE // SK
+  STOCK_LIST // SL
+  REPORT // RP
+  ORDER // SO (Bestellnummer)
+  RETURN // RT
+}
+
+enum DocLanguage {
+  AR
+  EN
+  BILINGUAL
+}
+
+enum PrintJobStatus {
+  QUEUED
+  RENDERING
+  DONE
+  FAILED
+}
+
+enum PrintTrigger {
+  MANUAL
+  BATCH
+  AUTO_STATUS
+}
+
+enum NotificationChannel {
+  SMS
+  WHATSAPP
+  EMAIL
+}
+
+enum NotificationStatus {
+  LOGGED // Phase 1–5: nur geloggt
+  SENT
+  FAILED
+}
+
+enum GatewayIntentStatus {
+  CREATED
+  REDIRECTED
+  AUTHORIZED
+  CAPTURED
+  FAILED
+  CANCELLED
+}
+
+// -----------------------------------------------------------------------------
+// EINSTELLUNGEN
+// -----------------------------------------------------------------------------
+
+/// Singleton (id = 1)
+model CompanySettings {
+  id                     Int         @id @default(1)
+  nameAr                 String
+  nameEn                 String
+  addressAr              String
+  addressEn              String
+  phone                  String
+  email                  String?
+  website                String?
+  dealerNumber           String // رقم المشتغل المرخص des Verkäufers
+  taxFileNumber          String?
+  logoFileId             String?
+  logoFile               FileObject? @relation("CompanyLogo", fields: [logoFileId], references: [id])
+  defaultLocale          Locale      @default(ar)
+  currency               String      @default("ILS")
+  minMarginBps           Int         @default(500) // Mindestmarge für Margenschutz
+  defaultPaymentTermDays Int         @default(30)
+  quoteValidityDays      Int         @default(14)
+  /// Konfigurierbare Pflichtangaben der Steuerrechnung (mit Steuerberater prüfen)
+  taxInvoiceFields       Json        @default("{}")
+  updatedAt              DateTime    @updatedAt
+}
+
+model BankAccount {
+  id          String  @id @default(cuid())
+  bankNameAr  String
+  bankNameEn  String
+  branch      String?
+  accountName String
+  accountNo   String
+  iban        String?
+  swift       String?
+  showOnDocs  Boolean @default(true)
+  sortOrder   Int     @default(0)
+  active      Boolean @default(true)
+}
+
+/// MwSt.-Satz mit Gültigkeit. Rechnungen speichern den Satz als Snapshot.
+model TaxRate {
+  id        String    @id @default(cuid())
+  code      String    @default("STANDARD") // später ggf. ZERO / EXEMPT
+  rateBps   Int // 1600
+  validFrom DateTime
+  validTo   DateTime?
+  createdAt DateTime  @default(now())
+
+  @@unique([code, validFrom])
+}
+
+model RoundingRule {
+  id                  String       @id @default(cuid())
+  channel             Channel      @default(B2C)
+  mode                RoundingMode
+  /// Regel gilt nur für Preise >= minAgorot (z. B. erst ab 5 ₪ auf ,90)
+  minAgorot           Int          @default(0)
+  appliesToPromotions Boolean      @default(true)
+  appliesToBasePrices Boolean      @default(false)
+  active              Boolean      @default(true)
+  sortOrder           Int          @default(0)
+}
+
+model DeliveryZone {
+  id               String             @id @default(cuid())
+  code             String             @unique
+  nameAr           String
+  nameEn           String
+  active           Boolean            @default(true)
+  sortOrder        Int                @default(0)
+  /// Liefertage (0=So … 6=Sa), leer = täglich
+  deliveryWeekdays Int[]
+  rates            DeliveryZoneRate[]
+  addresses        Address[]
+  orders           Order[]
+  tours            Tour[]
+}
+
+model DeliveryZoneRate {
+  id             String       @id @default(cuid())
+  zoneId         String
+  zone           DeliveryZone @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  channel        Channel
+  feeGrossAgorot Int // Liefergebühr brutto
+  minOrderAgorot Int          @default(0) // B2C brutto, B2B netto
+  freeFromAgorot Int? // Gratis-Lieferung ab
+
+  @@unique([zoneId, channel])
+}
+
+model PaymentMethodConfig {
+  id        String        @id @default(cuid())
+  method    PaymentMethod
+  channel   Channel
+  enabled   Boolean       @default(true)
+  labelAr   String
+  labelEn   String
+  /// Adapter-spezifisch (Gateway-Name, Gebühren, Hinweistext …)
+  config    Json          @default("{}")
+  sortOrder Int           @default(0)
+
+  @@unique([method, channel])
+}
+
+/// Nummernkreis pro Dokumentart und Jahr. Vergabe per SELECT … FOR UPDATE
+/// in derselben Transaktion wie der Beleg → lückenlos.
+model NumberSequence {
+  id         String  @id @default(cuid())
+  docType    DocType
+  year       Int
+  prefix     String // "INV"
+  padding    Int     @default(6)
+  nextNumber Int     @default(1)
+  gapless    Boolean @default(false)
+
+  @@unique([docType, year])
+}
+
+model DocumentTemplateText {
+  id         String  @id @default(cuid())
+  docType    DocType
+  locale     Locale
+  titleText  String?
+  headerText String?
+  footerText String?
+  termsText  String?
+
+  @@unique([docType, locale])
+}
+
+model AutoPrintRule {
+  id         String      @id @default(cuid())
+  onStatus   OrderStatus
+  docType    DocType
+  withPrices Boolean     @default(true) // für Lieferschein
+  language   DocLanguage @default(AR)
+  enabled    Boolean     @default(true)
+
+  @@unique([onStatus, docType])
+}
+
+/// Freie Key/Value-Einstellungen (Feature-Flags, Limits)
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+// -----------------------------------------------------------------------------
+// AUTH, ROLLEN, AUDIT
+// -----------------------------------------------------------------------------
+
+model User {
+  id              String    @id @default(cuid())
+  kind            UserKind
+  phone           String    @unique // E.164, z. B. +970599123456
+  phoneVerifiedAt DateTime?
+  email           String?   @unique
+  name            String
+  locale          Locale    @default(ar)
+  passwordHash    String? // nur STAFF (argon2id)
+  isActive        Boolean   @default(true)
+  lastLoginAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  sessions         Session[]
+  roles            UserRole[]
+  memberships      CustomerMember[]
+  auditLogs        AuditLog[]
+  priceHistory     PriceHistory[]
+  ordersPlaced     Order[]            @relation("OrderPlacedBy")
+  orderEvents      OrderStatusEvent[]
+  toursAsDriver    Tour[]             @relation("TourDriver")
+  cashClosings     CashClosing[]      @relation("ClosingDriver")
+  cashCollections  CashCollection[]
+  paymentsReceived Payment[]          @relation("PaymentReceivedBy")
+  quotesCreated    Quote[]            @relation("QuoteCreatedBy")
+  customerNotes    CustomerNote[]
+  uploadedFiles    FileObject[]
+}
+
+model Session {
+  id         String        @id @default(cuid())
+  userId     String
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String        @unique // SHA-256 des Tokens; Token selbst nie gespeichert
+  client     SessionClient @default(WEB)
+  /// STAFF: Passwort + OTP erfolgreich (2-Faktor)
+  mfaPassed  Boolean       @default(false)
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime      @default(now())
+  lastSeenAt DateTime      @default(now())
+  expiresAt  DateTime
+  revokedAt  DateTime?
+
+  @@index([userId])
+}
+
+model OtpChallenge {
+  id          String     @id @default(cuid())
+  phone       String
+  purpose     OtpPurpose
+  codeHash    String
+  attempts    Int        @default(0)
+  maxAttempts Int        @default(5)
+  ip          String?
+  expiresAt   DateTime
+  consumedAt  DateTime?
+  createdAt   DateTime   @default(now())
+
+  @@index([phone, createdAt])
+}
+
+/// Fixed-Window-Rate-Limit in Postgres (kein Redis nötig)
+model RateLimitBucket {
+  key         String   @id // z. B. "otp:phone:+9705…" / "otp:ip:1.2.3.4"
+  windowStart DateTime
+  count       Int
+}
+
+model Role {
+  id          String     @id @default(cuid())
+  key         String     @unique // owner, sales, pricing, warehouse, driver, accounting
+  nameAr      String
+  nameEn      String
+  isSystem    Boolean    @default(false) // Systemrollen nicht löschbar
+  /// Permission-Keys aus packages/core/permissions.ts, z. B. "price.edit"
+  permissions String[]
+  users       UserRole[]
+}
+
+model UserRole {
+  userId String
+  roleId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actor      User?    @relation(fields: [actorId], references: [id])
+  action     String // "order.confirm", "price.update", "customer.approve" …
+  entityType String
+  entityId   String?
+  before     Json?
+  after      Json?
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([actorId, createdAt])
+  @@index([createdAt])
+}
+
+// -----------------------------------------------------------------------------
+// DATEIEN (MinIO / S3)
+// -----------------------------------------------------------------------------
+
+model FileObject {
+  id           String   @id @default(cuid())
+  bucket       String
+  key          String
+  mimeType     String
+  sizeBytes    Int
+  sha256       String
+  originalName String?
+  purpose      String // "product-image", "trade-license", "invoice-pdf", "signature" …
+  uploadedById String?
+  uploadedBy   User?    @relation(fields: [uploadedById], references: [id])
+  createdAt    DateTime @default(now())
+
+  companyLogo      CompanySettings[]  @relation("CompanyLogo")
+  productImages    ProductImage[]
+  customerLicenses Customer[]         @relation("CustomerLicense")
+  customerFiles    CustomerFile[]
+  archivedDocs     ArchivedDocument[]
+  printJobs        PrintJob[]
+  signatures       Shipment[]         @relation("ShipmentSignature")
+  photos           Shipment[]         @relation("ShipmentPhoto")
+
+  @@unique([bucket, key])
+}
+
+// -----------------------------------------------------------------------------
+// KUNDEN
+// -----------------------------------------------------------------------------
+
+model CustomerGroup {
+  id                       String           @id @default(cuid())
+  code                     String           @unique // STANDARD, SILVER, GOLD, KEY_ACCOUNT
+  nameAr                   String
+  nameEn                   String
+  pricingMode              GroupPricingMode @default(DISCOUNT_PERCENT)
+  discountBps              Int              @default(0)
+  priceListId              String?
+  priceList                PriceList?       @relation(fields: [priceListId], references: [id])
+  defaultPaymentTermDays   Int?
+  defaultCreditLimitAgorot Int?
+  sortOrder                Int              @default(0)
+  active                   Boolean          @default(true)
+
+  customers         Customer[]
+  tierPrices        TierPrice[]
+  categoryDiscounts CategoryDiscount[]
+  promotions        Promotion[]
+}
+
+/// Kundenkonto (Privatperson oder Firma). Benutzer hängen über CustomerMember dran.
+model Customer {
+  id                String         @id @default(cuid())
+  number            String         @unique // K-000123
+  type              CustomerType
+  status            CustomerStatus @default(ACTIVE)
+  displayName       String
+  // --- B2B ---
+  companyName       String?
+  ownerName         String?
+  dealerNumber      String? // مشتغل مرخص
+  licenseFileId     String?
+  licenseFile       FileObject?    @relation("CustomerLicense", fields: [licenseFileId], references: [id])
+  groupId           String?
+  group             CustomerGroup? @relation(fields: [groupId], references: [id])
+  paymentTermDays   Int?
+  creditLimitAgorot Int            @default(0)
+  allowOnAccount    Boolean        @default(false)
+  approvedAt        DateTime?
+  approvedById      String?
+  rejectedReason    String?
+  blockedReason     String?
+  // --- allgemein ---
+  phone             String?
+  email             String?
+  preferredLocale   Locale         @default(ar)
+  isDemo            Boolean        @default(false)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  members           CustomerMember[]
+  addresses         Address[]
+  notes             CustomerNote[]
+  files             CustomerFile[]
+  customerPrices    CustomerPrice[]
+  categoryDiscounts CategoryDiscount[]
+  quotes            Quote[]
+  carts             Cart[]
+  savedLists        SavedOrderList[]
+  orders            Order[]
+  invoices          Invoice[]
+  creditNotes       CreditNote[]
+  payments          Payment[]
+  ledger            CustomerLedgerEntry[]
+  dunningNotices    DunningNotice[]
+  returns           Return[]
+
+  @@index([type, status])
+}
+
+model CustomerMember {
+  customerId String
+  userId     String
+  role       CustomerMemberRole @default(BUYER)
+  customer   Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime           @default(now())
+
+  @@id([customerId, userId])
+}
+
+model Address {
+  id         String       @id @default(cuid())
+  customerId String
+  customer   Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  zoneId     String
+  zone       DeliveryZone @relation(fields: [zoneId], references: [id])
+  label      String? // "Laden", "Lager"
+  recipient  String
+  phone      String
+  city       String
+  street     String?
+  details    String? // Gebäude, Etage, Landmarke
+  lat        Float?
+  lng        Float?
+  isDefault  Boolean      @default(false)
+  createdAt  DateTime     @default(now())
+}
+
+model CustomerNote {
+  id         String   @id @default(cuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  authorId   String
+  author     User     @relation(fields: [authorId], references: [id])
+  body       String
+  createdAt  DateTime @default(now())
+}
+
+model CustomerFile {
+  id         String     @id @default(cuid())
+  customerId String
+  customer   Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  fileId     String
+  file       FileObject @relation(fields: [fileId], references: [id])
+  title      String
+  createdAt  DateTime   @default(now())
+}
+
+// -----------------------------------------------------------------------------
+// KATALOG
+// -----------------------------------------------------------------------------
+
+model Category {
+  id        String     @id @default(cuid())
+  parentId  String?
+  parent    Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children  Category[] @relation("CategoryTree")
+  slug      String     @unique
+  nameAr    String
+  nameEn    String
+  sortOrder Int        @default(0)
+  active    Boolean    @default(true)
+
+  products          Product[]
+  categoryDiscounts CategoryDiscount[]
+  promotionTargets  PromotionTarget[]
+}
+
+model Brand {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  products Product[]
+}
+
+model Product {
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  nameAr        String
+  nameEn        String
+  descriptionAr String?
+  descriptionEn String?
+  categoryId    String
+  category      Category @relation(fields: [categoryId], references: [id])
+  brandId       String?
+  brand         Brand?   @relation(fields: [brandId], references: [id])
+  taxCode       String   @default("STANDARD") // → TaxRate.code
+  visibleB2C    Boolean  @default(true)
+  visibleB2B    Boolean  @default(true)
+  active        Boolean  @default(true)
+  isDemo        Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  variants         ProductVariant[]
+  images           ProductImage[]
+  promotionTargets PromotionTarget[]
+
+  @@index([categoryId])
+  @@index([nameAr(ops: raw("gin_trgm_ops"))], type: Gin, map: "Product_nameAr_trgm")
+  @@index([nameEn(ops: raw("gin_trgm_ops"))], type: Gin, map: "Product_nameEn_trgm")
+}
+
+model ProductImage {
+  id        String     @id @default(cuid())
+  productId String
+  product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  fileId    String
+  file      FileObject @relation(fields: [fileId], references: [id])
+  altAr     String?
+  altEn     String?
+  sortOrder Int        @default(0)
+}
+
+model UnitOfMeasure {
+  id           String        @id @default(cuid())
+  code         String        @unique // PIECE, PACK, CARTON, PALLET
+  nameAr       String
+  nameEn       String
+  variantUnits VariantUnit[]
+}
+
+/// Jedes Produkt hat ≥ 1 Variante. Preise, SKU, Barcode und Bestand hängen an
+/// der Variante. Alle Preise beziehen sich auf die BASISEINHEIT (Stück).
+model ProductVariant {
+  id           String   @id @default(cuid())
+  productId    String
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku          String   @unique
+  barcode      String?  @unique // EAN-13 der Basiseinheit
+  nameAr       String? // z. B. "أحمر – 1 لتر"
+  nameEn       String?
+  attributes   Json     @default("{}") // {"color":"red","size":"1L"}
+  // --- Preise (Agorot) ---
+  costPrice    Int // netto, intern
+  b2cPrice     Int // BRUTTO inkl. MwSt.
+  b2bBasePrice Int // NETTO exkl. MwSt.
+  // ---
+  weightGrams  Int?
+  minStock     Int      @default(0)
+  defaultBinId String?
+  defaultBin   Bin?     @relation(fields: [defaultBinId], references: [id])
+  active       Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  units            VariantUnit[]
+  channelRules     VariantChannelRule[]
+  priceListItems   PriceListItem[]
+  tierPrices       TierPrice[]
+  customerPrices   CustomerPrice[]
+  promotionTargets PromotionTarget[]
+  scheduledPrices  ScheduledPriceChange[]
+  priceHistory     PriceHistory[]
+  stockLevels      StockLevel[]
+  stockMovements   StockMovement[]
+  reservations     StockReservation[]
+  cartItems        CartItem[]
+  savedListItems   SavedOrderListItem[]
+  quoteItems       QuoteItem[]
+  orderItems       OrderItem[]
+  poItems          PurchaseOrderItem[]
+  receiptItems     GoodsReceiptItem[]
+  stocktakeLines   StocktakeLine[]
+
+  @@index([productId])
+}
+
+/// Verkaufseinheiten mit Umrechnung (1 Karton = 12 Stück)
+model VariantUnit {
+  id        String         @id @default(cuid())
+  variantId String
+  variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  unitId    String
+  unit      UnitOfMeasure  @relation(fields: [unitId], references: [id])
+  factor    Int // Anzahl Basiseinheiten
+  barcode   String?        @unique // z. B. Karton-EAN / DUN-14
+
+  @@unique([variantId, unitId])
+}
+
+/// Kanal-spezifische Einheit, Mindestmenge, Mengenschritt
+model VariantChannelRule {
+  id             String         @id @default(cuid())
+  variantId      String
+  variant        ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  channel        Channel
+  defaultUnitId  String // → UnitOfMeasure
+  allowedUnitIds String[]
+  minQtyBase     Int            @default(1) // in Basiseinheiten
+  qtyStepBase    Int            @default(1) // z. B. 12 = nur ganze Kartons
+
+  @@unique([variantId, channel])
+}
+
+// -----------------------------------------------------------------------------
+// PREISE
+// -----------------------------------------------------------------------------
+
+model PriceList {
+  id     String          @id @default(cuid())
+  code   String          @unique
+  nameAr String
+  nameEn String
+  active Boolean         @default(true)
+  items  PriceListItem[]
+  groups CustomerGroup[]
+}
+
+model PriceListItem {
+  id          String         @id @default(cuid())
+  priceListId String
+  priceList   PriceList      @relation(fields: [priceListId], references: [id], onDelete: Cascade)
+  variantId   String
+  variant     ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  priceNet    Int
+  validFrom   DateTime?
+  validTo     DateTime?
+
+  @@index([priceListId, variantId])
+}
+
+/// Staffelpreis B2B (netto, pro Basiseinheit). groupId = null → alle Gruppen.
+model TierPrice {
+  id         String         @id @default(cuid())
+  variantId  String
+  variant    ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  groupId    String?
+  group      CustomerGroup? @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  minQtyBase Int
+  priceNet   Int
+  validFrom  DateTime?
+  validTo    DateTime?
+
+  @@index([variantId])
+}
+
+/// Kundenspezifischer Sonderpreis (netto)
+model CustomerPrice {
+  id         String         @id @default(cuid())
+  customerId String
+  customer   Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  variantId  String
+  variant    ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  priceNet   Int
+  isFixed    Boolean        @default(false) // fix = gewinnt auch gegen günstigere Regeln
+  validFrom  DateTime?
+  validTo    DateTime?
+  note       String?
+
+  @@index([customerId, variantId])
+}
+
+/// Kategorie-Rabatt für Gruppe ODER Kunde (genau eins von beiden, CHECK in Migration)
+model CategoryDiscount {
+  id                   String         @id @default(cuid())
+  categoryId           String
+  category             Category       @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  groupId              String?
+  group                CustomerGroup? @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  customerId           String?
+  customer             Customer?      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  discountBps          Int
+  includeSubcategories Boolean        @default(true)
+  validFrom            DateTime?
+  validTo              DateTime?
+}
+
+model Promotion {
+  id         String            @id @default(cuid())
+  nameAr     String
+  nameEn     String
+  channel    ChannelScope
+  type       PromotionType
+  startsAt   DateTime
+  endsAt     DateTime
+  active     Boolean           @default(true)
+  priority   Int               @default(0)
+  percentBps Int? // PERCENT
+  buyQty     Int? // BUY_X_GET_Y (Basiseinheiten)
+  getQty     Int?
+  groupId    String? // optional nur für eine B2B-Gruppe
+  group      CustomerGroup?    @relation(fields: [groupId], references: [id])
+  targets    PromotionTarget[]
+  createdAt  DateTime          @default(now())
+
+  @@index([channel, startsAt, endsAt])
+}
+
+/// Ziel einer Aktion: Variante, Produkt oder Kategorie (genau eins)
+model PromotionTarget {
+  id          String          @id @default(cuid())
+  promotionId String
+  promotion   Promotion       @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  variantId   String?
+  variant     ProductVariant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  productId   String?
+  product     Product?        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  categoryId  String?
+  category    Category?       @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  /// FIXED_PRICE: B2C brutto / B2B netto
+  fixedPrice  Int?
+}
+
+model Quote {
+  id           String      @id @default(cuid())
+  number       String      @unique // QT-2026-000001
+  customerId   String
+  customer     Customer    @relation(fields: [customerId], references: [id])
+  status       QuoteStatus @default(DRAFT)
+  validUntil   DateTime
+  isFixed      Boolean     @default(true)
+  requestNote  String? // Anfrage-Text des Kunden
+  internalNote String?
+  createdById  String?
+  createdBy    User?       @relation("QuoteCreatedBy", fields: [createdById], references: [id])
+  sentAt       DateTime?
+  acceptedAt   DateTime?
+  subtotalNet  Int         @default(0)
+  vatTotal     Int         @default(0)
+  totalGross   Int         @default(0)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  items  QuoteItem[]
+  orders Order[]
+}
+
+model QuoteItem {
+  id           String         @id @default(cuid())
+  quoteId      String
+  quote        Quote          @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  variantId    String
+  variant      ProductVariant @relation(fields: [variantId], references: [id])
+  unitCode     String
+  unitFactor   Int
+  qty          Int // in Verkaufseinheit
+  unitPriceNet Int // pro Basiseinheit
+  sortOrder    Int            @default(0)
+}
+
+model PriceChangeBatch {
+  id          String                 @id @default(cuid())
+  source      PriceChangeSource
+  description String?
+  /// CSV: Originaldatei / Bulk: {categoryId, channel, percentBps}
+  meta        Json                   @default("{}")
+  createdById String
+  createdAt   DateTime               @default(now())
+  history     PriceHistory[]
+  scheduled   ScheduledPriceChange[]
+}
+
+model ScheduledPriceChange {
+  id          String            @id @default(cuid())
+  variantId   String
+  variant     ProductVariant    @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  field       PriceField // COST | B2C | B2B_BASE
+  newPrice    Int
+  effectiveAt DateTime
+  appliedAt   DateTime?
+  cancelledAt DateTime?
+  batchId     String?
+  batch       PriceChangeBatch? @relation(fields: [batchId], references: [id])
+  createdById String
+  createdAt   DateTime          @default(now())
+
+  @@index([effectiveAt, appliedAt])
+}
+
+model PriceHistory {
+  id                   String            @id @default(cuid())
+  variantId            String
+  variant              ProductVariant    @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  field                PriceField
+  refId                String? // PriceListItem/TierPrice/CustomerPrice-ID
+  oldPrice             Int?
+  newPrice             Int?
+  source               PriceChangeSource
+  belowMarginConfirmed Boolean           @default(false)
+  batchId              String?
+  batch                PriceChangeBatch? @relation(fields: [batchId], references: [id])
+  changedById          String?
+  changedBy            User?             @relation(fields: [changedById], references: [id])
+  changedAt            DateTime          @default(now())
+
+  @@index([variantId, changedAt])
+}
+
+// -----------------------------------------------------------------------------
+// LAGER
+// -----------------------------------------------------------------------------
+
+model Warehouse {
+  id             String          @id @default(cuid())
+  code           String          @unique
+  name           String
+  isDefault      Boolean         @default(false)
+  bins           Bin[]
+  stockLevels    StockLevel[]
+  stockMovements StockMovement[]
+  stocktakes     Stocktake[]
+}
+
+model Bin {
+  id          String    @id @default(cuid())
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  code        String // "A-03-2"
+  sortKey     Int // Laufweg-Reihenfolge für Kommissionierliste
+  active      Boolean   @default(true)
+
+  defaultFor     ProductVariant[]
+  stockMovements StockMovement[]
+  stocktakeLines StocktakeLine[]
+  receiptItems   GoodsReceiptItem[]
+
+  @@unique([warehouseId, code])
+}
+
+/// Materialisierter Bestand (wird nur zusammen mit StockMovement/Reservation
+/// in derselben Transaktion geändert; Journal ist maßgeblich).
+model StockLevel {
+  variantId   String
+  warehouseId String
+  variant     ProductVariant @relation(fields: [variantId], references: [id])
+  warehouse   Warehouse      @relation(fields: [warehouseId], references: [id])
+  onHand      Int            @default(0)
+  reserved    Int            @default(0)
+  updatedAt   DateTime       @updatedAt
+
+  @@id([variantId, warehouseId])
+}
+
+model StockMovement {
+  id          String            @id @default(cuid())
+  variantId   String
+  variant     ProductVariant    @relation(fields: [variantId], references: [id])
+  warehouseId String
+  warehouse   Warehouse         @relation(fields: [warehouseId], references: [id])
+  binId       String?
+  bin         Bin?              @relation(fields: [binId], references: [id])
+  type        StockMovementType
+  qtyBase     Int // signiert: + Zugang / − Abgang
+  unitCost    Int? // netto, für Lagerwert
+  refType     String? // "Shipment", "GoodsReceipt", "Stocktake", "Return"
+  refId       String?
+  note        String?
+  createdById String?
+  createdAt   DateTime          @default(now())
+
+  @@index([variantId, createdAt])
+  @@index([refType, refId])
+}
+
+model StockReservation {
+  id          String            @id @default(cuid())
+  variantId   String
+  variant     ProductVariant    @relation(fields: [variantId], references: [id])
+  orderItemId String
+  orderItem   OrderItem         @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  qtyBase     Int
+  status      ReservationStatus @default(ACTIVE)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([variantId, status])
+}
+
+model Stocktake {
+  id          String          @id @default(cuid())
+  number      String          @unique
+  warehouseId String
+  warehouse   Warehouse       @relation(fields: [warehouseId], references: [id])
+  status      StocktakeStatus @default(OPEN)
+  note        String?
+  startedAt   DateTime        @default(now())
+  closedAt    DateTime?
+  createdById String?
+  lines       StocktakeLine[]
+}
+
+model StocktakeLine {
+  id          String         @id @default(cuid())
+  stocktakeId String
+  stocktake   Stocktake      @relation(fields: [stocktakeId], references: [id], onDelete: Cascade)
+  variantId   String
+  variant     ProductVariant @relation(fields: [variantId], references: [id])
+  binId       String?
+  bin         Bin?           @relation(fields: [binId], references: [id])
+  expectedQty Int
+  countedQty  Int?
+  countedById String?
+  countedAt   DateTime?
+
+  @@unique([stocktakeId, variantId, binId])
+}
+
+// -----------------------------------------------------------------------------
+// EINKAUF
+// -----------------------------------------------------------------------------
+
+model Supplier {
+  id              String          @id @default(cuid())
+  number          String          @unique
+  name            String
+  contactName     String?
+  phone           String?
+  email           String?
+  dealerNumber    String?
+  address         String?
+  paymentTermDays Int?
+  active          Boolean         @default(true)
+  isDemo          Boolean         @default(false)
+  purchaseOrders  PurchaseOrder[]
+  goodsReceipts   GoodsReceipt[]
+}
+
+model PurchaseOrder {
+  id          String              @id @default(cuid())
+  number      String              @unique // PO-2026-000001
+  supplierId  String
+  supplier    Supplier            @relation(fields: [supplierId], references: [id])
+  status      PurchaseOrderStatus @default(DRAFT)
+  orderedAt   DateTime?
+  expectedAt  DateTime?
+  note        String?
+  subtotalNet Int                 @default(0)
+  vatTotal    Int                 @default(0)
+  totalGross  Int                 @default(0)
+  createdById String?
+  createdAt   DateTime            @default(now())
+  items       PurchaseOrderItem[]
+  receipts    GoodsReceipt[]
+}
+
+model PurchaseOrderItem {
+  id              String             @id @default(cuid())
+  poId            String
+  po              PurchaseOrder      @relation(fields: [poId], references: [id], onDelete: Cascade)
+  variantId       String
+  variant         ProductVariant     @relation(fields: [variantId], references: [id])
+  unitCode        String
+  unitFactor      Int
+  qty             Int
+  unitCostNet     Int // pro Basiseinheit
+  receivedQtyBase Int                @default(0)
+  receiptItems    GoodsReceiptItem[]
+}
+
+model GoodsReceipt {
+  id             String             @id @default(cuid())
+  number         String             @unique // GR-…
+  supplierId     String
+  supplier       Supplier           @relation(fields: [supplierId], references: [id])
+  poId           String?
+  po             PurchaseOrder?     @relation(fields: [poId], references: [id])
+  receivedAt     DateTime           @default(now())
+  /// Wie costPrice aktualisiert wird: "LAST" oder "WEIGHTED_AVG"
+  costUpdateMode String             @default("LAST")
+  createdById    String?
+  items          GoodsReceiptItem[]
+}
+
+model GoodsReceiptItem {
+  id          String             @id @default(cuid())
+  receiptId   String
+  receipt     GoodsReceipt       @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  poItemId    String?
+  poItem      PurchaseOrderItem? @relation(fields: [poItemId], references: [id])
+  variantId   String
+  variant     ProductVariant     @relation(fields: [variantId], references: [id])
+  binId       String?
+  bin         Bin?               @relation(fields: [binId], references: [id])
+  qtyBase     Int
+  unitCostNet Int
+}
+
+// -----------------------------------------------------------------------------
+// WARENKORB & LISTEN (keine Preise gespeichert – werden immer serverseitig berechnet)
+// -----------------------------------------------------------------------------
+
+model Cart {
+  id         String     @id @default(cuid())
+  customerId String?
+  customer   Customer?  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  guestToken String?    @unique
+  updatedAt  DateTime   @updatedAt
+  items      CartItem[]
+}
+
+model CartItem {
+  id        String         @id @default(cuid())
+  cartId    String
+  cart      Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  variantId String
+  variant   ProductVariant @relation(fields: [variantId], references: [id])
+  unitCode  String
+  qty       Int
+
+  @@unique([cartId, variantId, unitCode])
+}
+
+model SavedOrderList {
+  id         String               @id @default(cuid())
+  customerId String
+  customer   Customer             @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  name       String
+  createdAt  DateTime             @default(now())
+  items      SavedOrderListItem[]
+}
+
+model SavedOrderListItem {
+  id        String         @id @default(cuid())
+  listId    String
+  list      SavedOrderList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  variantId String
+  variant   ProductVariant @relation(fields: [variantId], references: [id])
+  unitCode  String
+  qty       Int
+}
+
+// -----------------------------------------------------------------------------
+// BESTELLUNGEN
+// -----------------------------------------------------------------------------
+
+model Order {
+  id                    String        @id @default(cuid())
+  number                String        @unique // SO-2026-000001
+  customerId            String
+  customer              Customer      @relation(fields: [customerId], references: [id])
+  channel               Channel // zum Bestellzeitpunkt wirksamer Kanal
+  status                OrderStatus   @default(NEW)
+  placedById            String?
+  placedBy              User?         @relation("OrderPlacedBy", fields: [placedById], references: [id])
+  quoteId               String?
+  quote                 Quote?        @relation(fields: [quoteId], references: [id])
+  /// Rückstandsbestellung zu einer Teillieferung
+  parentOrderId         String?
+  parentOrder           Order?        @relation("Backorder", fields: [parentOrderId], references: [id])
+  backorders            Order[]       @relation("Backorder")
+  // --- Lieferung ---
+  zoneId                String
+  zone                  DeliveryZone  @relation(fields: [zoneId], references: [id])
+  addressSnapshot       Json
+  requestedDeliveryDate DateTime?     @db.Date
+  // --- Zahlung ---
+  paymentMethod         PaymentMethod
+  paymentStatus         PaymentStatus @default(UNPAID)
+  paymentTermDays       Int?
+  // --- Summen (Agorot, Snapshot) ---
+  subtotalNet           Int
+  vatTotal              Int
+  deliveryFeeGross      Int           @default(0)
+  totalGross            Int
+  costTotal             Int // für Marge
+  taxRateBps            Int // Snapshot
+  currency              String        @default("ILS")
+  // ---
+  customerNote          String?
+  internalNote          String?
+  cancelReason          String?
+  isDemo                Boolean       @default(false)
+  placedAt              DateTime      @default(now())
+  confirmedAt           DateTime?
+  deliveredAt           DateTime?
+  cancelledAt           DateTime?
+  updatedAt             DateTime      @updatedAt
+
+  items          OrderItem[]
+  events         OrderStatusEvent[]
+  shipments      Shipment[]
+  invoices       Invoice[]
+  returns        Return[]
+  gatewayIntents PaymentIntent[]
+
+  @@index([status, placedAt])
+  @@index([customerId, placedAt])
+  @@index([channel, placedAt])
+}
+
+model OrderItem {
+  id               String         @id @default(cuid())
+  orderId          String
+  order            Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variantId        String
+  variant          ProductVariant @relation(fields: [variantId], references: [id])
+  // --- Snapshot ---
+  skuSnapshot      String
+  nameArSnapshot   String
+  nameEnSnapshot   String
+  unitCode         String
+  unitFactor       Int
+  qty              Int // in Verkaufseinheit
+  qtyBase          Int // = qty × unitFactor
+  // --- Preis (pro Basiseinheit) ---
+  unitPriceNet     Int
+  unitPriceGross   Int
+  vatRateBps       Int
+  lineNet          Int
+  lineVat          Int
+  lineGross        Int
+  unitCost         Int // costPrice-Snapshot
+  freeQtyBase      Int            @default(0) // aus Kaufe-X-bekomme-Y
+  priceRule        PriceRule
+  priceRuleRef     String? // ID der Regel (Promotion, CustomerPrice, …)
+  /// Vollständige Begründung aus resolvePrice() (alle Kandidaten)
+  priceTrace       Json
+  belowMargin      Boolean        @default(false)
+  overriddenById   String? // manueller Preis mit Recht "order.edit_price"
+  // --- Fortschritt ---
+  qtyPickedBase    Int            @default(0)
+  qtyDeliveredBase Int            @default(0)
+  qtyCancelledBase Int            @default(0)
+  sortOrder        Int            @default(0)
+
+  reservations  StockReservation[]
+  shipmentItems ShipmentItem[]
+  returnItems   ReturnItem[]
+}
+
+model OrderStatusEvent {
+  id         String       @id @default(cuid())
+  orderId    String
+  order      Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  fromStatus OrderStatus?
+  toStatus   OrderStatus
+  byUserId   String?
+  byUser     User?        @relation(fields: [byUserId], references: [id])
+  note       String?
+  createdAt  DateTime     @default(now())
+
+  @@index([orderId, createdAt])
+}
+
+// -----------------------------------------------------------------------------
+// LIEFERUNG, TOUREN, FAHRER-KASSE
+// -----------------------------------------------------------------------------
+
+/// Eine (Teil-)Lieferung = ein Lieferschein (DN-…)
+model Shipment {
+  id              String         @id @default(cuid())
+  number          String         @unique // DN-2026-000001
+  orderId         String
+  order           Order          @relation(fields: [orderId], references: [id])
+  status          ShipmentStatus @default(PENDING)
+  deliveredAt     DateTime?
+  receivedByName  String?
+  signatureFileId String?
+  signatureFile   FileObject?    @relation("ShipmentSignature", fields: [signatureFileId], references: [id])
+  photoFileId     String?
+  photoFile       FileObject?    @relation("ShipmentPhoto", fields: [photoFileId], references: [id])
+  createdAt       DateTime       @default(now())
+
+  items    ShipmentItem[]
+  tourStop TourStop?
+  invoice  Invoice?
+}
+
+model ShipmentItem {
+  id          String    @id @default(cuid())
+  shipmentId  String
+  shipment    Shipment  @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  orderItemId String
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id])
+  qtyBase     Int
+}
+
+model Tour {
+  id        String        @id @default(cuid())
+  number    String        @unique // TR-…
+  date      DateTime      @db.Date
+  zoneId    String?
+  zone      DeliveryZone? @relation(fields: [zoneId], references: [id])
+  driverId  String?
+  driver    User?         @relation("TourDriver", fields: [driverId], references: [id])
+  status    TourStatus    @default(PLANNED)
+  note      String?
+  createdAt DateTime      @default(now())
+  stops     TourStop[]
+
+  @@index([date, driverId])
+}
+
+model TourStop {
+  id          String           @id @default(cuid())
+  tourId      String
+  tour        Tour             @relation(fields: [tourId], references: [id], onDelete: Cascade)
+  shipmentId  String           @unique
+  shipment    Shipment         @relation(fields: [shipmentId], references: [id])
+  sequence    Int
+  status      TourStopStatus   @default(PENDING)
+  codExpected Int              @default(0) // Nachnahme-Soll (brutto)
+  failReason  String?
+  completedAt DateTime?
+  collections CashCollection[]
+
+  @@unique([tourId, sequence])
+}
+
+model CashCollection {
+  id          String       @id @default(cuid())
+  driverId    String
+  driver      User         @relation(fields: [driverId], references: [id])
+  tourStopId  String?
+  tourStop    TourStop?    @relation(fields: [tourStopId], references: [id])
+  amount      Int
+  collectedAt DateTime     @default(now())
+  paymentId   String?      @unique
+  payment     Payment?     @relation(fields: [paymentId], references: [id])
+  closingId   String?
+  closing     CashClosing? @relation(fields: [closingId], references: [id])
+  note        String?
+}
+
+/// Kassenabschluss pro Fahrer und Tag
+model CashClosing {
+  id            String            @id @default(cuid())
+  number        String            @unique // CC-…
+  driverId      String
+  driver        User              @relation("ClosingDriver", fields: [driverId], references: [id])
+  date          DateTime          @db.Date
+  expected      Int // Soll
+  counted       Int? // Ist
+  difference    Int?
+  status        CashClosingStatus @default(OPEN)
+  /// Stückelung {"200":3,"100":5,…}
+  denominations Json?
+  approvedById  String?
+  approvedAt    DateTime?
+  note          String?
+  collections   CashCollection[]
+
+  @@unique([driverId, date])
+}
+
+// -----------------------------------------------------------------------------
+// FINANZEN
+// -----------------------------------------------------------------------------
+
+/// Steuerrechnung – nach Erstellung UNVERÄNDERLICH (PDF eingefroren).
+model Invoice {
+  id               String            @id @default(cuid())
+  number           String            @unique // INV-2026-000123 (lückenlos)
+  customerId       String
+  customer         Customer          @relation(fields: [customerId], references: [id])
+  orderId          String?
+  order            Order?            @relation(fields: [orderId], references: [id])
+  shipmentId       String?           @unique
+  shipment         Shipment?         @relation(fields: [shipmentId], references: [id])
+  channel          Channel
+  issueDate        DateTime
+  dueDate          DateTime
+  status           InvoiceStatus     @default(ISSUED)
+  sellerSnapshot   Json // Firmendaten, Händlernummer, Bank
+  customerSnapshot Json // Name, Händlernummer Käufer, Adresse
+  subtotalNet      Int
+  vatTotal         Int
+  totalGross       Int
+  paidAmount       Int               @default(0)
+  creditedAmount   Int               @default(0)
+  paymentMethod    PaymentMethod
+  language         DocLanguage       @default(AR)
+  archivedDocId    String?           @unique
+  archivedDoc      ArchivedDocument? @relation(fields: [archivedDocId], references: [id])
+  createdById      String?
+  createdAt        DateTime          @default(now())
+
+  lines        InvoiceLine[]
+  creditNotes  CreditNote[]
+  allocations  PaymentAllocation[]
+  dunningLinks DunningNoticeInvoice[]
+
+  @@index([customerId, issueDate])
+  @@index([status, dueDate])
+}
+
+model InvoiceLine {
+  id           String  @id @default(cuid())
+  invoiceId    String
+  invoice      Invoice @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  orderItemId  String?
+  sku          String
+  nameAr       String
+  nameEn       String
+  unitCode     String
+  unitFactor   Int
+  qty          Int
+  qtyBase      Int
+  unitPriceNet Int
+  vatRateBps   Int
+  lineNet      Int
+  lineVat      Int
+  lineGross    Int
+  sortOrder    Int     @default(0)
+}
+
+model CreditNote {
+  id               String            @id @default(cuid())
+  number           String            @unique // CN-2026-000001 (lückenlos)
+  invoiceId        String
+  invoice          Invoice           @relation(fields: [invoiceId], references: [id])
+  customerId       String
+  customer         Customer          @relation(fields: [customerId], references: [id])
+  returnId         String?           @unique
+  return           Return?           @relation(fields: [returnId], references: [id])
+  reason           String
+  issueDate        DateTime
+  subtotalNet      Int
+  vatTotal         Int
+  totalGross       Int
+  customerSnapshot Json
+  language         DocLanguage       @default(AR)
+  archivedDocId    String?           @unique
+  archivedDoc      ArchivedDocument? @relation(fields: [archivedDocId], references: [id])
+  createdById      String?
+  createdAt        DateTime          @default(now())
+  lines            CreditNoteLine[]
+}
+
+model CreditNoteLine {
+  id            String     @id @default(cuid())
+  creditNoteId  String
+  creditNote    CreditNote @relation(fields: [creditNoteId], references: [id], onDelete: Restrict)
+  invoiceLineId String?
+  sku           String
+  nameAr        String
+  nameEn        String
+  qtyBase       Int
+  unitPriceNet  Int
+  vatRateBps    Int
+  lineNet       Int
+  lineVat       Int
+  lineGross     Int
+}
+
+model Return {
+  id         String       @id @default(cuid())
+  number     String       @unique // RT-…
+  orderId    String
+  order      Order        @relation(fields: [orderId], references: [id])
+  customerId String
+  customer   Customer     @relation(fields: [customerId], references: [id])
+  status     ReturnStatus @default(REQUESTED)
+  restock    Boolean      @default(true)
+  reason     String?
+  createdAt  DateTime     @default(now())
+  items      ReturnItem[]
+  creditNote CreditNote?
+}
+
+model ReturnItem {
+  id          String    @id @default(cuid())
+  returnId    String
+  return      Return    @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  orderItemId String
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id])
+  qtyBase     Int
+}
+
+model Payment {
+  id           String        @id @default(cuid())
+  number       String        @unique // RC-2026-000001 (Quittung)
+  customerId   String
+  customer     Customer      @relation(fields: [customerId], references: [id])
+  method       PaymentMethod
+  amount       Int
+  receivedAt   DateTime
+  reference    String? // Überweisungs-Ref., Gateway-ID, Scheck-Nr.
+  receivedById String?
+  receivedBy   User?         @relation("PaymentReceivedBy", fields: [receivedById], references: [id])
+  note         String?
+  voidedAt     DateTime?
+  voidReason   String?
+  createdAt    DateTime      @default(now())
+
+  allocations    PaymentAllocation[]
+  cashCollection CashCollection?
+  gatewayIntent  PaymentIntent?
+}
+
+model PaymentAllocation {
+  id        String  @id @default(cuid())
+  paymentId String
+  payment   Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id])
+  amount    Int
+
+  @@unique([paymentId, invoiceId])
+}
+
+/// Nur-anhängen-Journal je Kunde → Kontoauszug, Saldo, Kreditlimit-Prüfung
+model CustomerLedgerEntry {
+  id         String          @id @default(cuid())
+  customerId String
+  customer   Customer        @relation(fields: [customerId], references: [id])
+  type       LedgerEntryType
+  refId      String?
+  refNumber  String?
+  date       DateTime
+  debit      Int             @default(0) // erhöht Forderung
+  credit     Int             @default(0) // verringert Forderung
+  note       String?
+  createdAt  DateTime        @default(now())
+
+  @@index([customerId, date])
+}
+
+model DunningNotice {
+  id         String                 @id @default(cuid())
+  number     String                 @unique // DU-…
+  customerId String
+  customer   Customer               @relation(fields: [customerId], references: [id])
+  level      Int // 1–3
+  issuedAt   DateTime               @default(now())
+  feeAgorot  Int                    @default(0)
+  dueBy      DateTime?
+  invoices   DunningNoticeInvoice[]
+}
+
+model DunningNoticeInvoice {
+  noticeId   String
+  invoiceId  String
+  notice     DunningNotice @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+  invoice    Invoice       @relation(fields: [invoiceId], references: [id])
+  openAmount Int
+
+  @@id([noticeId, invoiceId])
+}
+
+/// Kartenzahlung über lokales Bank-Gateway (Adapter)
+model PaymentIntent {
+  id          String              @id @default(cuid())
+  orderId     String
+  order       Order               @relation(fields: [orderId], references: [id])
+  provider    String // "arabbank", "paytabs", "fake"
+  providerRef String?
+  amount      Int
+  status      GatewayIntentStatus @default(CREATED)
+  raw         Json?
+  paymentId   String?             @unique
+  payment     Payment?            @relation(fields: [paymentId], references: [id])
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@unique([provider, providerRef])
+}
+
+// -----------------------------------------------------------------------------
+// DOKUMENTE & DRUCK
+// -----------------------------------------------------------------------------
+
+/// Archiv aller erzeugten PDFs. frozen = true für Rechnungen/Gutschriften.
+model ArchivedDocument {
+  id          String      @id @default(cuid())
+  docType     DocType
+  number      String
+  entityType  String
+  entityId    String
+  language    DocLanguage
+  fileId      String
+  file        FileObject  @relation(fields: [fileId], references: [id])
+  sha256      String
+  frozen      Boolean     @default(false)
+  createdById String?
+  createdAt   DateTime    @default(now())
+
+  invoice    Invoice?
+  creditNote CreditNote?
+
+  @@index([entityType, entityId])
+  @@index([docType, number])
+}
+
+/// Sammeldruck / Auto-Druck bei Statuswechsel
+model PrintJob {
+  id          String         @id @default(cuid())
+  trigger     PrintTrigger
+  docTypes    DocType[]
+  entityType  String
+  entityIds   String[]
+  options     Json           @default("{}") // Sprache, mit/ohne Preise, Querformat
+  status      PrintJobStatus @default(QUEUED)
+  fileId      String?
+  file        FileObject?    @relation(fields: [fileId], references: [id])
+  error       String?
+  createdById String?
+  createdAt   DateTime       @default(now())
+  finishedAt  DateTime?
+}
+
+// -----------------------------------------------------------------------------
+// BENACHRICHTIGUNGEN
+// -----------------------------------------------------------------------------
+
+model NotificationLog {
+  id        String              @id @default(cuid())
+  channel   NotificationChannel
+  to        String
+  template  String // "otp", "order.confirmed" …
+  locale    Locale
+  payload   Json
+  status    NotificationStatus  @default(LOGGED)
+  provider  String?
+  error     String?
+  createdAt DateTime            @default(now())
+
+  @@index([to, createdAt])
+}

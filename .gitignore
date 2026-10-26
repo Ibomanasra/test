@@ -1,0 +1,16 @@
+node_modules
+.next
+dist
+coverage
+.turbo
+.env
+.env.local
+*.log
+playwright-report
+test-results
+backups/
+packages/db/generated
+
+# generiert
+**/tsconfig.tsbuildinfo
+apps/web/next-env.d.ts

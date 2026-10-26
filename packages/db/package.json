@@ -1,0 +1,38 @@
+{
+  "name": "@sa/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "prisma": {
+    "schema": "prisma/schema.prisma",
+    "seed": "tsx prisma/seed.ts"
+  },
+  "scripts": {
+    "generate": "prisma generate",
+    "postinstall": "prisma generate",
+    "migrate:dev": "node --env-file-if-exists=../../.env node_modules/prisma/build/index.js migrate dev",
+    "migrate:deploy": "node --env-file-if-exists=../../.env node_modules/prisma/build/index.js migrate deploy",
+    "seed": "node --env-file-if-exists=../../.env --import tsx prisma/seed.ts",
+    "reset": "node --env-file-if-exists=../../.env node_modules/prisma/build/index.js migrate reset --force",
+    "remove-demo": "node --env-file-if-exists=../../.env --import tsx scripts/remove-demo-data.ts",
+    "test": "node --env-file-if-exists=../../.env node_modules/vitest/vitest.mjs run",
+    "typecheck": "tsc -p tsconfig.json",
+    "migrate:status": "node --env-file-if-exists=../../.env node_modules/prisma/build/index.js migrate status",
+    "studio": "node --env-file-if-exists=../../.env node_modules/prisma/build/index.js studio"
+  },
+  "dependencies": {
+    "@node-rs/argon2": "^2.0.2",
+    "@prisma/client": "6.19.3",
+    "@sa/core": "workspace:*",
+    "prisma": "6.19.3",
+    "tsx": "^4.23.0"
+  },
+  "devDependencies": {
+    "@sa/config": "workspace:*",
+    "vitest": "^4.1.12"
+  }
+}

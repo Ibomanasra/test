@@ -1,0 +1,41 @@
+{
+  "name": "sholat-aljanoub",
+  "private": true,
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "turbo run dev --filter=@sa/web",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint && node scripts/check-logical-css.mjs",
+    "e2e": "playwright test",
+    "db:migrate": "pnpm --filter @sa/db migrate:dev",
+    "db:deploy": "pnpm --filter @sa/db migrate:deploy",
+    "db:seed": "pnpm --filter @sa/db seed",
+    "db:reset": "pnpm --filter @sa/db reset",
+    "format": "prettier --write .",
+    "postinstall": "node scripts/link-env.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@prisma/client": "6.19.3",
+    "@types/node": "^22.19.0",
+    "prettier": "^3.9.0",
+    "turbo": "^2.11.10",
+    "typescript": "5.9.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "prisma",
+      "esbuild",
+      "sharp",
+      "@node-rs/argon2",
+      "unrs-resolver"
+    ]
+  }
+}

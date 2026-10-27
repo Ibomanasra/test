@@ -4,7 +4,7 @@ Web-Shop und Verwaltung für einen Großhändler für Haushaltswaren in Palästi
 Arabisch (Standard, RTL) und Englisch, Beträge in ₪ (intern Agorot), MwSt. 16 %.
 
 > **Stand: Phase 1 (Grundgerüst).** Login, Registrierung, Händler-Freigabe, Rollen/Rechte, Audit-Log, Einstellungen.
-> Stand: Phasen 1–5 umgesetzt (Grundgerüst, Preise, Shop/Bestellungen, A4-Dokumente, Verwaltung). Offene Punkte: [ROADMAP.md](ROADMAP.md).
+> Stand: alle 6 Phasen umgesetzt (Grundgerüst, Preise, Shop/Bestellungen, A4-Dokumente, Verwaltung, Mobile-App & Zahlungs-Gateway). Offene Punkte: [ROADMAP.md](ROADMAP.md).
 
 ---
 
@@ -96,12 +96,14 @@ pnpm dev                     # http://localhost:3000
 
 ```
 apps/web/                 Next.js 16 – Shop, Admin, Fahrer, REST-API /api/v1 (auch für die Mobile-App)
+apps/mobile/              Expo-App für Kunden und Fahrer (dieselbe API, Bearer-Token)
   src/app/[locale]/       Seiten (ar/en); (shop), admin/(auth|panel), driver
   src/app/api/            API-Routen – jede prüft Rechte serverseitig
-  src/server/             Serverlogik: auth/, services/, adapters/ (SMS, Speicher), audit.ts
+  src/server/             Serverlogik: auth/, services/, adapters/ (SMS, Speicher, Zahlungs-Gateway), audit.ts
   src/messages/           Übersetzungen ar.json / en.json
 packages/core/            Reine TS-Logik: Geld, Steuer, Nummern, Rechte, Status, Telefon (+ Tests)
 packages/contracts/       Zod-Schemas der API
+packages/pdf/             A4-Dokumente: HTML/CSS → Chromium-PDF, Schriften, QR, Barcodes (+ Test „Arabisch verbunden“)
 packages/db/              Prisma-Schema, Migrationen, Seed, lückenlose Nummernvergabe (+ Integrationstests)
 packages/config/          gemeinsame tsconfig
 docker/                   Dockerfile + Entrypoint
@@ -157,6 +159,24 @@ e2e/                      Playwright-Tests
 - Kunden finden ihre Belege unter *Mein Konto → Dokumente*, Händler zusätzlich Kontoauszug und **persönliche Preisliste**.
 
 ---
+
+## Mobile-App (Kunden & Fahrer)
+
+`apps/mobile` – Expo (React Native), nutzt dieselbe `/api/v1` mit Bearer-Token.
+
+```bash
+# API-Adresse für Handy/Emulator (Android-Emulator: http://10.0.2.2:3000)
+EXPO_PUBLIC_API_URL=http://192.168.1.20:3000 pnpm --filter @sa/mobile start
+```
+
+- **Kunden**: Anmeldung per SMS-Code, Registrierung Privatkunde, Katalog mit Suche (Händler sehen ihre Preise und Staffeln), Warenkorb, Bestellung inkl. Kartenzahlung, Bestellungen mit Status, Belege als PDF (Teilen/Vorschau), „Erneut bestellen“.
+- **Fahrer**: Anmeldung mit Passwort + SMS-Code, eigene Touren, Anruf/Karte/Lieferschein, Zustellung mit Empfänger und Bargeld, Nicht-Zustellung mit Grund, Kassenabschluss nach Stückelung.
+- Arabisch (RTL) ist Standard; Sprachwechsel unter *Konto* (Richtung gilt nach Neustart).
+- Store-Builds: mit EAS (`eas build`) – siehe ROADMAP.
+
+## Zahlungen per Karte
+
+`PAYMENT_GATEWAY` in `.env`: `fake` (Entwicklung: Testseite mit „Zahlung bestätigen/ablehnen“), `paytabs` (PayTabs Hosted Payment Page) oder `arabbank` (Mastercard Gateway Hosted Checkout). Zugangsdaten über `PAYMENT_GATEWAY_MERCHANT_ID` / `PAYMENT_GATEWAY_API_KEY`, Callback-URL beim Anbieter: `https://<domain>/api/v1/payments/callback/<gateway>`. Die Zahlart „Karte“ wird unter *Einstellungen → Zahlungsarten* je Kanal aktiviert. Kartendaten berühren den Server nie; der Betrag wird serverseitig gegen die Bestellung geprüft, unbezahlte Kartenbestellungen werden nach `PAYMENT_TIMEOUT_MINUTES` storniert.
 
 ## Betrieb
 

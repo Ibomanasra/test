@@ -42,6 +42,11 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: pnpm test
       - run: pnpm --filter @sa/web build
+      # Mobile-App: JavaScript-Bundle (Hermes) muss sich erzeugen lassen
+      - run: pnpm --filter @sa/mobile exec expo export --platform android --output-dir /tmp/mobile-dist
+        env:
+          EXPO_OFFLINE: "1"
+          EXPO_NO_TELEMETRY: "1"
         env:
           NODE_ENV: production
 

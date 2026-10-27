@@ -15,7 +15,7 @@ export default async function OpenItemsPage({ params }: { params: Promise<{ loca
   setRequestLocale(locale);
   const auth = await staffPagePermission(locale, "finance.view");
   if (!auth) return <Forbidden />;
-  const [t, tc, data] = await Promise.all([getTranslations("admin.finance"), getTranslations("common"), openItems()]);
+  const [t, data] = await Promise.all([getTranslations("admin.finance"), openItems()]);
   const rows = data.customers.map((c) => ({ customer: c.customer.displayName, ...Object.fromEntries(AGING_BUCKETS.map((b) => [b, money(c.summary[b])])), total: money(c.summary.total), oldest: c.oldestDays }));
   return (
     <div className="space-y-6">
@@ -51,7 +51,6 @@ export default async function OpenItemsPage({ params }: { params: Promise<{ loca
           <ApiForm endpoint="/api/v1/admin/dunning" testId="dunning" submitLabel={t("runDunningSubmit")} successText={t("dunningDone")} redirect={undefined} fields={[{ name: "feeAgorot", label: t("dunningFee"), type: "money", hint: t("dunningFeeHint") }]} defaults={{ feeAgorot: "0" }} />
         </Card>
       ) : null}
-      <p className="text-xs text-ink-500">{tc("total")}: {data.rows.length}</p>
     </div>
   );
 }

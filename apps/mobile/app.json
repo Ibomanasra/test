@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "شعلة الجنوب",
+    "slug": "sholat-aljanoub",
+    "scheme": "sholataljanoub",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "ios": { "bundleIdentifier": "ps.sholataljanoub.app", "supportsTablet": false },
+    "android": { "package": "ps.sholataljanoub.app" },
+    "locales": { "ar": "./src/lib/locales/ar.json", "en": "./src/lib/locales/en.json" },
+    "extra": { "supportsRTL": true },
+    "plugins": ["expo-router", "expo-secure-store", "expo-localization"],
+    "experiments": { "typedRoutes": false }
+  }
+}

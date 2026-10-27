@@ -14,3 +14,9 @@ packages/db/generated
 # generiert
 **/tsconfig.tsbuildinfo
 apps/web/next-env.d.ts
+
+# Expo
+apps/mobile/.expo/
+apps/mobile/dist/
+apps/mobile/android/
+apps/mobile/ios/

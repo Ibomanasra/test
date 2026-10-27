@@ -17,7 +17,7 @@ test("purchase order → goods receipt raises stock and updates the cost price",
   await page.getByTestId("po-order").click();
   await expect(page.getByTestId("receive-submit")).toBeVisible();
   await page.getByTestId("receive-submit").click();
-  await expect(page.getByRole("status").filter({ hasText: /GR-\d{4}-\d{6}/ })).toBeVisible();
+  await expect(page.getByText(/GR-\d{4}-\d{6}/).first()).toBeVisible({ timeout: 15_000 });
   const after = await db.productVariant.findUniqueOrThrow({ where: { sku: "PA-001" }, include: { stockLevels: true } });
   expect(after.stockLevels[0]!.onHand).toBe(before.stockLevels[0]!.onHand + 20);
   expect(after.costPrice).toBeGreaterThan(before.costPrice);

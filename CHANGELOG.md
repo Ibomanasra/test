@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.0] – 2026-10-27 – Phase 6: Mobile-App & Zahlungs-Gateway
+
+### Hinzugefügt
+- **Zahlungs-Gateway-Adapter**: `paytabs` (Hosted Payment Page, signierte Callbacks, Statusabfrage), `arabbank` (Mastercard Gateway Hosted Checkout), `fake` für Entwicklung/Tests – mit Unit-Tests gegen simulierte Anbieter-Antworten.
+- **Kartenzahlung** im Checkout (Web und App): PaymentIntent, Weiterleitung zur Bezahlseite, Rückkehrseite mit Statusprüfung, „Jetzt bezahlen“ für offene Kartenbestellungen, automatische Stornierung nach Zeitüberschreitung; vorausbezahlte Rechnungen werden beim Versand mit Quittung ausgeglichen.
+- **Mobile-App** (`apps/mobile`, Expo SDK 58): Kunden (SMS-Login, Registrierung, Katalog, Warenkorb, Bestellung inkl. Karte, Bestellungen, PDF-Belege, Sprache AR/EN mit RTL) und Fahrer (Touren, Anruf/Karte/Lieferschein, Zustellung mit Bargeld, Nicht-Zustellung, Kassenabschluss).
+- CI erzeugt das Android-JavaScript-Bundle der App; E2E für Kartenzahlung (bezahlt/abgelehnt, gefälschter Callback).
+
 ## [0.5.0] – 2026-10-27 – Phase 5: Verwaltung
 
 ### Hinzugefügt

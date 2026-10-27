@@ -374,7 +374,8 @@
       "settings": "الإعدادات",
       "audit": "سجل التدقيق",
       "toShop": "إلى المتجر",
-      "menu": "القائمة"
+      "menu": "القائمة",
+      "documents": "المستندات"
     },
     "loggedInAs": "مسجل باسم {name}",
     "dashboard": {
@@ -484,7 +485,77 @@
       "label": "التسمية",
       "enabled": "مفعّل",
       "channel": "القناة",
-      "method": "الطريقة"
+      "method": "الطريقة",
+      "documents": "المستندات",
+      "docs": {
+        "logo": "الشعار",
+        "noLogo": "لا يوجد شعار",
+        "upload": "رفع",
+        "removeLogo": "إزالة الشعار",
+        "logoHint": "PNG أو JPG أو WEBP، حتى 2 ميغابايت. يظهر في رأس كل مستند A4.",
+        "banks": "الحسابات البنكية",
+        "banksHint": "تظهر الحسابات المفعّلة في تذييل الفواتير والمستندات.",
+        "newBank": "حساب جديد",
+        "bank": "البنك",
+        "bankNameAr": "اسم البنك (عربي)",
+        "bankNameEn": "اسم البنك (إنجليزي)",
+        "branch": "الفرع",
+        "accountName": "اسم الحساب",
+        "accountNo": "رقم الحساب",
+        "showOnDocs": "على المستندات",
+        "sequences": "تسلسل الأرقام",
+        "sequencesHint": "البادئة وعدد الخانات لكل نوع مستند. أرقام الفواتير والإشعارات الدائنة متسلسلة بلا فجوات ولا يمكن تغيير صيغتها بعد إصدار أول رقم في السنة.",
+        "prefix": "البادئة",
+        "padding": "عدد الخانات",
+        "example": "الرقم التالي",
+        "nextNumber": "العدّاد",
+        "gapless": "بلا فجوات",
+        "docTypeLabel": "نوع المستند",
+        "languageLabel": "اللغة",
+        "texts": "نصوص المستندات",
+        "textsHint": "عنوان بديل ونص افتتاحي وشروط وتذييل لكل نوع مستند ولغة.",
+        "newText": "نص جديد",
+        "titleText": "العنوان",
+        "headerText": "نص افتتاحي",
+        "termsText": "الشروط والملاحظات",
+        "footerText": "التذييل",
+        "autoPrint": "الطباعة التلقائية",
+        "autoPrintHint": "عند تغيّر حالة الطلب يُنشأ أمر طباعة تلقائياً (مثلاً قائمة التجهيز عند التأكيد وسند التسليم عند الإرسال). تجدها في «أوامر الطباعة».",
+        "newRule": "قاعدة جديدة",
+        "onStatus": "عند الحالة",
+        "withPrices": "مع الأسعار",
+        "taxInvoice": "الفاتورة الضريبية",
+        "taxAdvisor": "البيانات الإلزامية للفاتورة الضريبية الفلسطينية يجب مراجعتها مع المحاسب أو المستشار الضريبي.",
+        "invoiceNotesAr": "ملاحظة على الفاتورة (عربي)",
+        "invoiceNotesEn": "ملاحظة على الفاتورة (إنجليزي)",
+        "printJobsHint": "الفواتير والإشعارات الدائنة تُحفظ عند إصدارها كملف PDF مجمّد في الأرشيف ولا يمكن تعديلها، والتصحيح يتم بإشعار دائن فقط.",
+        "language": {
+          "AR": "عربي",
+          "EN": "إنجليزي",
+          "BILINGUAL": "ثنائي اللغة"
+        },
+        "docType": {
+          "QUOTE": "عرض سعر",
+          "ORDER_CONFIRMATION": "تأكيد طلب",
+          "PICK_LIST": "قائمة تجهيز",
+          "DELIVERY_NOTE": "سند تسليم",
+          "INVOICE": "فاتورة ضريبية",
+          "RECEIPT": "سند قبض",
+          "CREDIT_NOTE": "إشعار دائن",
+          "TOUR_SHEET": "قائمة توزيع",
+          "CASH_CLOSING": "تسوية نقدية",
+          "ACCOUNT_STATEMENT": "كشف حساب",
+          "DUNNING": "تذكير دفع",
+          "PURCHASE_ORDER": "أمر شراء",
+          "GOODS_RECEIPT": "سند استلام بضاعة",
+          "PRICE_LIST": "قائمة أسعار",
+          "STOCKTAKE": "قائمة جرد",
+          "STOCK_LIST": "قائمة المخزون",
+          "REPORT": "تقرير",
+          "ORDER": "طلب",
+          "RETURN": "مرتجع"
+        }
+      }
     },
     "audit": {
       "title": "سجل التدقيق",
@@ -765,7 +836,8 @@
         "order-confirmation": "طباعة تأكيدات الطلب",
         "pick-list": "طباعة قوائم التجهيز",
         "delivery-note": "طباعة سندات التسليم",
-        "invoice": "طباعة الفواتير"
+        "invoice": "طباعة الفواتير",
+        "dn-invoice": "سندات التسليم + الفواتير"
       },
       "clearSelection": "إلغاء التحديد",
       "selectAll": "تحديد الكل",
@@ -776,7 +848,11 @@
       "total": "الإجمالي",
       "print": {
         "confirmation": "تأكيد الطلب (A4)",
-        "pickList": "قائمة التجهيز (A4)"
+        "pickList": "قائمة التجهيز (A4)",
+        "dnAndInvoice": "سند التسليم + الفاتورة",
+        "invoice": "الفاتورة",
+        "deliveryNote": "سند التسليم",
+        "deliveryNoteNoPrices": "بدون أسعار"
       },
       "backorderOf": "طلب متأخر من",
       "hasBackorders": "طلبات متأخرة:",
@@ -867,6 +943,71 @@
       "actions": {
         "create": "جديد",
         "update": "تحديث"
+      }
+    },
+    "documents": {
+      "title": "المستندات والفواتير",
+      "tabs": {
+        "invoices": "الفواتير",
+        "creditNotes": "الإشعارات الدائنة",
+        "printJobs": "أوامر الطباعة"
+      },
+      "searchPlaceholder": "رقم، عميل أو طلب",
+      "printAllInvoices": "طباعة الفواتير المعروضة",
+      "date": "التاريخ",
+      "dueDate": "الاستحقاق",
+      "customer": "العميل",
+      "order": "الطلب",
+      "invoice": "الفاتورة",
+      "total": "الإجمالي",
+      "open": "المفتوح",
+      "openPdf": "فتح PDF",
+      "archive": "الأرشيف",
+      "frozen": "مجمّد",
+      "pendingArchive": "قيد الأرشفة",
+      "reason": "السبب",
+      "amounts": "المبالغ",
+      "net": "الصافي",
+      "vat": "الضريبة",
+      "paid": "المدفوع",
+      "credited": "بإشعار دائن",
+      "item": "الصنف",
+      "qty": "الكمية",
+      "unitNet": "سعر الوحدة (صافي)",
+      "immutableHint": "الفاتورة غير قابلة للتعديل. للتصحيح أصدر إشعاراً دائناً.",
+      "createCreditNote": "إصدار إشعار دائن",
+      "creditHint": "أدخل الكميات المرتجعة لكل بند (بالوحدة الأساسية) أو اعكس الفاتورة كاملة. يُرحَّل الإشعار إلى حساب العميل ويُحفظ كملف PDF مجمّد.",
+      "invoicedQty": "المفوتر",
+      "creditedQty": "مُعاد سابقاً",
+      "creditQty": "كمية الإشعار",
+      "creditSelected": "إشعار للكميات المحددة",
+      "creditFull": "عكس الفاتورة كاملة",
+      "creditConfirm": "سيتم إصدار إشعار دائن نهائي برقم متسلسل. متابعة؟",
+      "creditCreated": "تم إصدار الإشعار الدائن {number}",
+      "invoiceStatus": {
+        "ISSUED": "مستحقة",
+        "PARTIALLY_PAID": "مدفوعة جزئياً",
+        "PAID": "مدفوعة",
+        "CREDITED": "ملغاة بإشعار دائن"
+      },
+      "printJobsText": "أوامر الطباعة التلقائية (حسب حالة الطلب) والمجمّعة. افتح الملف واطبعه من محطة الطباعة.",
+      "noPrintJobs": "لا توجد أوامر طباعة",
+      "created": "الوقت",
+      "trigger": "المصدر",
+      "documentsLabel": "المستندات",
+      "for": "لـ",
+      "jobStatus": "الحالة",
+      "retry": "إعادة المحاولة",
+      "triggerType": {
+        "MANUAL": "يدوي",
+        "BATCH": "مجمّع",
+        "AUTO_STATUS": "تلقائي"
+      },
+      "jobStatusType": {
+        "QUEUED": "بالانتظار",
+        "RENDERING": "قيد الإنشاء",
+        "DONE": "جاهز",
+        "FAILED": "فشل"
       }
     }
   },
@@ -977,7 +1118,19 @@
     "unknown_category": "صنف غير معروف.",
     "invalid_slug": "رابط غير صالح.",
     "invalid_sku": "SKU غير صالح.",
-    "no_default_warehouse": "لا يوجد مستودع افتراضي."
+    "no_default_warehouse": "لا يوجد مستودع افتراضي.",
+    "sequence_in_use": "تم إصدار أرقام هذه السنة بالفعل؛ لا يمكن تغيير الصيغة لأن الترقيم يجب أن يبقى بلا فجوات.",
+    "invalid_prefix": "البادئة: 1–5 أحرف لاتينية كبيرة",
+    "invalid_iban": "رقم IBAN غير صالح",
+    "invalid_swift": "رمز SWIFT غير صالح",
+    "nothing_to_credit": "لا يوجد ما يمكن إضافته للإشعار الدائن",
+    "credit_exceeds_invoice": "المبلغ يتجاوز قيمة الفاتورة",
+    "invalid_invoice_line": "بند الفاتورة غير صالح",
+    "already_invoiced": "تم إصدار فاتورة لهذا السند مسبقاً",
+    "nothing_to_print": "لا توجد مستندات للطباعة",
+    "too_many_documents": "عدد المستندات كبير جداً (حد أقصى 200)",
+    "invalid_items": "طلب طباعة غير صالح",
+    "invalid_price_list": "قائمة أسعار غير صالحة"
   },
   "permissions": {
     "dashboard_view": "عرض لوحة المعلومات",
@@ -1052,5 +1205,13 @@
     "PACK": "علبة",
     "CARTON": "كرتونة",
     "PALLET": "طبلية"
+  },
+  "print": {
+    "button": "طباعة / PDF (A4)",
+    "english": "English",
+    "bilingual": "عربي + إنجليزي",
+    "download": "تنزيل PDF",
+    "rendering": "جارٍ التجهيز…",
+    "failed": "تعذّر إنشاء ملف PDF"
   }
 }

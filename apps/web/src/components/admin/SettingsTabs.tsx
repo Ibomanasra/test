@@ -9,6 +9,7 @@ const TABS = [
   { href: "/admin/settings/tax", key: "tax" },
   { href: "/admin/settings/zones", key: "zones" },
   { href: "/admin/settings/payment-methods", key: "paymentMethods" },
+  { href: "/admin/settings/documents", key: "documents" },
 ] as const;
 
 export function SettingsTabs() {

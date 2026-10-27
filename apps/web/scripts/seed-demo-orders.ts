@@ -8,7 +8,10 @@
 import { ALL_PERMISSIONS, businessDate, effectiveChannel } from "@sa/core";
 import { prisma, type OrderStatus, type PaymentMethod } from "@sa/db";
 import type { AuthContext } from "../src/server/auth/context";
+import { closePdfBrowser } from "@sa/pdf";
 import { addCartItem } from "../src/server/services/cart";
+import { archivePendingDocuments } from "../src/server/services/invoicing";
+import { processPrintJobs } from "../src/server/services/print-jobs";
 import { advanceOrder, cancelOrder, checkoutOptions, dispatchOrder, failDelivery, markDelivered, placeOrder } from "../src/server/services/orders";
 
 type Step = "NEW" | "CONFIRMED" | "PICKING" | "READY" | "OUT_FOR_DELIVERY" | "DELIVERED" | "CANCELLED" | "PARTIAL" | "FAILED";
@@ -135,6 +138,10 @@ async function main() {
     created.push({ number: order.number, step: plan.step, status: after.status });
   }
   console.table(created);
+  // Rechnungen/Gutschriften einfrieren und Auto-Druckaufträge rendern, bevor der Prozess endet
+  let printed = 0;
+  for (let n = await processPrintJobs(100); n > 0; n = await processPrintJobs(100)) printed += n;
+  console.info(`[demo-orders] archived ${await archivePendingDocuments(100)} documents, rendered ${printed} print jobs`);
 }
 
 main()
@@ -142,4 +149,7 @@ main()
     console.error(err);
     process.exitCode = 1;
   })
-  .finally(() => prisma.$disconnect());
+  .finally(async () => {
+    await closePdfBrowser();
+    await prisma.$disconnect();
+  });

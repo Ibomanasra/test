@@ -14,8 +14,8 @@ const nextConfig: NextConfig = {
   output: "standalone",
   // Monorepo: Tracing ab Repo-Wurzel, damit packages/* im Standalone-Build landen
   outputFileTracingRoot: new URL("../../", import.meta.url).pathname,
-  transpilePackages: ["@sa/core", "@sa/db", "@sa/contracts"],
-  serverExternalPackages: ["@node-rs/argon2", "@prisma/client", ".prisma/client"],
+  transpilePackages: ["@sa/core", "@sa/db", "@sa/contracts", "@sa/pdf"],
+  serverExternalPackages: ["@node-rs/argon2", "@prisma/client", ".prisma/client", "playwright-core", "pdf-lib", "qrcode"],
   poweredByHeader: false,
   typedRoutes: false,
   async headers() {

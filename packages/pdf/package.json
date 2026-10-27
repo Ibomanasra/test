@@ -1,0 +1,26 @@
+{
+  "name": "@sa/pdf",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@sa/core": "workspace:*",
+    "pdf-lib": "1.17.1",
+    "playwright-core": "1.63.0",
+    "qrcode": "1.5.4"
+  },
+  "devDependencies": {
+    "@sa/config": "workspace:*",
+    "@types/qrcode": "1.5.5",
+    "pdfjs-dist": "4.10.38",
+    "vitest": "^4.1.12"
+  }
+}

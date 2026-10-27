@@ -7,3 +7,4 @@ export * from "./phone";
 export * from "./channel";
 export * from "./pricing";
 export * from "./checkout";
+export * from "./invoicing";

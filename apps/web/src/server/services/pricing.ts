@@ -18,6 +18,8 @@ import { prisma } from "@sa/db";
 export interface PricingViewer {
   channel: PricingChannel;
   customerId: string | null;
+  /** Preisliste je Gruppe (ohne kundenindividuelle Preise) */
+  groupId?: string | null;
 }
 
 export async function loadPricingCustomer(customerId: string | null): Promise<PricingCustomer | null> {
@@ -28,6 +30,13 @@ export async function loadPricingCustomer(customerId: string | null): Promise<Pr
   });
   if (!c) return null;
   return { id: c.id, groupId: c.groupId, group: c.group?.active ? c.group : null };
+}
+
+/** Gruppen-„Kunde“ für Gruppen-Preislisten: keine Kunden-ID → keine Sonderpreise/Angebote */
+export async function loadPricingGroup(groupId: string): Promise<PricingCustomer | null> {
+  const g = await prisma.customerGroup.findUnique({ where: { id: groupId }, select: { id: true, pricingMode: true, discountBps: true, priceListId: true, active: true } });
+  if (!g) return null;
+  return { id: `group:${g.id}`, groupId: g.id, group: g.active ? g : null };
 }
 
 /** Kategorie-ID → [eigene ID, Eltern-ID, …] */
@@ -175,7 +184,7 @@ export async function priceItems(
   date = new Date(),
   quoteId?: string | null,
 ): Promise<Map<string, PriceResult>> {
-  const customer = viewer.channel === "B2B" ? await loadPricingCustomer(viewer.customerId) : null;
+  const customer = viewer.channel !== "B2B" ? null : viewer.groupId ? await loadPricingGroup(viewer.groupId) : await loadPricingCustomer(viewer.customerId);
   const products = await loadPricingProducts(
     items.map((i) => i.variantId),
     customer,

@@ -1,5 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { Alert, Card, EmptyState, Num, PageHeader, Table, Td, Th } from "@/components/ui";
+import { PrintButton } from "@/components/print/PrintButton";
+import { Alert, Button, Card, EmptyState, Input, Num, PageHeader, Table, Td, Th } from "@/components/ui";
 import { requireCustomerPage } from "@/server/auth/page-guards";
 import { day, money } from "@/server/format";
 import { customerStatement } from "@/server/services/statement";
@@ -16,7 +17,21 @@ export default async function StatementPage({ params, searchParams }: { params: 
   const s = await customerStatement(auth.customer!.id, sp.from, sp.to);
   return (
     <div className="space-y-4">
-      <PageHeader title={t("title")} subtitle={`${s.from} → ${s.to}`} />
+      <PageHeader
+        title={t("title")}
+        subtitle={`${s.from} → ${s.to}`}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <PrintButton href={`/api/v1/documents/statement/${auth.customer!.id}?from=${s.from}&to=${s.to}`} testId="print-statement" />
+            <PrintButton href={`/api/v1/documents/price-list/customer:${auth.customer!.id}`} label={t("priceList")} testId="print-price-list" />
+          </div>
+        }
+      />
+      <form method="get" className="flex flex-wrap items-end gap-2">
+        <Input name="from" type="date" dir="ltr" defaultValue={s.from} className="num w-auto" aria-label={t("from")} />
+        <Input name="to" type="date" dir="ltr" defaultValue={s.to} className="num w-auto" aria-label={t("to")} />
+        <Button type="submit" variant="secondary">{t("show")}</Button>
+      </form>
       <div className="grid gap-4 sm:grid-cols-3">
         <Card><p className="text-sm text-ink-500">{t("opening")}</p><p className="num text-xl font-semibold">{money(s.opening)}</p></Card>
         <Card><p className="text-sm text-ink-500">{t("closing")}</p><p className="num text-xl font-semibold" data-testid="balance">{money(s.closing)}</p></Card>

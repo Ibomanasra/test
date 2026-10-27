@@ -3,11 +3,11 @@
 import { parsePercentToBps, parseShekel } from "@sa/core";
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
-import { Alert, Button, Card, Field, Input, Select, Table, Td, Th } from "@/components/ui";
+import { Alert, Button, Card, Field, Input, Select, Table, Td, Textarea, Th } from "@/components/ui";
 import { useRouter } from "@/i18n/navigation";
 import { ApiError, apiFetch, useApi } from "@/lib/api-client";
 
-export type FieldType = "text" | "money" | "bps" | "int" | "day" | "datetime" | "select" | "checkbox" | "sku";
+export type FieldType = "text" | "textarea" | "money" | "bps" | "int" | "day" | "datetime" | "select" | "checkbox" | "sku";
 
 export interface FieldDef {
   name: string;
@@ -69,6 +69,7 @@ function toBody(fields: FieldDef[], values: Record<string, string | boolean>) {
     const s = String(raw ?? "").trim();
     if (s === "") {
       body[f.name] = f.type === "text" || f.type === "sku" ? (f.required ? "" : undefined) : null;
+      if (f.type === "textarea") body[f.name] = f.required ? "" : undefined;
       if (f.type === "select") body[f.name] = f.required ? "" : null;
       continue;
     }
@@ -181,6 +182,8 @@ export function CrudManager({ endpoint, fields, columns, rows, canEdit, createLa
                         <option key={o.value} value={o.value}>{o.label}</option>
                       ))}
                     </Select>
+                  ) : f.type === "textarea" ? (
+                    <Textarea id={id} name={f.name} value={String(v ?? "")} required={f.required} disabled={disabled} dir={f.dir} rows={3} onChange={(e) => setValues({ ...values, [f.name]: e.target.value })} />
                   ) : (
                     <Input
                       id={id}

@@ -374,7 +374,8 @@
       "settings": "Settings",
       "audit": "Audit log",
       "toShop": "To shop",
-      "menu": "Menu"
+      "menu": "Menu",
+      "documents": "Documents"
     },
     "loggedInAs": "Logged in as {name}",
     "dashboard": {
@@ -484,7 +485,77 @@
       "label": "Label",
       "enabled": "Enabled",
       "channel": "Channel",
-      "method": "Method"
+      "method": "Method",
+      "documents": "Documents",
+      "docs": {
+        "logo": "Logo",
+        "noLogo": "No logo",
+        "upload": "Upload",
+        "removeLogo": "Remove logo",
+        "logoHint": "PNG, JPG or WEBP, up to 2 MB. Shown in the header of every A4 document.",
+        "banks": "Bank accounts",
+        "banksHint": "Active accounts are printed in the footer of invoices and documents.",
+        "newBank": "New account",
+        "bank": "Bank",
+        "bankNameAr": "Bank name (Arabic)",
+        "bankNameEn": "Bank name (English)",
+        "branch": "Branch",
+        "accountName": "Account holder",
+        "accountNo": "Account no.",
+        "showOnDocs": "On documents",
+        "sequences": "Number ranges",
+        "sequencesHint": "Prefix and digits per document type. Invoice and credit note numbers are gapless; their format cannot change after the first number of the year was issued.",
+        "prefix": "Prefix",
+        "padding": "Digits",
+        "example": "Next number",
+        "nextNumber": "Counter",
+        "gapless": "Gapless",
+        "docTypeLabel": "Document type",
+        "languageLabel": "Language",
+        "texts": "Document texts",
+        "textsHint": "Optional title, introduction, terms and footer per document type and language.",
+        "newText": "New text",
+        "titleText": "Title",
+        "headerText": "Introduction",
+        "termsText": "Terms and notes",
+        "footerText": "Footer",
+        "autoPrint": "Automatic printing",
+        "autoPrintHint": "When an order changes status a print job is created automatically (e.g. pick list on confirmation, delivery note on dispatch). Find them under “Print jobs”.",
+        "newRule": "New rule",
+        "onStatus": "On status",
+        "withPrices": "With prices",
+        "taxInvoice": "Tax invoice",
+        "taxAdvisor": "The mandatory fields of a Palestinian tax invoice must be reviewed with your accountant or tax advisor.",
+        "invoiceNotesAr": "Invoice note (Arabic)",
+        "invoiceNotesEn": "Invoice note (English)",
+        "printJobsHint": "Invoices and credit notes are frozen as PDF in the archive when issued and cannot be changed; corrections only via credit note.",
+        "language": {
+          "AR": "Arabic",
+          "EN": "English",
+          "BILINGUAL": "Bilingual"
+        },
+        "docType": {
+          "QUOTE": "Quotation",
+          "ORDER_CONFIRMATION": "Order confirmation",
+          "PICK_LIST": "Pick list",
+          "DELIVERY_NOTE": "Delivery note",
+          "INVOICE": "Tax invoice",
+          "RECEIPT": "Receipt",
+          "CREDIT_NOTE": "Credit note",
+          "TOUR_SHEET": "Tour sheet",
+          "CASH_CLOSING": "Cash closing",
+          "ACCOUNT_STATEMENT": "Account statement",
+          "DUNNING": "Payment reminder",
+          "PURCHASE_ORDER": "Purchase order",
+          "GOODS_RECEIPT": "Goods receipt",
+          "PRICE_LIST": "Price list",
+          "STOCKTAKE": "Stocktake",
+          "STOCK_LIST": "Stock list",
+          "REPORT": "Report",
+          "ORDER": "Order",
+          "RETURN": "Return"
+        }
+      }
     },
     "audit": {
       "title": "Audit log",
@@ -765,7 +836,8 @@
         "order-confirmation": "Print order confirmations",
         "pick-list": "Print pick lists",
         "delivery-note": "Print delivery notes",
-        "invoice": "Print invoices"
+        "invoice": "Print invoices",
+        "dn-invoice": "Delivery notes + invoices"
       },
       "clearSelection": "Clear selection",
       "selectAll": "Select all",
@@ -776,7 +848,11 @@
       "total": "Total",
       "print": {
         "confirmation": "Order confirmation (A4)",
-        "pickList": "Pick list (A4)"
+        "pickList": "Pick list (A4)",
+        "dnAndInvoice": "Delivery note + invoice",
+        "invoice": "Invoice",
+        "deliveryNote": "Delivery note",
+        "deliveryNoteNoPrices": "Without prices"
       },
       "backorderOf": "Backorder of",
       "hasBackorders": "Backorders:",
@@ -867,6 +943,71 @@
       "actions": {
         "create": "New",
         "update": "Update"
+      }
+    },
+    "documents": {
+      "title": "Documents & invoices",
+      "tabs": {
+        "invoices": "Invoices",
+        "creditNotes": "Credit notes",
+        "printJobs": "Print jobs"
+      },
+      "searchPlaceholder": "Number, customer or order",
+      "printAllInvoices": "Print listed invoices",
+      "date": "Date",
+      "dueDate": "Due",
+      "customer": "Customer",
+      "order": "Order",
+      "invoice": "Invoice",
+      "total": "Total",
+      "open": "Open",
+      "openPdf": "Open PDF",
+      "archive": "Archive",
+      "frozen": "Frozen",
+      "pendingArchive": "Archiving",
+      "reason": "Reason",
+      "amounts": "Amounts",
+      "net": "Net",
+      "vat": "VAT",
+      "paid": "Paid",
+      "credited": "Credited",
+      "item": "Item",
+      "qty": "Qty",
+      "unitNet": "Unit price (net)",
+      "immutableHint": "The invoice cannot be changed. Issue a credit note to correct it.",
+      "createCreditNote": "Issue credit note",
+      "creditHint": "Enter the returned quantity per line (base unit) or reverse the whole invoice. The credit note is posted to the customer account and frozen as PDF.",
+      "invoicedQty": "Invoiced",
+      "creditedQty": "Already credited",
+      "creditQty": "Credit qty",
+      "creditSelected": "Credit selected quantities",
+      "creditFull": "Reverse whole invoice",
+      "creditConfirm": "A final credit note with a sequential number will be issued. Continue?",
+      "creditCreated": "Credit note {number} issued",
+      "invoiceStatus": {
+        "ISSUED": "Open",
+        "PARTIALLY_PAID": "Partially paid",
+        "PAID": "Paid",
+        "CREDITED": "Credited"
+      },
+      "printJobsText": "Automatic (by order status) and batch print jobs. Open the file and print it at the printing station.",
+      "noPrintJobs": "No print jobs",
+      "created": "Created",
+      "trigger": "Source",
+      "documentsLabel": "Documents",
+      "for": "For",
+      "jobStatus": "Status",
+      "retry": "Retry",
+      "triggerType": {
+        "MANUAL": "Manual",
+        "BATCH": "Batch",
+        "AUTO_STATUS": "Automatic"
+      },
+      "jobStatusType": {
+        "QUEUED": "Queued",
+        "RENDERING": "Rendering",
+        "DONE": "Ready",
+        "FAILED": "Failed"
       }
     }
   },
@@ -977,7 +1118,19 @@
     "unknown_category": "Unknown category.",
     "invalid_slug": "Invalid slug.",
     "invalid_sku": "Invalid SKU.",
-    "no_default_warehouse": "No default warehouse."
+    "no_default_warehouse": "No default warehouse.",
+    "sequence_in_use": "Numbers were already issued this year; the format cannot change because numbering must stay gapless.",
+    "invalid_prefix": "Prefix: 1–5 capital Latin letters",
+    "invalid_iban": "Invalid IBAN",
+    "invalid_swift": "Invalid SWIFT code",
+    "nothing_to_credit": "Nothing left to credit",
+    "credit_exceeds_invoice": "Amount exceeds the invoice",
+    "invalid_invoice_line": "Invalid invoice line",
+    "already_invoiced": "This delivery note was already invoiced",
+    "nothing_to_print": "Nothing to print",
+    "too_many_documents": "Too many documents (max. 200)",
+    "invalid_items": "Invalid print request",
+    "invalid_price_list": "Invalid price list"
   },
   "permissions": {
     "dashboard_view": "View dashboard",
@@ -1052,5 +1205,13 @@
     "PACK": "Pack",
     "CARTON": "Carton",
     "PALLET": "Pallet"
+  },
+  "print": {
+    "button": "Print / PDF (A4)",
+    "english": "English",
+    "bilingual": "Arabic + English",
+    "download": "Download PDF",
+    "rendering": "Rendering…",
+    "failed": "Could not create the PDF"
   }
 }

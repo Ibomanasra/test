@@ -1,5 +1,7 @@
 import "server-only";
+import { archivePendingDocuments } from "./services/invoicing";
 import { applyDueScheduledPrices } from "./services/prices-admin";
+import { processPrintJobs } from "./services/print-jobs";
 import { expireQuotes } from "./services/quotes";
 
 const g = globalThis as unknown as { __saJobs?: boolean };
@@ -22,4 +24,6 @@ export function startJobs() {
   };
   every(5 * 60_000, "scheduled-prices", () => applyDueScheduledPrices());
   every(60 * 60_000, "expire-quotes", () => expireQuotes());
+  every(5 * 60_000, "archive-documents", () => archivePendingDocuments());
+  every(60_000, "print-jobs", () => processPrintJobs());
 }

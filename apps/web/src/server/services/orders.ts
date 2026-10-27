@@ -22,7 +22,9 @@ import { audit } from "../audit";
 import type { AuthContext } from "../auth/context";
 import { AppError, badRequest, forbidden, notFound } from "../errors";
 import { clearCart, findCart, pricedCart, type CartOwner } from "./cart";
+import { archiveFiscalDocument, createCreditNote, issueInvoiceForShipment } from "./invoicing";
 import { guardMargin } from "./prices-admin";
+import { queueAutoPrint } from "./print-jobs";
 import { currentTaxRateBps, getMinMarginBps, priceItems, priceKey } from "./pricing";
 import { consumeForShipment, defaultWarehouseId, lockStock, releaseReservations, reserveStock } from "./stock";
 
@@ -343,6 +345,8 @@ export function onOrderStatus(hook: StatusHook) {
   statusHooks.push(hook);
 }
 async function runHooks(orderId: string, status: OrderStatus, ctx: AuthContext) {
+  // Auto-Druck (Einstellungen → Dokumente) – Fehler blockieren den Statuswechsel nicht
+  await queueAutoPrint(orderId, status, ctx).catch((err: unknown) => console.error("[auto-print]", err));
   for (const h of statusHooks) {
     try {
       await h(orderId, status, ctx);
@@ -410,6 +414,8 @@ export async function dispatchOrder(ctx: AuthContext, orderId: string, input: Di
       for (const p of plan) {
         await tx.orderItem.update({ where: { id: p.item.id }, data: { qtyDeliveredBase: { increment: p.ship }, qtyPickedBase: p.ship } });
       }
+      // Rechnung je Lieferschein – gleiche Transaktion → lückenlose Nummern (D23)
+      const invoice = await issueInvoiceForShipment(tx, ctx, shipment.id);
       const rest = plan.filter((p) => p.rest > 0);
       let backorder: { id: string; number: string } | null = null;
       if (rest.length) {
@@ -482,10 +488,11 @@ export async function dispatchOrder(ctx: AuthContext, orderId: string, input: Di
         await recalcTotals(tx, o.id);
       }
       await audit(ctx, { action: "order.dispatch", entityType: "Order", entityId: orderId, after: { shipment: number, partial: rest.length > 0, backorder: backorder?.number } }, tx);
-      return { shipment, backorder };
+      return { shipment, backorder, invoice: { id: invoice.id, number: invoice.number } };
     },
     { timeout: 30_000 },
   );
+  void archiveFiscalDocument("INVOICE", result.invoice.id, ctx.user.id).catch((err: unknown) => console.error("[archive]", err));
   await notifyCustomer(orderId, "order.out_for_delivery");
   await runHooks(orderId, "OUT_FOR_DELIVERY", ctx);
   return result;
@@ -504,9 +511,10 @@ export async function markDelivered(ctx: AuthContext, orderId: string, receivedB
 
 /** Zustellung fehlgeschlagen: Ware zurück ins Lager und wieder reserviert, Status „Bereit“ */
 export async function failDelivery(ctx: AuthContext, orderId: string, reason: string) {
-  const o = await prisma.order.findUnique({ where: { id: orderId }, include: { shipments: { where: { status: { in: ["PENDING", "LOADED"] } }, include: { items: true } }, items: true } });
+  const o = await prisma.order.findUnique({ where: { id: orderId }, include: { shipments: { where: { status: { in: ["PENDING", "LOADED"] } }, include: { items: true, invoice: { select: { id: true, status: true } } } }, items: true } });
   if (!o) throw notFound();
-  await prisma.$transaction(async (tx) => {
+  const creditNotes = await prisma.$transaction(async (tx) => {
+    const notes: string[] = [];
     await setStatus(tx, ctx, orderId, o.status, "READY", reason);
     const warehouseId = await defaultWarehouseId(tx);
     for (const s of o.shipments) {
@@ -519,8 +527,15 @@ export async function failDelivery(ctx: AuthContext, orderId: string, reason: st
         await tx.stockReservation.create({ data: { orderItemId: item.id, variantId: item.variantId, qtyBase: si.qtyBase } });
         await tx.orderItem.update({ where: { id: item.id }, data: { qtyDeliveredBase: { decrement: si.qtyBase } } });
       }
+      // Rechnung des fehlgeschlagenen Lieferscheins per Gutschrift stornieren (Rechnungen sind unveränderlich)
+      if (s.invoice && s.invoice.status !== "CREDITED") {
+        const cn = await createCreditNote(ctx, s.invoice.id, { reason: `Zustellung fehlgeschlagen: ${reason}` }, tx);
+        notes.push(cn.id);
+      }
     }
-  });
+    return notes;
+  }, { timeout: 30_000 });
+  for (const id of creditNotes) void archiveFiscalDocument("CREDIT_NOTE", id, ctx.user.id).catch((err: unknown) => console.error("[archive]", err));
   await runHooks(orderId, "READY", ctx);
 }
 

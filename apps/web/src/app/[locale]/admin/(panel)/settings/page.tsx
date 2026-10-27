@@ -11,7 +11,6 @@ export default async function CompanySettingsPage({ params }: { params: Promise<
   const auth = await staffPagePermission(locale, "settings.view");
   if (!auth) return <Forbidden />;
   const s = await getCompanySettings();
-  // TODO(Phase 4): Logo-Upload, Bankdaten, Dokumenttexte AR/EN, Nummernkreise, Pflichtfelder Steuerrechnung
   return (
     <CompanyForm
       canEdit={hasPermission(auth.permissions, "settings.edit")}

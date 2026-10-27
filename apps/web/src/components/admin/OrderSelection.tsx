@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Badge, Button, EmptyState, Table, Td, Th } from "@/components/ui";
+import { PrintTableButton } from "@/components/print/PrintTableButton";
 import { Link } from "@/i18n/navigation";
 
 export interface OrderRow {
@@ -41,19 +42,37 @@ export function OrderSelection({ rows }: { rows: OrderRow[] }) {
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <span className="text-ink-600">{t("selected", { count: sel.size })}</span>
-        {(["order-confirmation", "pick-list", "delivery-note", "invoice"] as const).map((doc) => (
+        {([["order-confirmation", "order-confirmation"], ["pick-list", "pick-list"], ["delivery-note", "delivery-note"], ["invoice", "invoice"], ["delivery-note,invoice", "dn-invoice"]] as const).map(([doc, key]) => (
           <a
-            key={doc}
+            key={key}
             aria-disabled={sel.size === 0}
             className={sel.size === 0 ? "pointer-events-none rounded-lg px-3 py-1.5 text-ink-400 ring-1 ring-ink-200" : "rounded-lg px-3 py-1.5 ring-1 ring-ink-300 hover:bg-ink-100"}
             href={`/api/v1/print/batch?doc=${doc}&ids=${ids}`}
             target="_blank"
             rel="noopener"
-            data-testid={`batch-${doc}`}
+            data-testid={`batch-${key}`}
           >
-            {t(`batch.${doc}`)}
+            {t(`batch.${key}`)}
           </a>
         ))}
+        <span className="ms-auto">
+          <PrintTableButton
+            data={{
+              title: t("title"),
+              columns: [
+                { key: "number", label: tc("number") },
+                { key: "customer", label: t("customer") },
+                { key: "channel", label: t("channel") },
+                { key: "status", label: tc("status") },
+                { key: "zone", label: t("zone") },
+                { key: "placedAt", label: t("placedAt"), kind: "num" },
+                { key: "deliveryDay", label: t("deliveryDay"), kind: "num" },
+                { key: "total", label: t("total"), kind: "num" },
+              ],
+              rows: (sel.size ? rows.filter((r) => sel.has(r.id)) : rows).map((r) => ({ number: r.number, customer: r.customer, channel: r.channel, status: r.statusLabel, zone: r.zone, placedAt: r.placedAt, deliveryDay: r.deliveryDay, total: r.total })),
+            }}
+          />
+        </span>
         {sel.size ? <Button size="sm" variant="ghost" onClick={() => setSel(new Set())}>{t("clearSelection")}</Button> : null}
       </div>
       <Table>

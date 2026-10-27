@@ -1,6 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { AccountQuoteActions } from "@/components/shop/AccountQuoteActions";
+import { PrintButton } from "@/components/print/PrintButton";
 import { CartActionButton } from "@/components/shop/ReorderButton";
 import { Alert, Badge, Card, Num, PageHeader, Table, Td, Th } from "@/components/ui";
 import { requireCustomerPage } from "@/server/auth/page-guards";
@@ -19,7 +20,7 @@ export default async function AccountQuotePage({ params }: { params: Promise<{ l
   const nm = (o: { nameAr: string | null; nameEn: string | null }) => (locale === "ar" ? o.nameAr : o.nameEn);
   return (
     <div className="space-y-6">
-      <PageHeader title={<Num>{q.number}</Num>} subtitle={`${ts("validUntil")}: ${day(q.validUntil)}`} actions={<Badge tone="brand">{ts(`status.${q.status}`)}</Badge>} />
+      <PageHeader title={<Num>{q.number}</Num>} subtitle={`${ts("validUntil")}: ${day(q.validUntil)}`} actions={<div className="flex flex-wrap items-center gap-2"><Badge tone="brand">{ts(`status.${q.status}`)}</Badge><PrintButton href={`/api/v1/documents/quote/${q.id}`} testId="print-quote" /></div>} />
       {q.status === "SENT" ? <AccountQuoteActions id={q.id} /> : null}
       {q.status === "ACCEPTED" ? (
         <Alert tone="green">

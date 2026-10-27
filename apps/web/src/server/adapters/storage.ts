@@ -86,3 +86,11 @@ export function sniffMimeType(buf: Buffer): string | null {
   if (buf.subarray(0, 4).toString("ascii") === "RIFF" && buf.subarray(8, 12).toString("ascii") === "WEBP") return "image/webp";
   return null;
 }
+
+/** Datei vollständig als Buffer lesen (PDF-Archiv, Logo für Dokumente) */
+export async function readFileBuffer(fileId: string): Promise<{ data: Buffer; mimeType: string; sha256: string }> {
+  const f = await prisma.fileObject.findUniqueOrThrow({ where: { id: fileId } });
+  const res = await s3().send(new GetObjectCommand({ Bucket: f.bucket, Key: f.key }));
+  if (!res.Body) throw new Error("empty object");
+  return { data: Buffer.from(await res.Body.transformToByteArray()), mimeType: f.mimeType, sha256: f.sha256 };
+}

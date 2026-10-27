@@ -1,4 +1,5 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { PrintButton } from "@/components/print/PrintButton";
 import { EmptyState, Num, PageHeader, Table, Td, Th } from "@/components/ui";
 import { requireCustomerPage } from "@/server/auth/page-guards";
 import { day } from "@/server/format";
@@ -33,7 +34,7 @@ export default async function DocumentsPage({ params }: { params: Promise<{ loca
                 <Td>{t(`kinds.${d.kind}`)}</Td>
                 <Td className="num">{d.number}</Td>
                 <Td>
-                  <a href={d.href} target="_blank" rel="noopener" className="text-brand-700 underline">{t("pdf")}</a>
+                  <PrintButton href={d.href} label={t("pdf")} />
                 </Td>
               </tr>
             ))}

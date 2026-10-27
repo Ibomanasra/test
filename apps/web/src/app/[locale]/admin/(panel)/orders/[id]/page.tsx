@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Forbidden } from "@/components/admin/Forbidden";
 import { OrderActions } from "@/components/admin/OrderActions";
 import { OrderItemsEditor } from "@/components/admin/OrderItemsEditor";
+import { PrintButton } from "@/components/print/PrintButton";
 import { OrderStatusTimeline } from "@/components/shop/OrderStatusTimeline";
 import { Alert, Badge, Card, Num, PageHeader, Table, Td, Th } from "@/components/ui";
 import { Link } from "@/i18n/navigation";
@@ -36,8 +37,9 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ loc
             <Badge>{tAll(`channel.${o.channel}`)}</Badge>
             {can("order.print") ? (
               <>
-                <a className="rounded-lg px-3 py-1 text-sm ring-1 ring-ink-300 hover:bg-ink-100" href={`/api/v1/documents/order-confirmation/${o.id}`} target="_blank" rel="noopener">{t("print.confirmation")}</a>
-                <a className="rounded-lg px-3 py-1 text-sm ring-1 ring-ink-300 hover:bg-ink-100" href={`/api/v1/documents/pick-list/${o.id}`} target="_blank" rel="noopener">{t("print.pickList")}</a>
+                <PrintButton href={`/api/v1/documents/order-confirmation/${o.id}`} label={t("print.confirmation")} testId="print-confirmation" />
+                <PrintButton href={`/api/v1/documents/pick-list/${o.id}`} label={t("print.pickList")} testId="print-pick-list" />
+                {o.shipments.length ? <PrintButton href={`/api/v1/print/batch?doc=delivery-note,invoice&ids=${o.id}`} label={t("print.dnAndInvoice")} testId="print-dn-invoice" /> : null}
               </>
             ) : null}
           </div>
@@ -74,7 +76,10 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ loc
           <p className="text-sm">{tAll(`paymentMethod.${o.paymentMethod}`)}</p>
           <p className="text-sm text-ink-600">{t(`paymentStatus.${o.paymentStatus}`)}{o.paymentTermDays ? ` · ${t("terms", { days: o.paymentTermDays })}` : ""}</p>
           {o.invoices.map((inv) => (
-            <p key={inv.id} className="text-sm"><a href={`/api/v1/documents/invoice/${inv.id}`} target="_blank" rel="noopener" className="num text-brand-700 underline">{inv.number}</a> · <span className="num">{money(inv.totalGross)}</span></p>
+            <div key={inv.id} className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+              <span className="num font-medium">{inv.number}</span> · <span className="num">{money(inv.totalGross)}</span>
+              <PrintButton href={`/api/v1/documents/invoice/${inv.id}`} label={t("print.invoice")} testId="print-invoice" />
+            </div>
           ))}
         </Card>
       </div>
@@ -122,8 +127,14 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ loc
           <ul className="space-y-1 text-sm">
             {o.shipments.map((s) => (
               <li key={s.id}>
-                <a href={`/api/v1/documents/delivery-note/${s.id}`} target="_blank" rel="noopener" className="num text-brand-700 underline">{s.number}</a> · {t(`shipmentStatus.${s.status}`)} · <Num>{dateTimeText(s.deliveredAt ?? s.createdAt)}</Num>
+                <span className="num font-medium">{s.number}</span> · {t(`shipmentStatus.${s.status}`)} · <Num>{dateTimeText(s.deliveredAt ?? s.createdAt)}</Num>
                 {s.receivedByName ? ` · ${s.receivedByName}` : ""}
+                {can("order.print") ? (
+                  <span className="mt-1 flex flex-wrap gap-2">
+                    <PrintButton href={`/api/v1/documents/delivery-note/${s.id}`} label={t("print.deliveryNote")} testId="print-delivery-note" />
+                    <PrintButton href={`/api/v1/documents/delivery-note/${s.id}?prices=0`} label={t("print.deliveryNoteNoPrices")} />
+                  </span>
+                ) : null}
               </li>
             ))}
           </ul>

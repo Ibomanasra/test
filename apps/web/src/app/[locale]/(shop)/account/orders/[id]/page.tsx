@@ -1,6 +1,7 @@
 import type { OrderStatusKey } from "@sa/core";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
+import { PrintButton } from "@/components/print/PrintButton";
 import { CartActionButton } from "@/components/shop/ReorderButton";
 import { OrderStatusTimeline } from "@/components/shop/OrderStatusTimeline";
 import { Alert, Card, Num, PageHeader, Table, Td, Th } from "@/components/ui";
@@ -23,7 +24,13 @@ export default async function MyOrderPage({ params, searchParams }: { params: Pr
       <PageHeader
         title={<Num>{o.number}</Num>}
         subtitle={dateTimeText(o.placedAt)}
-        actions={<CartActionButton endpoint="/api/v1/cart/reorder" body={{ orderId: o.id }} label={t("reorder")} testId="reorder" />}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <PrintButton href={`/api/v1/documents/order-confirmation/${o.id}`} label={t("confirmationPdf")} testId="print-confirmation" />
+            {o.invoices.map((inv) => <PrintButton key={inv.id} href={`/api/v1/documents/invoice/${inv.id}`} label={`${t("invoicePdf")} ${inv.number}`} />)}
+            <CartActionButton endpoint="/api/v1/cart/reorder" body={{ orderId: o.id }} label={t("reorder")} testId="reorder" />
+          </div>
+        }
       />
       <Card><OrderStatusTimeline status={o.status as OrderStatusKey} events={o.events.map((e) => ({ toStatus: e.toStatus, at: dateTimeText(e.createdAt) }))} /></Card>
       <div className="grid gap-6 md:grid-cols-2">

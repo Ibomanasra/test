@@ -33,6 +33,14 @@ const schema = z.object({
   S3_SECRET_KEY: z.string().default(""),
   S3_FORCE_PATH_STYLE: bool.default(true),
   UPLOAD_MAX_MB: z.coerce.number().int().min(1).max(50).default(10),
+  // Zahlungs-Gateway (Phase 6): fake (Entwicklung), paytabs, arabbank (Mastercard Gateway)
+  PAYMENT_GATEWAY: z.enum(["fake", "paytabs", "arabbank"]).default("fake"),
+  PAYMENT_GATEWAY_URL: z.string().url().optional(),
+  PAYMENT_GATEWAY_MERCHANT_ID: z.string().default(""),
+  PAYMENT_GATEWAY_API_KEY: z.string().default(""),
+  PAYMENT_GATEWAY_CALLBACK_SECRET: z.string().default(""),
+  /** Minuten, nach denen unbezahlte Kartenbestellungen storniert werden */
+  PAYMENT_TIMEOUT_MINUTES: z.coerce.number().int().min(5).default(60),
 });
 
 export type Env = z.infer<typeof schema>;
@@ -44,6 +52,9 @@ export function env(): Env {
   const parsed = schema.safeParse(process.env);
   if (!parsed.success) {
     throw new Error(`Invalid environment: ${parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ")}`);
+  }
+  if (parsed.data.NODE_ENV === "production" && parsed.data.PAYMENT_GATEWAY !== "fake" && !parsed.data.PAYMENT_GATEWAY_API_KEY) {
+    throw new Error("PAYMENT_GATEWAY_API_KEY is required for the configured payment gateway");
   }
   if (parsed.data.NODE_ENV === "production" && parsed.data.OTP_DEV_FIXED_CODE) {
     throw new Error("OTP_DEV_FIXED_CODE must not be set in production");

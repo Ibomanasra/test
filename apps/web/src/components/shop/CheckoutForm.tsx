@@ -93,7 +93,16 @@ export function CheckoutForm({ options, zones }: { options: Options; zones: { id
 
   async function place() {
     const res = await call<{ id: string }>("/api/v1/orders", { body: { addressId, paymentMethod: method, requestedDeliveryDate: date, customerNote: note || undefined } });
-    if (res) router.replace(`/account/orders/${res.id}?placed=1`);
+    if (!res) return;
+    if (method === "CARD_GATEWAY") {
+      // Kartenzahlung: weiter zur gehosteten Bezahlseite des Gateways
+      const pay = await call<{ redirectUrl: string }>(`/api/v1/orders/${res.id}/pay`, { body: {} });
+      if (pay) {
+        window.location.assign(pay.redirectUrl);
+        return;
+      }
+    }
+    router.replace(`/account/orders/${res.id}?placed=1`);
   }
 
   const onAccount = method === "ON_ACCOUNT";

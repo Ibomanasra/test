@@ -1,4 +1,5 @@
 import "server-only";
+import { cancelUnpaidCardOrders } from "./services/card-payments";
 import { archivePendingDocuments } from "./services/invoicing";
 import { applyDueScheduledPrices } from "./services/prices-admin";
 import { processPrintJobs } from "./services/print-jobs";
@@ -26,4 +27,5 @@ export function startJobs() {
   every(60 * 60_000, "expire-quotes", () => expireQuotes());
   every(5 * 60_000, "archive-documents", () => archivePendingDocuments());
   every(60_000, "print-jobs", () => processPrintJobs());
+  every(5 * 60_000, "card-timeout", () => cancelUnpaidCardOrders());
 }

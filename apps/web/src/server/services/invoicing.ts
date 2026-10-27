@@ -166,8 +166,25 @@ export async function issueInvoiceForShipment(tx: Tx, ctx: AuthContext | null, s
     data: { customerId: o.customerId, type: "INVOICE", refId: invoice.id, refNumber: number, date: issueDate, debit: totals.gross, note: o.number },
   });
   if (prepaid) {
+    // Vorauszahlung (Karte/Überweisung): Quittung mit Zuordnung zu dieser Rechnung
+    const intent = await tx.paymentIntent.findFirst({ where: { orderId: o.id, status: "CAPTURED" }, orderBy: { updatedAt: "desc" } });
+    const rc = await allocateDocumentNumber(tx, "RECEIPT", issueDate);
+    const payment = await tx.payment.create({
+      data: {
+        number: rc.number,
+        customerId: o.customerId,
+        method: o.paymentMethod,
+        amount: totals.gross,
+        receivedAt: issueDate,
+        reference: intent?.providerRef ?? o.number,
+        note: `prepaid ${o.number}`,
+        receivedById: ctx?.user.id ?? null,
+        allocations: { create: { invoiceId: invoice.id, amount: totals.gross } },
+      },
+    });
+    if (intent && !intent.paymentId) await tx.paymentIntent.update({ where: { id: intent.id }, data: { paymentId: payment.id } });
     await tx.customerLedgerEntry.create({
-      data: { customerId: o.customerId, type: "PAYMENT", refId: invoice.id, refNumber: number, date: issueDate, credit: totals.gross, note: `prepaid ${o.paymentMethod}` },
+      data: { customerId: o.customerId, type: "PAYMENT", refId: payment.id, refNumber: rc.number, date: issueDate, credit: totals.gross, note: `prepaid ${o.paymentMethod} ${o.number}` },
     });
   }
   await audit(ctx, { action: "invoice.issue", entityType: "Invoice", entityId: invoice.id, after: { number, shipment: s.number, totalGross: totals.gross } }, tx);

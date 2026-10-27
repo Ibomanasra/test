@@ -1466,7 +1466,10 @@
     "closing_approved": "Today's cash closing is already approved",
     "already_voided": "Payment already voided",
     "cash_already_closed": "Cash already closed – cannot void",
-    "return_exceeds_delivered": "Return exceeds delivered quantity"
+    "return_exceeds_delivered": "Return exceeds delivered quantity",
+    "already_paid": "This order is already paid",
+    "gateway_unavailable": "The payment gateway is currently unavailable. Please try later.",
+    "invalid_signature": "Invalid signature"
   },
   "permissions": {
     "dashboard_view": "View dashboard",
@@ -1549,5 +1552,20 @@
     "download": "Download PDF",
     "rendering": "Rendering…",
     "failed": "Could not create the PDF"
+  },
+  "pay": {
+    "payNow": "Pay now by card",
+    "approve": "Approve (successful payment)",
+    "decline": "Decline",
+    "fakeTitle": "Test payment gateway",
+    "fakeHint": "Development test page only. In production the bank's secure payment page opens instead.",
+    "successTitle": "Payment successful",
+    "successText": "Thank you! Your payment was received and we are preparing your order.",
+    "failedTitle": "Payment failed",
+    "failedText": "The payment was not completed. You can try again or contact us for another payment method.",
+    "pendingTitle": "Payment processing",
+    "pendingText": "Waiting for the bank's confirmation. The order status updates automatically.",
+    "toOrder": "View order",
+    "retry": "Try again"
   }
 }

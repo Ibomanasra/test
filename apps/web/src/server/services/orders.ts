@@ -435,6 +435,8 @@ export async function dispatchOrder(ctx: AuthContext, orderId: string, input: Di
               addressSnapshot: o.addressSnapshot as Prisma.InputJsonValue,
               requestedDeliveryDate: o.requestedDeliveryDate,
               paymentMethod: o.paymentMethod,
+              // Vorauszahlung deckt auch den Rückstand (Karte/Überweisung bereits bezahlt)
+              paymentStatus: o.paymentStatus === "PAID" ? "PAID" : "UNPAID",
               paymentTermDays: o.paymentTermDays,
               subtotalNet: 0,
               vatTotal: 0,

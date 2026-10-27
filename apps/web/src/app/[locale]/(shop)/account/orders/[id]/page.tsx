@@ -2,6 +2,7 @@ import type { OrderStatusKey } from "@sa/core";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { PrintButton } from "@/components/print/PrintButton";
+import { PayNowButton } from "@/components/shop/PaymentButtons";
 import { CartActionButton } from "@/components/shop/ReorderButton";
 import { OrderStatusTimeline } from "@/components/shop/OrderStatusTimeline";
 import { Alert, Card, Num, PageHeader, Table, Td, Th } from "@/components/ui";
@@ -28,6 +29,7 @@ export default async function MyOrderPage({ params, searchParams }: { params: Pr
           <div className="flex flex-wrap gap-2">
             <PrintButton href={`/api/v1/documents/order-confirmation/${o.id}`} label={t("confirmationPdf")} testId="print-confirmation" />
             {o.invoices.map((inv) => <PrintButton key={inv.id} href={`/api/v1/documents/invoice/${inv.id}`} label={`${t("invoicePdf")} ${inv.number}`} />)}
+            {o.paymentMethod === "CARD_GATEWAY" && o.paymentStatus !== "PAID" && o.status === "NEW" ? <PayNowButton orderId={o.id} /> : null}
             <CartActionButton endpoint="/api/v1/cart/reorder" body={{ orderId: o.id }} label={t("reorder")} testId="reorder" />
           </div>
         }

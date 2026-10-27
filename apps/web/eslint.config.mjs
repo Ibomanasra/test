@@ -16,7 +16,7 @@ const config = [
     },
   },
   {
-    files: ["src/server/**", "src/app/**/page.tsx", "src/app/**/layout.tsx", "src/app/**/route.ts"],
+    files: ["src/server/**", "scripts/**", "src/app/**/page.tsx", "src/app/**/layout.tsx", "src/app/**/route.ts"],
     rules: { "no-restricted-imports": "off" },
   },
 ];

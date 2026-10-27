@@ -2,6 +2,7 @@ import { registerB2BSchema } from "@sa/contracts";
 import { issueSession } from "@/server/auth/issue";
 import { createSession } from "@/server/auth/session";
 import { badRequest } from "@/server/errors";
+import { mergeGuestCart } from "@/server/services/cart";
 import { apiRoute } from "@/server/http";
 import { getRequestMeta } from "@/server/request-meta";
 import { readRegistrationTicket } from "@/server/services/auth";
@@ -28,6 +29,7 @@ export const POST = apiRoute(async (req) => {
     data: Buffer.from(await file.arrayBuffer()),
     originalName: file.name,
   });
+  await mergeGuestCart(customer.id);
   const meta = await getRequestMeta();
   const client = req.headers.get("x-client") === "mobile" ? "MOBILE" : "WEB";
   const s = await createSession({ userId: user.id, kind: "CUSTOMER", mfaPassed: true, client, ip: meta.ip, userAgent: meta.userAgent });

@@ -52,6 +52,12 @@ Sie stehen außerdem in der Tabelle `NotificationLog`.
 
 Demo-Kunden (alle mit „(مثال)“ markiert): `0599100001`, `0569100002` (B2C), `0599100003` (B2B Gold), `0599100004` (B2B Silber), `0599100005` (B2B wartet auf Freigabe).
 
+Beispielbestellungen in allen Status (nach dem Seed mit Demo-Daten, idempotent):
+
+```bash
+pnpm db:demo-orders
+```
+
 Demo-Daten entfernen:
 
 ```bash

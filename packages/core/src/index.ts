@@ -6,3 +6,4 @@ export * from "./order-status";
 export * from "./phone";
 export * from "./channel";
 export * from "./pricing";
+export * from "./checkout";

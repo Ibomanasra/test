@@ -17,7 +17,8 @@
     "db:seed": "pnpm --filter @sa/db seed",
     "db:reset": "pnpm --filter @sa/db reset",
     "format": "prettier --write .",
-    "postinstall": "node scripts/link-env.mjs"
+    "postinstall": "node scripts/link-env.mjs",
+    "db:demo-orders": "pnpm --filter @sa/web demo:orders"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",

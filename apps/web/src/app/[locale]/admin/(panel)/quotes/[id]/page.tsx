@@ -14,7 +14,7 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ lo
   const auth = await staffPagePermission(locale, "quote.view");
   if (!auth) return <Forbidden />;
   const q = await getQuote(id).catch(() => notFound());
-  const [t, tc] = await Promise.all([getTranslations("admin.quotes"), getTranslations("common")]);
+  const [t, tc, tAll] = await Promise.all([getTranslations("admin.quotes"), getTranslations("common"), getTranslations()]);
   const nm = (o: { nameAr: string | null; nameEn: string | null }) => (locale === "ar" ? o.nameAr : o.nameEn);
   return (
     <div className="space-y-6">
@@ -44,7 +44,7 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ lo
             <tr key={i.id}>
               <Td className="num">{i.variant.sku}</Td>
               <Td>{[nm(i.variant.product), nm(i.variant)].filter(Boolean).join(" – ")}</Td>
-              <Td className="num">{i.qty} × {i.unitCode} ({i.unitFactor})</Td>
+              <Td className="num">{i.qty} × {tAll(`units.${i.unitCode}`)} ({i.unitFactor})</Td>
               <Td className="num">{money(i.unitPriceNet)}</Td>
               <Td className="num">{money(i.unitPriceNet * i.qty * i.unitFactor)}</Td>
             </tr>

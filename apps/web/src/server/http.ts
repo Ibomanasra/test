@@ -1,4 +1,5 @@
 import "server-only";
+import { MoneyError, NumberingError, OrderStatusError, PhoneError, PricingError, TaxError } from "@sa/core";
 import { Prisma } from "@sa/db";
 import { NextResponse, type NextRequest } from "next/server";
 import { ZodError, type ZodType } from "zod";
@@ -58,6 +59,11 @@ export function errorResponse(err: unknown): Response {
       { error: { code: "validation_error", details: err.issues.map((i) => ({ path: i.path.join("."), message: i.message })) } },
       { status: 400 },
     );
+  }
+  // Fachliche Fehler aus packages/core
+  if (err instanceof OrderStatusError) return NextResponse.json({ error: { code: "invalid_status" } }, { status: 409 });
+  if (err instanceof PricingError || err instanceof MoneyError || err instanceof TaxError || err instanceof NumberingError || err instanceof PhoneError) {
+    return NextResponse.json({ error: { code: "validation_error", details: [{ path: "", message: err.message }] } }, { status: 400 });
   }
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
     if (err.code === "P2002") return NextResponse.json({ error: { code: "duplicate", details: err.meta } }, { status: 409 });

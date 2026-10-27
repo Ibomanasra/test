@@ -102,7 +102,7 @@ export function Badge({ tone = "neutral", children }: { tone?: Tone; children: R
   return <span className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium", TONES[tone])}>{children}</span>;
 }
 
-export function Alert({ tone = "amber", children }: { tone?: "amber" | "red" | "green" | "blue"; children: ReactNode }) {
+export function Alert({ tone = "amber", children, "data-testid": testId }: { tone?: "amber" | "red" | "green" | "blue"; children: ReactNode; "data-testid"?: string }) {
   const map = {
     amber: "bg-amber-50 text-amber-900 ring-amber-200",
     red: "bg-red-50 text-red-800 ring-red-200",
@@ -110,7 +110,7 @@ export function Alert({ tone = "amber", children }: { tone?: "amber" | "red" | "
     blue: "bg-sky-50 text-sky-900 ring-sky-200",
   } as const;
   return (
-    <div role={tone === "red" ? "alert" : "status"} className={cn("rounded-lg px-4 py-3 text-sm ring-1", map[tone])}>
+    <div role={tone === "red" ? "alert" : "status"} className={cn("rounded-lg px-4 py-3 text-sm ring-1", map[tone])} data-testid={testId}>
       {children}
     </div>
   );

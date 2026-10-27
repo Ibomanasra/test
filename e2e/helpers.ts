@@ -23,7 +23,13 @@ export function randomPhone(): { local: string; e164: string } {
   return { local: `059${rest}`, e164: `+97059${rest}` };
 }
 
+/** Tests melden sich oft an – Rate-Limit-Zähler vor jedem Login leeren (nur Testumgebung). */
+export async function resetRateLimits() {
+  await db.rateLimitBucket.deleteMany({});
+}
+
 export async function staffLogin(page: Page, phone: string, password: string, locale = "ar") {
+  await resetRateLimits();
   const e164 = `+970${phone.replace(/^0/, "")}`;
   await page.goto(`/${locale}/admin/login`);
   await page.locator("#phone").fill(phone);

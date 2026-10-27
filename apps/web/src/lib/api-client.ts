@@ -88,5 +88,5 @@ export function useApi() {
     [run, locale],
   );
 
-  return { pending, error, setError, run, call };
+  return { pending, error, setError, run, call, translate };
 }

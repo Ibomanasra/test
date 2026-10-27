@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.3.0] – 2026-10-27 – Phase 3: Katalog, Shop, Warenkorb, Checkout, Bestellungen
+
+### Hinzugefügt
+- **Produktverwaltung**: Produkte mit Varianten, SKU/EAN, Einheiten (Stück/Packung/Karton/Palette mit Faktor und eigenem Barcode), Bildern (MinIO), Texten AR/EN, Sichtbarkeit und Mengenregeln pro Kanal; Kategorien; CSV-/Excel-Import mit Vorschau und Export.
+- **Katalog & Suche** (AR/EN, SKU, Barcode), Kategorie- und Aktionsfilter, Verfügbarkeitsanzeige; Kanal-DTOs an genau einer Stelle (`server/services/catalog.ts`) – Einkaufs- und B2B-Basispreis werden nie selektiert, Staffeln nur für freigegebene Händler.
+- **Warenkorb** ohne gespeicherte Preise (Preise immer serverseitig für den Kanal des Betrachters), Gast-Warenkorb per Cookie, Übernahme beim Login; Angebot in den Warenkorb übernehmen (B2B).
+- **Checkout**: Lieferadresse/-gebiet mit Gebühr und Gratis-Grenze, Mindestbestellwert, Liefertage nach Gebiet (Freitag frei, Annahmeschluss 14 Uhr), Zahlungsarten je Kanal, Kreditlimit-Prüfung in der Transaktion (Kundenzeile gesperrt), Lagerreservierung mit `SELECT … FOR UPDATE` – keine Überverkäufe.
+- **Bestellungen**: Statusfluss Neu → Bestätigt → Kommissionierung → Bereit → Unterwegs (Lieferschein-Nummer, Warenausgang, Teillieferung mit Rückstand oder Storno) → Zugestellt; fehlgeschlagene Zustellung bucht zurück; Stornierung gibt Reservierungen frei; Bearbeitung nur im Status „Neu“ (manueller Preis mit eigenem Recht und Margenschutz); Statusverlauf; SMS-/WhatsApp-Benachrichtigung über den Log-Adapter.
+- **B2B-Extras**: Schnellbestellung (SKU + Menge, auch CSV), „Bestellung wiederholen“, Bestelllisten, Kontoauszug, Dokumente, Angebote im Kundenkonto.
+- **Dashboard**: Umsatz und Marge B2B vs. B2C, Artikel unter Mindestbestand, offene Forderungen, Bargeld bei Fahrern.
+- **Demo-Bestellungen** in allen Status (`pnpm db:demo-orders`), erzeugt über die echten Services.
+- **E2E**: „B2B-Preis nie im HTML/JSON für Gast und B2C“ (inkl. Gegenprobe Händler), B2C-Bestellung mit Nachnahme, B2B-Schnellbestellung auf Rechnung.
+
+### Geändert
+- Fehler `OrderStatusError` → HTTP 409 statt 500; Positionswerte werden nach Teillieferung auf die tatsächliche Menge neu berechnet.
+
 ## [0.2.0] – 2026-10-26 – Phase 2: Preis-Engine & Preisverwaltung
 
 ### Hinzugefügt

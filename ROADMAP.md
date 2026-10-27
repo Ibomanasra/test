@@ -1,18 +1,9 @@
 # Roadmap
 
-Stand: Phase 2 abgeschlossen. Alles, was noch nicht umgesetzt ist, steht hier als `TODO:`. Im Code markieren `TODO(Phase N)`-Kommentare und die Admin-Menüpunkte mit „P2/P3/P5“ dieselben Stellen.
+Stand: Phase 3 abgeschlossen. Alles, was noch nicht umgesetzt ist, steht hier als `TODO:`. Im Code markieren `TODO(Phase N)`-Kommentare und die Admin-Menüpunkte mit „P2/P3/P5“ dieselben Stellen.
 
 ## Phase 2 – erledigt (siehe CHANGELOG 0.2.0)
-
-## Phase 3 – Katalog & Shop
-- TODO: Produktverwaltung (Varianten, EAN, Einheiten, Bilder, AR/EN, Sichtbarkeit pro Kanal), Import/Export
-- TODO: Katalog, Suche (AR/EN, SKU, Barcode – Trigramm-Indizes sind angelegt), Filter, Verfügbarkeit
-- TODO: Kanalbezogene DTOs + E2E-Test „B2B-Preis nie im HTML/JSON für Gast/B2C“
-- TODO: Warenkorb, Checkout (Liefergebiet/Gebühr, Mindestbestellwert, Zahlungsart, Kreditlimit, Liefertag), Bestellungen, Lagerreservierung in Transaktion
-- TODO: B2B-Extras: Schnellbestellung (SKU/CSV), „Letzte Bestellung wiederholen“, Bestelllisten
-- TODO: Dashboard: Umsatz/Marge B2B vs. B2C, Mindestbestand
-- TODO: Seed: Beispielbestellungen in allen Status (30 Produkte sind seit Phase 2 vorhanden)
-- TODO: Kundenkonto: Bestellübersicht mit Statusverlauf, SMS/WhatsApp-Bestätigung (Log-Adapter)
+## Phase 3 – erledigt (siehe CHANGELOG 0.3.0)
 
 ## Phase 4 – A4-Dokumente (`packages/pdf`)
 - TODO: Vorlage-Engine (HTML/CSS → Playwright/Chromium-PDF), Kopf/Fuß, „Seite X von Y“, Tabellenkopf-Wiederholung, Übertrag, QR-Code

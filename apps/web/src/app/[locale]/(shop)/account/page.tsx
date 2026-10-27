@@ -2,7 +2,9 @@ import { formatPhone } from "@sa/core";
 import { prisma } from "@sa/db";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { LogoutButton } from "@/components/LogoutButton";
-import { Alert, Badge, Card, Money, Num, PageHeader } from "@/components/ui";
+import { Badge, Card, Money, Num, PageHeader } from "@/components/ui";
+import { Link } from "@/i18n/navigation";
+import { money } from "@/server/format";
 import { requireCustomerPage } from "@/server/auth/page-guards";
 
 export const dynamic = "force-dynamic";
@@ -30,6 +32,7 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
     },
   });
 
+  const recent = await prisma.order.findMany({ where: { customerId: auth.customer!.id }, orderBy: { placedAt: "desc" }, take: 5, select: { id: true, number: true, status: true, totalGross: true } });
   return (
     <div className="space-y-6">
       <PageHeader title={t("title")} subtitle={auth.user.name} actions={<LogoutButton className="rounded-lg px-3 py-2 text-sm ring-1 ring-ink-300 hover:bg-ink-100" />} />
@@ -78,8 +81,18 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
           </ul>
         </Card>
       </div>
-      {/* TODO(Phase 3–5): Bestellungen, Kontoauszug, offene Posten, Dokumente */}
-      <Alert tone="blue">{t("ordersComing")}</Alert>
+      <Card title={t("recentOrders")}>
+        {recent.length === 0 ? <p className="text-sm text-ink-500">{t("noOrders")}</p> : null}
+        <ul className="divide-y divide-ink-100 text-sm">
+          {recent.map((o) => (
+            <li key={o.id} className="flex justify-between py-2">
+              <Link href={`/account/orders/${o.id}`} className="num text-brand-700 hover:underline">{o.number}</Link>
+              <span>{tAll(`orderStatus.${o.status}`)}</span>
+              <span className="num">{money(o.totalGross)}</span>
+            </li>
+          ))}
+        </ul>
+      </Card>
     </div>
   );
 }

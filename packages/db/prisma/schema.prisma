@@ -16,13 +16,13 @@
 // =============================================================================
 
 generator client {
-  provider      = "prisma-client-js"
+  provider        = "prisma-client-js"
   binaryTargets   = ["native", "linux-musl-openssl-3.0.x", "debian-openssl-3.0.x"]
   previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
+  provider   = "postgresql"
   url        = env("DATABASE_URL")
   extensions = [pg_trgm]
 }
@@ -1262,6 +1262,10 @@ model GoodsReceiptItem {
 
 model Cart {
   id         String     @id @default(cuid())
+  /**
+   * angenommenes Angebot, dessen Preise für diesen Warenkorb gelten
+   */
+  quoteId    String?
   customerId String?
   customer   Customer?  @relation(fields: [customerId], references: [id], onDelete: Cascade)
   guestToken String?    @unique

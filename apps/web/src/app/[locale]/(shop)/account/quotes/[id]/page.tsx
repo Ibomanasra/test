@@ -1,6 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { AccountQuoteActions } from "@/components/shop/AccountQuoteActions";
+import { CartActionButton } from "@/components/shop/ReorderButton";
 import { Alert, Badge, Card, Num, PageHeader, Table, Td, Th } from "@/components/ui";
 import { requireCustomerPage } from "@/server/auth/page-guards";
 import { day, money } from "@/server/format";
@@ -14,13 +15,18 @@ export default async function AccountQuotePage({ params }: { params: Promise<{ l
   const auth = await requireCustomerPage(locale, `/account/quotes/${id}`);
   if (auth.channel !== "B2B") notFound();
   const q = await getQuote(id, auth.customer!.id).catch(() => notFound());
-  const [t, ts, tc] = await Promise.all([getTranslations("account.quotes"), getTranslations("admin.quotes"), getTranslations("common")]);
+  const [t, ts, tc, tAll] = await Promise.all([getTranslations("account.quotes"), getTranslations("admin.quotes"), getTranslations("common"), getTranslations()]);
   const nm = (o: { nameAr: string | null; nameEn: string | null }) => (locale === "ar" ? o.nameAr : o.nameEn);
   return (
     <div className="space-y-6">
       <PageHeader title={<Num>{q.number}</Num>} subtitle={`${ts("validUntil")}: ${day(q.validUntil)}`} actions={<Badge tone="brand">{ts(`status.${q.status}`)}</Badge>} />
       {q.status === "SENT" ? <AccountQuoteActions id={q.id} /> : null}
-      {q.status === "ACCEPTED" ? <Alert tone="green">{t("acceptedNote")}</Alert> : null}
+      {q.status === "ACCEPTED" ? (
+        <Alert tone="green">
+          {t("acceptedNote")}{" "}
+          <CartActionButton endpoint="/api/v1/cart/quote" body={{ quoteId: q.id }} label={t("toCart")} variant="primary" testId="quote-to-cart" />
+        </Alert>
+      ) : null}
       <Table>
         <thead>
           <tr>
@@ -36,7 +42,7 @@ export default async function AccountQuotePage({ params }: { params: Promise<{ l
             <tr key={i.id}>
               <Td className="num">{i.variant.sku}</Td>
               <Td>{[nm(i.variant.product), nm(i.variant)].filter(Boolean).join(" – ")}</Td>
-              <Td className="num">{i.qty} × {i.unitCode}</Td>
+              <Td className="num">{i.qty} × {tAll(`units.${i.unitCode}`)}</Td>
               <Td className="num">{money(i.unitPriceNet)}</Td>
               <Td className="num">{money(i.unitPriceNet * i.qty * i.unitFactor)}</Td>
             </tr>

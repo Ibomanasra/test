@@ -4,6 +4,7 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Alert } from "@/components/ui";
 import { Link } from "@/i18n/navigation";
 import { getAuth } from "@/server/auth/context";
+import { cartCount, cartOwner } from "@/server/services/cart";
 
 export default async function ShopLayout({ children, params }: { children: React.ReactNode; params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -11,6 +12,7 @@ export default async function ShopLayout({ children, params }: { children: React
   const [t, auth] = await Promise.all([getTranslations("common"), getAuth()]);
   const ts = await getTranslations("shop");
   const customer = auth?.customer;
+  const cartItems = auth?.isStaff ? 0 : await cartCount(cartOwner(auth));
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -21,11 +23,22 @@ export default async function ShopLayout({ children, params }: { children: React
             {t("appName")}
           </Link>
           <nav className="order-3 flex w-full gap-4 overflow-x-auto text-sm font-medium text-ink-700 sm:order-none sm:ms-6 sm:w-auto">
-            <Link href="/" className="whitespace-nowrap hover:text-brand-700">{ts("nav.catalog")}</Link>
-            <Link href="/" className="whitespace-nowrap hover:text-brand-700">{ts("nav.offers")}</Link>
-            <Link href="/register?type=b2b" className="whitespace-nowrap hover:text-brand-700">{ts("nav.forBusiness")}</Link>
+            <Link href="/products" className="whitespace-nowrap hover:text-brand-700">{ts("nav.catalog")}</Link>
+            <Link href="/products?promo=1" className="whitespace-nowrap hover:text-brand-700">{ts("nav.offers")}</Link>
+            {auth?.channel === "B2B" ? (
+              <Link href="/account/quick-order" className="whitespace-nowrap hover:text-brand-700">{ts("nav.quickOrder")}</Link>
+            ) : (
+              <Link href="/register?type=b2b" className="whitespace-nowrap hover:text-brand-700">{ts("nav.forBusiness")}</Link>
+            )}
           </nav>
+          <form action={`/${locale}/products`} className="order-4 w-full sm:order-none sm:ms-4 sm:w-56">
+            <input name="q" placeholder={ts("searchPlaceholder")} aria-label={ts("searchPlaceholder")} className="w-full rounded-lg border border-ink-300 px-3 py-1.5 text-sm" />
+          </form>
           <div className="ms-auto flex items-center gap-2">
+            <Link href="/cart" className="relative rounded-lg px-3 py-1.5 text-sm ring-1 ring-ink-300 hover:bg-ink-100" data-testid="cart-link">
+              {ts("nav.cart")}
+              {cartItems > 0 ? <span className="num ms-1 rounded-full bg-brand-700 px-1.5 text-xs text-white" data-testid="cart-count">{cartItems}</span> : null}
+            </Link>
             <Suspense>
               <LanguageSwitcher />
             </Suspense>

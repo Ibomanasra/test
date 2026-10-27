@@ -56,8 +56,8 @@ export async function htmlToPdf(html: string, opts: PdfOptions = {}): Promise<Bu
       footerTemplate: opts.footerTemplate ?? "<span></span>",
       margin:
         opts.marginMm != null
-          ? { top: `${opts.marginMm}mm`, right: `${opts.marginMm}mm`, bottom: `${opts.marginMm}mm`, left: `${opts.marginMm}mm` }
-          : { top: PAGE_MARGIN.top, right: PAGE_MARGIN.side, bottom: PAGE_MARGIN.bottom, left: PAGE_MARGIN.side },
+          ? { top: `${opts.marginMm}mm`, right: `${opts.marginMm}mm`, bottom: `${opts.marginMm}mm`, left: `${opts.marginMm}mm` } // logical-css-ignore (Playwright-API)
+          : { top: PAGE_MARGIN.top, right: PAGE_MARGIN.side, bottom: PAGE_MARGIN.bottom, left: PAGE_MARGIN.side }, // logical-css-ignore
     });
     return Buffer.from(pdf);
   } finally {

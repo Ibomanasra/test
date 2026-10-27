@@ -3,6 +3,7 @@ import { formatPhone } from "@sa/core";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { Forbidden } from "@/components/admin/Forbidden";
 import { Pagination } from "@/components/admin/Pagination";
+import { PrintTableButton } from "@/components/print/PrintTableButton";
 import { Badge, Button, EmptyState, Input, Num, PageHeader, Select, Table, Td, Th } from "@/components/ui";
 import { Link } from "@/i18n/navigation";
 import { staffPagePermission } from "@/server/auth/page-guards";
@@ -32,7 +33,33 @@ export default async function CustomersPage({
 
   return (
     <div className="space-y-4">
-      <PageHeader title={t("title")} subtitle={<Num>{total}</Num>} />
+      <PageHeader
+        title={t("title")}
+        subtitle={<Num>{total}</Num>}
+        actions={
+          <PrintTableButton
+            data={{
+              title: t("title"),
+              columns: [
+                { key: "number", label: tc("number") },
+                { key: "name", label: tc("name") },
+                { key: "type", label: tc("type") },
+                { key: "status", label: tc("status") },
+                { key: "group", label: t("group") },
+                { key: "phone", label: tc("phone"), kind: "num" },
+              ],
+              rows: items.map((c) => ({
+                number: c.number,
+                name: c.displayName,
+                type: tAll(`channel.${c.type}`),
+                status: tAll(`customerStatus.${c.status}`),
+                group: c.group ? (locale === "ar" ? c.group.nameAr : c.group.nameEn) : "",
+                phone: c.phone ? formatPhone(c.phone) : "",
+              })),
+            }}
+          />
+        }
+      />
       <form className="flex flex-wrap gap-2" method="get">
         <Input name="q" defaultValue={filter.q} placeholder={t("searchPlaceholder")} className="max-w-xs" />
         <Select name="type" defaultValue={filter.type ?? ""} className="w-auto">

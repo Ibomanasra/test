@@ -2,6 +2,7 @@ import { hasPermission } from "@sa/core";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Forbidden } from "@/components/admin/Forbidden";
 import { Pagination } from "@/components/admin/Pagination";
+import { PrintTableButton } from "@/components/print/PrintTableButton";
 import { Badge, Button, EmptyState, Input, Num, PageHeader, Select, Table, Td, Th } from "@/components/ui";
 import { Link } from "@/i18n/navigation";
 import { staffPagePermission } from "@/server/auth/page-guards";
@@ -28,7 +29,27 @@ export default async function ProductsAdminPage({ params, searchParams }: { para
             {canEdit ? <Link href="/admin/products/new" className="rounded-lg bg-brand-700 px-4 py-2.5 font-medium text-white">{t("new")}</Link> : null}
             {canEdit ? <Link href="/admin/products/categories" className="rounded-lg px-4 py-2.5 ring-1 ring-ink-300">{t("categories")}</Link> : null}
             {canImport ? <Link href="/admin/products/import" className="rounded-lg px-4 py-2.5 ring-1 ring-ink-300">{t("importExport")}</Link> : null}
-            {hasPermission(auth.permissions, "product.print_labels") ? <a href="/api/v1/print/labels" target="_blank" rel="noopener" className="rounded-lg px-4 py-2.5 ring-1 ring-ink-300">{t("labels")}</a> : null}
+            {hasPermission(auth.permissions, "product.print_labels") ? <a href={`/api/v1/print/labels?price=1${data.items.length ? `&skus=${data.items.flatMap((p) => p.variants.map((v) => v.sku)).join(",")}` : ""}`} target="_blank" rel="noopener" className="rounded-lg px-4 py-2.5 ring-1 ring-ink-300">{t("labels")}</a> : null}
+            <PrintTableButton
+              size="md"
+              data={{
+                title: t("title"),
+                columns: [
+                  { key: "sku", label: "SKU" },
+                  { key: "name", label: t("product") },
+                  { key: "category", label: t("category") },
+                  { key: "stock", label: t("stock"), kind: "num" },
+                ],
+                rows: data.items.flatMap((p) =>
+                  p.variants.map((v) => ({
+                    sku: v.sku,
+                    name: locale === "ar" ? p.nameAr : p.nameEn,
+                    category: p.category ? (locale === "ar" ? p.category.nameAr : p.category.nameEn) : "",
+                    stock: v.stockLevels.reduce((b, s) => b + s.onHand - s.reserved, 0),
+                  })),
+                ),
+              }}
+            />
           </>
         }
       />

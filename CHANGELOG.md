@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.4.0] – 2026-10-27 – Phase 4: A4-Dokumente
+
+### Hinzugefügt
+- **`packages/pdf`**: Vorlage-Engine (HTML/CSS → Chromium-PDF) mit eingebetteter arabischer Schrift, Kopf (Logo, Firma AR/EN, Händlernummer), Fuß (Bankdaten, „Seite X von Y“), wiederholtem Tabellenkopf, ungeteilten Zeilen, Summen auf der letzten Seite, QR-Code, Code-128-Barcodes, Sprachen AR / EN / zweisprachig, Etikettenbogen 3 × 8, PDF-Zusammenführung. Test „Arabisch korrekt verbunden“ (PDF erzeugen, Text extrahieren, Schrift prüfen).
+- **Alle 15 Dokumente**: Angebot, Auftragsbestätigung, Kommissionierliste, Lieferschein (mit/ohne Preise, Unterschriften Kunde/Fahrer), Steuerrechnung, Quittung, Gutschrift, Tourenliste, Kassenabschluss, Kontoauszug, Mahnung (Stufe 1–3), Einkaufsbestellung, Preisliste (pro Kunde mit persönlichen Preisen oder pro Gruppe), Inventur-Zählliste, Bestandsliste; Berichte/Listen über den generischen Listendruck.
+- **Rechnungen je Lieferschein** beim Übergang „Unterwegs“ in derselben Transaktion (lückenlose INV-Nummern), Buchung im Kundenjournal, Snapshot von Verkäufer- und Kundendaten; fehlgeschlagene Zustellung storniert automatisch per Gutschrift.
+- **Gutschriften** (voll oder je Position/Menge) mit lückenlosen CN-Nummern; **Archiv**: Rechnung und Gutschrift werden beim Erstellen als PDF eingefroren (SHA-256), Nachhol-Job.
+- **Druck**: „Drucken / PDF (A4)“ an allen Belegen und Listen (Vorschau im Browser, EN, zweisprachig, Download), Sammeldruck mehrerer Bestellungen, „Lieferschein + Rechnung“, Barcode-Etiketten, Auto-Druck bei Statuswechsel mit Druckauftrags-Liste.
+- Admin-Menü **Dokumente**: Rechnungen, Gutschriften (mit Erstellung), Druckaufträge.
+- **Einstellungen → Dokumente**: Logo-Upload, Bankkonten, Dokumenttexte AR/EN je Belegart, Nummernkreise (Präfix/Stellen, für Rechnungen nach erster Nummer gesperrt), Auto-Druck-Regeln, Hinweise der Steuerrechnung.
+- Kundenkonto: Belege als PDF, Kontoauszug mit Zeitraum, persönliche Preisliste.
+- Docker-Image enthält Chromium und die PDF-Schriften.
+- E2E: Rechnung beim Versand (lückenlos, eingefroren, unveränderlich, Journal), Zugriff Kunde/Fremdkunde/Gast, Sammel-PDF, Teil-Gutschrift über die Oberfläche, Nummernkreis-Sperre, Listendruck.
+
 ## [0.3.0] – 2026-10-27 – Phase 3: Katalog, Shop, Warenkorb, Checkout, Bestellungen
 
 ### Hinzugefügt

@@ -32,6 +32,10 @@
     "DATABASE_URL",
     "TEST_DATABASE_URL",
     "NODE_ENV",
-    "CI"
+    "CI",
+    "PLAYWRIGHT_BROWSERS_PATH",
+    "PDF_CHROMIUM_PATH",
+    "PDF_FONTS_DIR",
+    "HOME"
   ]
 }

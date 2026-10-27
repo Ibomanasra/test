@@ -243,7 +243,15 @@ const DEMO_CUSTOMERS: DemoCustomer[] = [
   },
 ];
 
+async function seedDemoBank() {
+  if (await prisma.bankAccount.count()) return;
+  await prisma.bankAccount.create({
+    data: { bankNameAr: "البنك العربي (مثال)", bankNameEn: "Arab Bank (example)", branch: "الخليل", accountName: "شعلة الجنوب", accountNo: "0000-000000-000", iban: "PS00ARAB000000000000000000000", showOnDocs: true },
+  });
+}
+
 async function seedDemo() {
+  await seedDemoBank();
   const password = env("SEED_DEMO_PASSWORD", "Demo-2026-pass");
   for (const [phone, name, role] of DEMO_STAFF) await upsertStaff(phone, name, password, role);
   log(`demo staff: ${DEMO_STAFF.length} (password from SEED_DEMO_PASSWORD)`);

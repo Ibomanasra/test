@@ -1,6 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 /**
  * IBM Plex Sans Arabic (OFL) wird als data:-URL in jedes Dokument eingebettet →
@@ -19,12 +18,9 @@ function fontsDir(): string {
     process.env.PDF_FONTS_DIR,
     path.join(process.cwd(), "packages/pdf/fonts"),
     path.join(process.cwd(), "../../packages/pdf/fonts"),
+    // Tests/Skripte im Paketordner
+    path.join(process.cwd(), "fonts"),
   ];
-  try {
-    candidates.push(fileURLToPath(new URL("../fonts", import.meta.url)));
-  } catch {
-    // gebündelt ohne file:-URL
-  }
   const dir = candidates.find((d) => d && existsSync(path.join(d, "ibm-plex-sans-arabic-arabic-400-normal.woff2")));
   if (!dir) throw new Error("PDF fonts not found – set PDF_FONTS_DIR");
   return dir;

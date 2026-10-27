@@ -38,6 +38,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
+      # Chromium für die PDF-Tests (packages/pdf)
+      - run: npx playwright install --with-deps chromium
       - run: pnpm test
       - run: pnpm --filter @sa/web build
         env:
@@ -81,13 +83,14 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm db:deploy && pnpm db:seed
       - run: pnpm --filter @sa/web build
+      # vor dem App-Start: die App rendert PDFs mit Chromium
+      - run: npx playwright install --with-deps chromium
       - name: Start app (standalone)
         run: |
           cp -r apps/web/.next/static apps/web/.next/standalone/apps/web/.next/static
           mkdir -p apps/web/.next/standalone/apps/web/public
           PORT=3000 HOSTNAME=127.0.0.1 nohup node apps/web/.next/standalone/apps/web/server.js > web.log 2>&1 &
           npx wait-on -t 60000 http://127.0.0.1:3000/api/health
-      - run: npx playwright install --with-deps chromium
       - run: pnpm e2e
       - if: failure()
         uses: actions/upload-artifact@v4

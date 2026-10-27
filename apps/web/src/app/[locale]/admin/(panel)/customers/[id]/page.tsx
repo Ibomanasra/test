@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { CustomerActions } from "@/components/admin/CustomerActions";
 import { Forbidden } from "@/components/admin/Forbidden";
 import { CUSTOMER_STATUS_TONE } from "@/components/admin/status";
+import { PrintButton } from "@/components/print/PrintButton";
 import { Alert, Badge, Card, Money, DateText, Num, PageHeader } from "@/components/ui";
 import { Link } from "@/i18n/navigation";
 import { staffPagePermission } from "@/server/auth/page-guards";
@@ -35,7 +36,13 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
       <PageHeader
         title={c.displayName}
         subtitle={<Num>{c.number}</Num>}
-        actions={<Badge tone={CUSTOMER_STATUS_TONE[c.status]}>{tAll(`customerStatus.${c.status}`)}</Badge>}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge tone={CUSTOMER_STATUS_TONE[c.status]}>{tAll(`customerStatus.${c.status}`)}</Badge>
+            <PrintButton href={`/api/v1/documents/statement/${c.id}`} label={tAll("admin.documents.statement")} testId="print-statement" />
+            {c.type === "B2B" ? <PrintButton href={`/api/v1/documents/price-list/customer:${c.id}`} label={tAll("admin.documents.priceList")} testId="print-price-list" /> : null}
+          </div>
+        }
       />
       <div className="grid gap-6 xl:grid-cols-3">
         <div className="space-y-6 xl:col-span-2">

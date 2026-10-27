@@ -1,17 +1,13 @@
 # Roadmap
 
-Stand: Phase 3 abgeschlossen. Alles, was noch nicht umgesetzt ist, steht hier als `TODO:`. Im Code markieren `TODO(Phase N)`-Kommentare und die Admin-Menüpunkte mit „P2/P3/P5“ dieselben Stellen.
+Stand: Phase 4 abgeschlossen. Alles, was noch nicht umgesetzt ist, steht hier als `TODO:`. Im Code markieren `TODO(Phase N)`-Kommentare und die Admin-Menüpunkte mit „P2/P3/P5“ dieselben Stellen.
 
 ## Phase 2 – erledigt (siehe CHANGELOG 0.2.0)
 ## Phase 3 – erledigt (siehe CHANGELOG 0.3.0)
 
-## Phase 4 – A4-Dokumente (`packages/pdf`)
-- TODO: Vorlage-Engine (HTML/CSS → Playwright/Chromium-PDF), Kopf/Fuß, „Seite X von Y“, Tabellenkopf-Wiederholung, Übertrag, QR-Code
-- TODO: Alle 15 Dokumente aus Abschnitt 6.1, Sprachen AR / EN / zweisprachig
-- TODO: Test „Arabisch korrekt verbunden“ (PDF erzeugen, Text extrahieren und prüfen)
-- TODO: Archiv (Rechnung/Gutschrift beim Erstellen einfrieren – DB-Schutz existiert bereits), Sammeldruck, „Lieferschein + Rechnung“, Auto-Druck (`AutoPrintRule` ist geseedet)
-- TODO: Einstellungen: Logo-Upload, Bankdaten, Dokumenttexte AR/EN, Nummernkreise (Präfix/Stellen)
-- TODO: **Pflichtangaben der palästinensischen Steuerrechnung mit Steuerberater prüfen** (`CompanySettings.taxInvoiceFields`)
+## Phase 4 – erledigt (siehe CHANGELOG 0.4.0)
+- TODO: **Pflichtangaben der palästinensischen Steuerrechnung mit Steuerberater prüfen** (konfigurierbar unter Einstellungen → Dokumente → Steuerrechnung, `CompanySettings.taxInvoiceFields`)
+- TODO (optional): „Übertrag“ (Zwischensumme je Seite) bei mehrseitigen Rechnungen
 
 ## Phase 5 – Verwaltung
 - TODO: Lager (Journal, Lagerplätze, Inventur mit Zählliste, Mindestbestand), Einkauf (Lieferanten, Bestellungen, Wareneingang → `costPrice`)

@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Forbidden } from "@/components/admin/Forbidden";
 import { QuoteActions } from "@/components/admin/QuoteActions";
+import { PrintButton } from "@/components/print/PrintButton";
 import { Alert, Badge, Card, Num, PageHeader, Table, Td, Th } from "@/components/ui";
 import { staffPagePermission } from "@/server/auth/page-guards";
 import { dateTimeText, day, money } from "@/server/format";
@@ -18,7 +19,7 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ lo
   const nm = (o: { nameAr: string | null; nameEn: string | null }) => (locale === "ar" ? o.nameAr : o.nameEn);
   return (
     <div className="space-y-6">
-      <PageHeader title={<Num>{q.number}</Num>} subtitle={q.customer.displayName} actions={<Badge tone="brand">{t(`status.${q.status}`)}</Badge>} />
+      <PageHeader title={<Num>{q.number}</Num>} subtitle={q.customer.displayName} actions={<div className="flex flex-wrap items-center gap-2"><Badge tone="brand">{t(`status.${q.status}`)}</Badge><PrintButton href={`/api/v1/documents/quote/${q.id}`} testId="print-quote" /></div>} />
       {hasPermission(auth.permissions, "quote.edit") ? <QuoteActions id={q.id} status={q.status} /> : null}
       {q.requestNote ? <Alert tone="amber"><strong>{t("requestNote")}:</strong> {q.requestNote}</Alert> : null}
       <Card>

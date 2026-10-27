@@ -74,7 +74,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
         <tbody className="divide-y divide-ink-100">
           {inv.lines.map((l) => (
             <tr key={l.id}>
-              <Td className="num">{l.sku}</Td>
+              <Td className="num">{l.sku === "DELIVERY" ? "–" : l.sku}</Td>
               <Td>{locale === "ar" ? l.nameAr : l.nameEn}</Td>
               <Td className="num">{l.qty} × {tAll(`units.${l.unitCode}`)}{l.unitFactor > 1 ? ` (${l.unitFactor})` : ""}</Td>
               <Td className="num">{money(l.unitPriceNet * l.unitFactor)}</Td>

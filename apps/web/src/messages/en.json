@@ -298,7 +298,9 @@
       "deliveryFee": "Delivery",
       "net": "Net total",
       "vat": "VAT",
-      "backorder": "The remaining quantity will be delivered with order: {numbers}"
+      "backorder": "The remaining quantity will be delivered with order: {numbers}",
+      "confirmationPdf": "Order confirmation",
+      "invoicePdf": "Invoice"
     },
     "quick": {
       "title": "Quick order",
@@ -336,7 +338,11 @@
         "DUNNING_FEE": "Reminder fee",
         "OPENING_BALANCE": "Opening balance",
         "ADJUSTMENT": "Adjustment"
-      }
+      },
+      "priceList": "My price list",
+      "from": "From",
+      "to": "To",
+      "show": "Show"
     },
     "documents": {
       "title": "Documents",
@@ -1008,7 +1014,9 @@
         "RENDERING": "Rendering",
         "DONE": "Ready",
         "FAILED": "Failed"
-      }
+      },
+      "statement": "Account statement",
+      "priceList": "Customer price list"
     }
   },
   "driver": {

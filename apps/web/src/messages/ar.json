@@ -298,7 +298,9 @@
       "deliveryFee": "التوصيل",
       "net": "المجموع الصافي",
       "vat": "ضريبة القيمة المضافة",
-      "backorder": "الكمية المتبقية ستُرسل في الطلب: {numbers}"
+      "backorder": "الكمية المتبقية ستُرسل في الطلب: {numbers}",
+      "confirmationPdf": "تأكيد الطلب",
+      "invoicePdf": "فاتورة"
     },
     "quick": {
       "title": "طلب سريع",
@@ -336,7 +338,11 @@
         "DUNNING_FEE": "رسوم تذكير",
         "OPENING_BALANCE": "رصيد افتتاحي",
         "ADJUSTMENT": "تسوية"
-      }
+      },
+      "priceList": "قائمة أسعاري",
+      "from": "من",
+      "to": "إلى",
+      "show": "عرض"
     },
     "documents": {
       "title": "المستندات",
@@ -1008,7 +1014,9 @@
         "RENDERING": "قيد الإنشاء",
         "DONE": "جاهز",
         "FAILED": "فشل"
-      }
+      },
+      "statement": "كشف حساب",
+      "priceList": "قائمة أسعار العميل"
     }
   },
   "driver": {

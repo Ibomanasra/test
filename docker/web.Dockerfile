@@ -33,6 +33,7 @@ COPY packages/core/package.json packages/core/
 COPY packages/contracts/package.json packages/contracts/
 COPY packages/config/package.json packages/config/
 COPY packages/db/package.json packages/db/
+COPY packages/pdf/package.json packages/pdf/
 COPY packages/db/prisma packages/db/prisma
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store --mount=type=secret,id=extra_ca,required=false \
   if [ -f /run/secrets/extra_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/extra_ca; fi; \
@@ -52,8 +53,19 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store --mount=type=secret,id=extra_c
   && ./node_modules/.bin/prisma version
 
 FROM base AS runtime
-ENV NODE_ENV=production HOSTNAME=0.0.0.0 PORT=3000 TZ=Asia/Hebron
+ENV NODE_ENV=production HOSTNAME=0.0.0.0 PORT=3000 TZ=Asia/Hebron \
+  PDF_CHROMIUM_PATH=/usr/bin/chromium PDF_FONTS_DIR=/app/fonts
+# Chromium für die A4-PDFs (Phase 4) – Schriften werden eingebettet, DejaVu nur als Ersatz für Sonderzeichen
+RUN --mount=type=secret,id=extra_ca,required=false \
+  if [ -f /run/secrets/extra_ca ]; then \
+    sed -i 's|http://deb.debian.org|https://deb.debian.org|g' /etc/apt/sources.list.d/debian.sources; \
+    echo 'Acquire::https::CAInfo "/run/secrets/extra_ca";' > /etc/apt/apt.conf.d/99extra-ca; \
+  fi \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends chromium fonts-dejavu-core \
+  && rm -rf /var/lib/apt/lists/* /etc/apt/apt.conf.d/99extra-ca
 WORKDIR /app
+COPY --chown=node:node packages/pdf/fonts ./fonts
 COPY --from=build --chown=node:node /repo/apps/web/.next/standalone ./
 COPY --from=build --chown=node:node /repo/apps/web/.next/static ./apps/web/.next/static
 COPY --from=build --chown=node:node /repo/apps/web/public ./apps/web/public

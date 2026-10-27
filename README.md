@@ -4,7 +4,7 @@ Web-Shop und Verwaltung für einen Großhändler für Haushaltswaren in Palästi
 Arabisch (Standard, RTL) und Englisch, Beträge in ₪ (intern Agorot), MwSt. 16 %.
 
 > **Stand: Phase 1 (Grundgerüst).** Login, Registrierung, Händler-Freigabe, Rollen/Rechte, Audit-Log, Einstellungen.
-> Preise, Katalog, Bestellungen, A4-Druck usw. folgen in den nächsten Phasen – siehe [ROADMAP.md](ROADMAP.md).
+> Stand: Phasen 1–4 umgesetzt (Grundgerüst, Preise, Shop/Bestellungen, A4-Dokumente). Offene Punkte: [ROADMAP.md](ROADMAP.md).
 
 ---
 
@@ -132,7 +132,16 @@ e2e/                      Playwright-Tests
 | Wer hat was geändert? | Audit-Log (Filter nach Aktion, Objekt, ID) |
 
 **Preise pflegen:** folgt in Phase 2, mit eigenem Menüpunkt „Preise“ (Preislisten, Gruppen, Staffeln, Sonderpreise, Aktionen, Historie, Vorschau, CSV-Import).
-**Drucken (A4/PDF):** folgt in Phase 4. Jedes Dokument und jede Liste bekommt dann „Drucken / PDF (A4)“.
+**Drucken (A4/PDF):**
+- Jeder Beleg hat den Knopf **„طباعة / PDF (A4)“**: öffnet die PDF-Vorschau im Browser (dort drucken oder speichern). Daneben: **EN** (Englisch), **ع+EN** (zweisprachig), **⬇** (Download).
+- Bestellung: Auftragsbestätigung, Kommissionierliste (nach Lagerplatz, mit Barcode, ohne Preise), Lieferschein mit/ohne Preise, Rechnung und **„Lieferschein + Rechnung“** in einem PDF.
+- **Sammeldruck**: in der Bestellliste Bestellungen anhaken → gewünschte Belegart wählen (ein PDF).
+- **Jede Liste** (Bestellungen, Kunden, Produkte, Rechnungen …): „طباعة / PDF (A4)“ oben rechts druckt die angezeigte Liste.
+- **Rechnungen** entstehen automatisch je Lieferschein beim Status „Unterwegs“ (fortlaufend, lückenlos) und werden sofort als PDF **eingefroren** (Menü *Dokumente*). Korrektur nur per **Gutschrift** (Rechnung öffnen → „إصدار إشعار دائن“).
+- **Auto-Druck**: *Einstellungen → Dokumente → Automatischer Druck* (z. B. „Bestätigt“ → Kommissionierliste). Die fertigen PDFs liegen unter *Dokumente → Druckaufträge*.
+- Logo, Bankdaten, Dokumenttexte AR/EN, Nummernkreise und Hinweise der Steuerrechnung: *Einstellungen → Dokumente*.
+- Barcode-Etiketten (A4, 3 × 8): *Produkte → Etiketten*.
+- Kunden finden ihre Belege unter *Mein Konto → Dokumente*, Händler zusätzlich Kontoauszug und **persönliche Preisliste**.
 
 ---
 

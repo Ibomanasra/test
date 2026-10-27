@@ -13,9 +13,10 @@ export async function requireStaffPage(locale: string): Promise<AuthContext> {
   return ctx;
 }
 
-export async function staffPagePermission(locale: string, permission: Permission): Promise<AuthContext | null> {
+/** Mitarbeiterseite: mindestens eines der Rechte nötig */
+export async function staffPagePermission(locale: string, ...permissions: Permission[]): Promise<AuthContext | null> {
   const ctx = await requireStaffPage(locale);
-  return hasPermission(ctx.permissions, permission) ? ctx : null;
+  return permissions.some((p) => hasPermission(ctx.permissions, p)) ? ctx : null;
 }
 
 export async function requireCustomerPage(locale: string, next?: string): Promise<AuthContext> {

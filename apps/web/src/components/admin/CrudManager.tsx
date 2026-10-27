@@ -54,7 +54,7 @@ interface Props {
   allowCreate?: boolean;
 }
 
-function toBody(fields: FieldDef[], values: Record<string, string | boolean>) {
+export function toBody(fields: FieldDef[], values: Record<string, string | boolean>) {
   const body: Record<string, unknown> = {};
   for (const f of fields) {
     if (f.showIf && !f.showIf.in.includes(String(values[f.showIf.field] ?? ""))) {

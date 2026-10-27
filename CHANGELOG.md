@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.5.0] – 2026-10-27 – Phase 5: Verwaltung
+
+### Hinzugefügt
+- **Lager**: Bestandsübersicht (verfügbar/reserviert, Mindestbestand, Lagerwert), Lagerjournal, Bestandskorrektur mit Grund, Lagerplätze mit Laufweg, Lagerplatz je Artikel, **Inventur** (eingefrorene Soll-Mengen, blinde Zählung, Abschluss bucht Differenzen) mit Zählliste.
+- **Einkauf**: Lieferanten, Einkaufsaufträge (Entwurf → bestellt → teilweise/vollständig geliefert), **Wareneingang** mit Lagerplatz und Einstandspreis-Aktualisierung (gleitender Durchschnitt oder letzter Preis, mit Preis-Historie), Einkaufsbestellung als PDF.
+- **Lieferung**: Tourenplanung (Datum, Fahrer, Gebiet, Lieferscheine, Reihenfolge), Nachnahme-Soll je Stopp, Tourenliste; **Fahreransicht** fürs Handy (Anruf, Karte, Lieferschein, Zustellung mit Empfänger, Unterschrift und Bargeld, Nicht-Zustellung mit Grund); **Kassenabschluss** pro Fahrer und Tag (Stückelung, Soll/Ist/Differenz, Freigabe).
+- **Finanzen**: Zahlungen mit automatischer oder gezielter Zuordnung (Quittung RC-…), Storno per Gegenbuchung; **offene Posten** mit Altersstruktur; **Mahnlauf** Stufe 1–3 mit optionaler Gebühr; **Retouren** mit Wiedereinlagerung und Gutschrift; **Export** für den Steuerberater (Rechnungen, Gutschriften, Zahlungen, Kundenjournal als Excel/CSV).
+- **Berichte**: Umsatz und Marge nach Kanal, Kategorie, Produkt, Kunde, Gebiet, Monat; Top/Flop 20; Lagerwert – als Tabelle, PDF (A4), Excel und CSV.
+- Admin-Kundendetail: Umsatz im Jahr, offene/überfällige Posten, letzte Bestellungen, alle Belege, Kontoauszug und Preisliste drucken.
+- Alle Admin-Module sind umgesetzt (keine Phasen-Platzhalter mehr).
+- E2E: Einkauf → Wareneingang, Fahrer-Zustellung mit Bargeld und Kassenabschluss (Handy-Ansicht), Zahlung/Zuordnung/Storno, Inventur über die Oberfläche, Berichte und Export.
+
+### Behoben
+- Tour- und Kassenabschluss-Datum wurden um einen Tag versetzt gespeichert (Zeitzone).
+
 ## [0.4.0] – 2026-10-27 – Phase 4: A4-Dokumente
 
 ### Hinzugefügt

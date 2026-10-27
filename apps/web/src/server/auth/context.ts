@@ -74,6 +74,15 @@ export async function requireStaff(...permissions: Permission[]): Promise<AuthCo
   return ctx;
 }
 
+/** Für API-Handler: mindestens eines der Rechte (z. B. Fahrer ODER Disponent) */
+export async function requireStaffAny(...permissions: Permission[]): Promise<AuthContext> {
+  const ctx = await getAuth();
+  if (!ctx) throw unauthorized();
+  if (!ctx.isStaff) throw forbidden();
+  if (!permissions.some((p) => hasPermission(ctx.permissions, p))) throw forbidden();
+  return ctx;
+}
+
 export async function requireCustomer(): Promise<AuthContext & { customer: CustomerRef }> {
   const ctx = await getAuth();
   if (!ctx) throw unauthorized();

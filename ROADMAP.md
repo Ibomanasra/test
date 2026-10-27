@@ -1,6 +1,6 @@
 # Roadmap
 
-Stand: Phase 4 abgeschlossen. Alles, was noch nicht umgesetzt ist, steht hier als `TODO:`. Im Code markieren `TODO(Phase N)`-Kommentare und die Admin-Menüpunkte mit „P2/P3/P5“ dieselben Stellen.
+Stand: Phase 5 abgeschlossen. Alles, was noch nicht umgesetzt ist, steht hier als `TODO:`. Im Code markieren `TODO(Phase N)`-Kommentare und die Admin-Menüpunkte mit „P2/P3/P5“ dieselben Stellen.
 
 ## Phase 2 – erledigt (siehe CHANGELOG 0.2.0)
 ## Phase 3 – erledigt (siehe CHANGELOG 0.3.0)
@@ -9,12 +9,9 @@ Stand: Phase 4 abgeschlossen. Alles, was noch nicht umgesetzt ist, steht hier al
 - TODO: **Pflichtangaben der palästinensischen Steuerrechnung mit Steuerberater prüfen** (konfigurierbar unter Einstellungen → Dokumente → Steuerrechnung, `CompanySettings.taxInvoiceFields`)
 - TODO (optional): „Übertrag“ (Zwischensumme je Seite) bei mehrseitigen Rechnungen
 
-## Phase 5 – Verwaltung
-- TODO: Lager (Journal, Lagerplätze, Inventur mit Zählliste, Mindestbestand), Einkauf (Lieferanten, Bestellungen, Wareneingang → `costPrice`)
-- TODO: Touren, Fahreransicht (Unterschrift/Foto, Bargeld), Kassenabschluss pro Fahrer und Tag
-- TODO: Finanzen (Zahlungen/Zuordnung, Altersstruktur offener Posten, Mahnstufen, Gutschriften/Retouren, CSV/Excel-Export)
-- TODO: Berichte (Kanal, Kategorie, Produkt, Kunde, Gebiet, Zeitraum; Top/Flop; Lagerwert) als PDF und Excel
-- TODO: Admin-Kundendetail: Umsatz, Kontoauszug, offene Posten, Dokumente
+## Phase 5 – erledigt (siehe CHANGELOG 0.5.0)
+- TODO (optional): Lager-Umbuchungen zwischen mehreren Lagern (Modell vorbereitet: TRANSFER_IN/OUT)
+- TODO (optional): Mahnungen per SMS/E-Mail versenden (Adapter vorhanden)
 
 ## Phase 6 – Mobile & Zahlungen
 - TODO: Expo-App (Kunde + Fahrer) mit derselben `/api/v1` (Bearer-Token ist bereits implementiert)

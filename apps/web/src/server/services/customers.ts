@@ -1,5 +1,6 @@
 import "server-only";
 import type { ApproveCustomer, RegisterB2B, RegisterB2C } from "@sa/contracts";
+import { businessDate, invoiceOpenAmount, startOfBusinessDay } from "@sa/core";
 import { nextCustomerNumber, prisma, type CustomerStatus, type CustomerType, type Locale, type Prisma } from "@sa/db";
 import { smsAdapter } from "../adapters/sms";
 import { sniffMimeType, storeFile } from "../adapters/storage";
@@ -260,4 +261,24 @@ export async function addCustomerNote(ctx: AuthContext, id: string, body: string
     await audit(ctx, { action: "customer.note", entityType: "Customer", entityId: id, after: note }, tx);
     return note;
   });
+}
+
+/** Kennzahlen für die Kundendetailseite: Umsatz (Jahr), offene Posten, letzte Bestellungen */
+export async function customerFinance(customerId: string) {
+  const yearStart = startOfBusinessDay(`${businessDate(new Date()).slice(0, 4)}-01-01`);
+  const [inv, cn, open, orders] = await Promise.all([
+    prisma.invoice.aggregate({ where: { customerId, issueDate: { gte: yearStart } }, _sum: { subtotalNet: true } }),
+    prisma.creditNote.aggregate({ where: { customerId, issueDate: { gte: yearStart } }, _sum: { subtotalNet: true } }),
+    prisma.invoice.findMany({ where: { customerId, status: { in: ["ISSUED", "PARTIALLY_PAID"] } }, orderBy: { dueDate: "asc" }, select: { id: true, number: true, dueDate: true, totalGross: true, paidAmount: true, creditedAmount: true } }),
+    prisma.order.findMany({ where: { customerId }, orderBy: { placedAt: "desc" }, take: 8, select: { id: true, number: true, status: true, placedAt: true, totalGross: true } }),
+  ]);
+  const now = new Date();
+  const items = open.map((i) => ({ ...i, open: invoiceOpenAmount(i), overdue: i.dueDate < now }));
+  return {
+    revenueYtd: (inv._sum.subtotalNet ?? 0) - (cn._sum.subtotalNet ?? 0),
+    openTotal: items.reduce((a, i) => a + i.open, 0),
+    overdueTotal: items.filter((i) => i.overdue).reduce((a, i) => a + i.open, 0),
+    openItems: items,
+    orders,
+  };
 }

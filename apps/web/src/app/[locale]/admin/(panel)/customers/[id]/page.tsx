@@ -9,7 +9,9 @@ import { Alert, Badge, Card, Money, DateText, Num, PageHeader } from "@/componen
 import { Link } from "@/i18n/navigation";
 import { staffPagePermission } from "@/server/auth/page-guards";
 import { AppError } from "@/server/errors";
-import { getCustomerDetail } from "@/server/services/customers";
+import { customerDocuments } from "@/server/services/customer-documents";
+import { customerFinance, getCustomerDetail } from "@/server/services/customers";
+import { day, money } from "@/server/format";
 import { getCompanySettings, listCustomerGroups } from "@/server/services/settings";
 
 export default async function CustomerDetailPage({ params }: { params: Promise<{ locale: string; id: string }> }) {
@@ -154,6 +156,43 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
               note: hasPermission(auth.permissions, "customer.edit"),
             }}
           />
+          {hasPermission(auth.permissions, "finance.view") ? await (async () => {
+            const [fin, docs, tf] = await Promise.all([customerFinance(c.id), customerDocuments(c.id), getTranslations("admin.customerFinance")]);
+            return (
+              <div className="mt-6 space-y-4" data-testid="customer-finance">
+                <Card title={tf("title")}>
+                  <dl className="grid gap-2 text-sm sm:grid-cols-3">
+                    <div><dt className="text-ink-500">{tf("revenueYtd")}</dt><dd className="num font-semibold">{money(fin.revenueYtd)}</dd></div>
+                    <div><dt className="text-ink-500">{tf("open")}</dt><dd className="num font-semibold">{money(fin.openTotal)}</dd></div>
+                    <div><dt className="text-ink-500">{tf("overdue")}</dt><dd className={`num font-semibold ${fin.overdueTotal ? "text-red-700" : ""}`}>{money(fin.overdueTotal)}</dd></div>
+                  </dl>
+                  {fin.openItems.length ? (
+                    <ul className="mt-3 space-y-1 text-sm">
+                      {fin.openItems.map((i) => (
+                        <li key={i.id} className={i.overdue ? "text-red-700" : undefined}>
+                          <Link href={`/admin/documents/invoices/${i.id}`} className="num underline">{i.number}</Link> · {tf("due")} <Num>{day(i.dueDate)}</Num> · <span className="num">{money(i.open)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </Card>
+                <Card title={tf("orders")}>
+                  <ul className="space-y-1 text-sm">
+                    {fin.orders.map((o) => (
+                      <li key={o.id}><Link href={`/admin/orders/${o.id}`} className="num text-brand-700 underline">{o.number}</Link> · <Num>{day(o.placedAt)}</Num> · {tAll(`orderStatus.${o.status}`)} · <span className="num">{money(o.totalGross)}</span></li>
+                    ))}
+                  </ul>
+                </Card>
+                <Card title={tf("documents")}>
+                  <ul className="max-h-64 space-y-1 overflow-y-auto text-sm">
+                    {docs.slice(0, 50).map((d) => (
+                      <li key={`${d.kind}-${d.id}`}><a href={d.href} target="_blank" rel="noopener" className="num text-brand-700 underline">{d.number}</a> · {tf(`docKind.${d.kind}`)} · <Num>{day(d.date)}</Num></li>
+                    ))}
+                  </ul>
+                </Card>
+              </div>
+            );
+          })() : null}
           <p className="mt-6 text-sm"><Link href={`/admin/audit?entityType=Customer&entityId=${c.id}`} className="text-brand-700 underline">{(await getTranslations("admin.nav"))("audit")}</Link></p>
         </div>
       </div>

@@ -1,38 +1,12 @@
-import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
-import { OWNER, db, latestOtp, resetRateLimits, staffLogin } from "./helpers";
+import { expect, test } from "@playwright/test";
+import { ORIGIN, OWNER, customerLogin, db, placeCodOrder, staffLogin } from "./helpers";
 
 test.afterAll(async () => {
   await db.$disconnect();
 });
 
-const ORIGIN = { Origin: "http://localhost:3000" };
 const B2C = { local: "0599100001", e164: "+970599100001" };
 const OTHER = { local: "0569100002", e164: "+970569100002" };
-
-async function customerLogin(page: Page, who: { local: string; e164: string }) {
-  await resetRateLimits();
-  await page.goto("/ar/login");
-  await page.locator("#phone").fill(who.local);
-  const started = new Date(Date.now() - 1000);
-  await page.locator("button[type=submit]").click();
-  await page.locator("#code").fill(await latestOtp(who.e164, started));
-  await page.locator("button[type=submit]").click();
-  await page.waitForURL((url) => !url.pathname.endsWith("/login"));
-}
-
-/** Frische B2C-Bestellung über die echte API (wiederholbar) */
-async function placeOrder(req: APIRequestContext): Promise<string> {
-  const customer = await db.customer.findFirstOrThrow({ where: { phone: B2C.e164 } });
-  await db.cartItem.deleteMany({ where: { cart: { customerId: customer.id } } });
-  const v = await db.productVariant.findFirstOrThrow({ where: { sku: "KI-001" } });
-  await db.stockLevel.updateMany({ where: { variantId: v.id }, data: { onHand: { increment: 5 } } });
-  expect((await req.post("/api/v1/cart/items", { data: { variantId: v.id, unitCode: "PIECE", qty: 2 }, headers: ORIGIN })).ok()).toBe(true);
-  const opts = await (await req.get("/api/v1/checkout")).json();
-  const address = opts.addresses[0];
-  const res = await req.post("/api/v1/orders", { data: { addressId: address.id, paymentMethod: "CASH_ON_DELIVERY", requestedDeliveryDate: address.deliveryDates[0] }, headers: ORIGIN });
-  expect(res.ok(), await res.text()).toBe(true);
-  return (await res.json()).id;
-}
 
 async function waitArchived(invoiceId: string) {
   for (let i = 0; i < 60; i++) {
@@ -45,7 +19,7 @@ async function waitArchived(invoiceId: string) {
 
 test("dispatch issues a gapless invoice, freezes the PDF and restricts access", async ({ page, browser }) => {
   await customerLogin(page, B2C);
-  const orderId = await placeOrder(page.request);
+  const orderId = await placeCodOrder(page.request, B2C.e164);
 
   const staff = await browser.newPage();
   await staffLogin(staff, OWNER.phone, OWNER.password);

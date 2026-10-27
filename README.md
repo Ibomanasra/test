@@ -4,7 +4,7 @@ Web-Shop und Verwaltung für einen Großhändler für Haushaltswaren in Palästi
 Arabisch (Standard, RTL) und Englisch, Beträge in ₪ (intern Agorot), MwSt. 16 %.
 
 > **Stand: Phase 1 (Grundgerüst).** Login, Registrierung, Händler-Freigabe, Rollen/Rechte, Audit-Log, Einstellungen.
-> Stand: Phasen 1–4 umgesetzt (Grundgerüst, Preise, Shop/Bestellungen, A4-Dokumente). Offene Punkte: [ROADMAP.md](ROADMAP.md).
+> Stand: Phasen 1–5 umgesetzt (Grundgerüst, Preise, Shop/Bestellungen, A4-Dokumente, Verwaltung). Offene Punkte: [ROADMAP.md](ROADMAP.md).
 
 ---
 
@@ -130,8 +130,21 @@ e2e/                      Playwright-Tests
 | MwSt.-Satz ändern | Einstellungen → MwSt. → neuer Satz mit Startdatum (alter Satz endet automatisch; bestehende Rechnungen behalten ihren Satz) |
 | Liefergebiete und Gebühren | Einstellungen → Liefergebiete (Gebühr, Mindestbestellwert, Gratis-Grenze **je Kanal**) |
 | Wer hat was geändert? | Audit-Log (Filter nach Aktion, Objekt, ID) |
+| Bestellung bearbeiten | Bestellungen → Bestellung → Bestätigen → Kommissionierung → Bereit → **Versenden** (Teillieferung möglich; Rechnung entsteht automatisch) |
+| Ware einkaufen | Einkauf → Neuer Einkaufsauftrag → „An Lieferanten senden“ → **Wareneingang** (Bestand + Einstandspreis, wahlweise gleitender Durchschnitt) |
+| Bestand korrigieren | Lager → Bestandskorrektur (SKU, ± Menge, Grund) – alles im Lagerjournal |
+| Inventur | Lager → Inventur → Starten (optional nur Lagerplatz-Präfix) → Zählliste drucken → Mengen eintragen → **Abschließen** (Differenzen werden gebucht) |
+| Lagerplätze / Laufweg | Lager → Lagerplätze (Reihenfolge = Laufweg der Kommissionierliste) |
+| Tour planen | Lieferung → Neue Tour (Datum, Fahrer, Lieferscheine auswählen) → Tourenliste drucken |
+| Fahrer | meldet sich unter `/admin/login` an und landet in `/driver`: Stopps, Anruf/Karte, **Zugestellt** (Empfänger, Unterschrift, Bargeld) oder **Nicht zugestellt**, abends **Kassenabschluss** (Stückelung) |
+| Kassenabschluss prüfen | Lieferung → Kassenabschluss → Freigeben |
+| Zahlung erfassen | Finanzen → Zahlungen (wird automatisch der ältesten offenen Rechnung zugeordnet; Quittung RC-…) |
+| Offene Posten / Mahnungen | Finanzen → Offene Posten (Altersstruktur) → **Mahnlauf** (Stufe 1–3) → Mahnungen drucken |
+| Retoure | Finanzen → Retouren → Bestellnummer → Mengen → Retoure + Gutschrift (optional zurück ins Lager) |
+| Steuerberater-Export | Finanzen → Export (Rechnungen, Gutschriften, Zahlungen, Kundenjournal; Excel oder CSV) |
+| Berichte | Berichte → Art (Kanal, Kategorie, Produkt, Kunde, Gebiet, Monat, Top/Flop, Lagerwert) → PDF / Excel / CSV |
 
-**Preise pflegen:** folgt in Phase 2, mit eigenem Menüpunkt „Preise“ (Preislisten, Gruppen, Staffeln, Sonderpreise, Aktionen, Historie, Vorschau, CSV-Import).
+**Preise pflegen:** Menü *Preise* – Übersicht mit Marge, Gruppen, Preislisten, Staffeln, Sonderpreise, Kategorie-Rabatte, Aktionen, Rundung, geplante Preise, Massenänderung, CSV-/Excel-Import, Historie und **Preisvorschau** („welcher Preis gilt für Kunde X bei Menge Y – und warum“).
 **Drucken (A4/PDF):**
 - Jeder Beleg hat den Knopf **„طباعة / PDF (A4)“**: öffnet die PDF-Vorschau im Browser (dort drucken oder speichern). Daneben: **EN** (Englisch), **ع+EN** (zweisprachig), **⬇** (Download).
 - Bestellung: Auftragsbestätigung, Kommissionierliste (nach Lagerplatz, mit Barcode, ohne Preise), Lieferschein mit/ohne Preise, Rechnung und **„Lieferschein + Rechnung“** in einem PDF.

@@ -64,7 +64,9 @@ let cached: Env | undefined;
 
 export function env(): Env {
   if (cached) return cached;
-  const parsed = schema.safeParse(process.env);
+  // Leere Einträge aus .env (z. B. "PAYMENT_GATEWAY_URL=") gelten als nicht gesetzt → Standardwert
+  const raw = Object.fromEntries(Object.entries(process.env).filter(([, v]) => v !== undefined && v.trim() !== ""));
+  const parsed = schema.safeParse(raw);
   if (!parsed.success) {
     throw new Error(`Invalid environment: ${parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ")}`);
   }

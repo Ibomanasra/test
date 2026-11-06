@@ -18,7 +18,9 @@
     "db:reset": "pnpm --filter @sa/db reset",
     "format": "prettier --write .",
     "postinstall": "node scripts/link-env.mjs",
-    "db:demo-orders": "pnpm --filter @sa/web demo:orders"
+    "db:demo-orders": "pnpm --filter @sa/web demo:orders",
+    "setup:dev": "node scripts/dev-setup.mjs",
+    "app": "node scripts/mobile-start.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",

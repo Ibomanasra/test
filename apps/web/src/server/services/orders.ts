@@ -17,6 +17,7 @@ import {
   type PricingChannel,
 } from "@sa/core";
 import { allocateDocumentNumber, prisma, type OrderStatus, type PaymentMethod, type Prisma, type Tx } from "@sa/db";
+import { pushToUsers } from "../adapters/push";
 import { smsAdapter, whatsappAdapter } from "../adapters/sms";
 import { audit } from "../audit";
 import type { AuthContext } from "../auth/context";
@@ -131,6 +132,9 @@ async function notifyCustomer(orderId: string, template: "order.placed" | "order
   const text = texts[template][ar ? 0 : 1];
   const msg = { to: o.customer.phone, template, locale: o.customer.preferredLocale, text, payload: { orderId } };
   await smsAdapter().send(msg);
+  // Push an alle App-Geräte der Firma (Kundenkonten)
+  const members = await prisma.customerMember.findMany({ where: { customerId: o.customerId }, select: { userId: true } });
+  await pushToUsers(members.map((m) => m.userId), { title: o.number, body: text, data: { orderId } });
   // WhatsApp-Link für den Kunden (Versand-Adapter loggt nur)
   await whatsappAdapter().send({ ...msg, payload: { orderId, link: `https://wa.me/${o.customer.phone.replace("+", "")}?text=${encodeURIComponent(text)}` } });
 }

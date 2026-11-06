@@ -214,7 +214,23 @@
     "staffIntro": "Password, then the verification code sent to your phone.",
     "password": "Password",
     "continue": "Continue",
-    "staffLink": "Staff login"
+    "staffLink": "Staff login",
+    "forgotPassword": "Forgot your password?",
+    "reset": {
+      "title": "Reset password",
+      "requestIntro": "Enter your phone number or email. If your account has an email address, we send a link valid for 30 minutes.",
+      "identifier": "Phone number or email",
+      "send": "Send link",
+      "sent": "If the account exists and has an email address, we have sent a reset link.",
+      "confirmIntro": "Choose a new password. You will be signed out on all devices.",
+      "newPassword": "New password",
+      "repeat": "Repeat password",
+      "rules": "At least 10 characters, letters and digits",
+      "mismatch": "Passwords do not match",
+      "save": "Save password",
+      "done": "Your password was changed.",
+      "toLogin": "Sign in"
+    }
   },
   "register": {
     "title": "Create account",
@@ -892,7 +908,11 @@
       "net": "Net total",
       "vat": "VAT",
       "margin": "Margin",
-      "history": "Status history"
+      "history": "Status history",
+      "refundCard": "Refund to card",
+      "refundConfirm": "The amount will be refunded to the customer's card via the payment gateway. Continue?",
+      "signature": "Signature",
+      "photo": "Delivery photo"
     },
     "products": {
       "title": "Products",
@@ -1469,7 +1489,12 @@
     "return_exceeds_delivered": "Return exceeds delivered quantity",
     "already_paid": "This order is already paid",
     "gateway_unavailable": "The payment gateway is currently unavailable. Please try later.",
-    "invalid_signature": "Invalid signature"
+    "invalid_signature": "Invalid signature",
+    "invalid_reset_token": "The link is invalid or has expired",
+    "nothing_to_refund": "No refundable card payment",
+    "refund_exceeds_refundable": "Amount exceeds the refundable amount",
+    "refund_failed": "The payment gateway rejected the refund",
+    "gateway_changed": "The payment gateway changed since this payment"
   },
   "permissions": {
     "dashboard_view": "View dashboard",

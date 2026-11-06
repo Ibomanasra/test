@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { StaffLoginForm } from "@/components/auth/StaffLoginForm";
 import { Card } from "@/components/ui";
-import { redirect } from "@/i18n/navigation";
+import { Link, redirect } from "@/i18n/navigation";
 import { getAuth } from "@/server/auth/context";
 
 export async function generateMetadata() {
@@ -29,6 +29,7 @@ export default async function StaffLoginPage({ params }: { params: Promise<{ loc
         <Card title={t("staffTitle")}>
           <p className="mb-4 text-sm text-ink-600">{t("staffIntro")}</p>
           <StaffLoginForm />
+          <p className="mt-4 text-center text-sm"><Link href="/admin/reset-password" className="text-brand-700 underline" data-testid="forgot-password">{t("forgotPassword")}</Link></p>
         </Card>
       </div>
     </main>

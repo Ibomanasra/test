@@ -75,6 +75,11 @@ const ar = {
   loading: "جارٍ التحميل…",
   error: "حدث خطأ. حاول مرة أخرى.",
   networkError: "تعذّر الاتصال بالخادم",
+  signature: "توقيع المستلم",
+  clearSignature: "مسح التوقيع",
+  takePhoto: "صورة التسليم",
+  retakePhoto: "إعادة التصوير",
+  notifications: "إشعارات الطلبات",
 } as const;
 
 export type MessageKey = keyof typeof ar;
@@ -152,6 +157,11 @@ const en: Record<MessageKey, string> = {
   loading: "Loading…",
   error: "Something went wrong. Please try again.",
   networkError: "Cannot reach the server",
+  signature: "Recipient signature",
+  clearSignature: "Clear signature",
+  takePhoto: "Delivery photo",
+  retakePhoto: "Retake photo",
+  notifications: "Order notifications",
 };
 
 const ORDER_STATUS: Record<Locale, Record<string, string>> = {

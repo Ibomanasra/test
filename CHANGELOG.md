@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.7.0] – 2026-11-06 – Restpunkte
+
+### Hinzugefügt
+- **Passwort vergessen** für Mitarbeiter: Link per E-Mail (SMTP, Mailpit in Entwicklung), 30 Minuten gültig, einmalig, beendet alle Sessions.
+- **SMS-/WhatsApp-Adapter**: generischer HTTP-SMS-Anbieter und WhatsApp Business Cloud API; Login-Codes im Protokoll geschwärzt; Statusmeldungen blockieren nie.
+- **Erstattung auf die Karte** über die Gateway-API (PayTabs, Arab Bank/MPGS, Test-Gateway); neuer Intent-Status `REFUNDED`.
+- **App**: Unterschrift mit dem Finger und Foto als Zustellnachweis; Nachweise im Admin sichtbar (SVG wird serverseitig aus Pfaddaten gebaut und mit Sandbox-CSP ausgeliefert).
+- **Push-Benachrichtigungen** (Expo): Bestellstatus an Kunden, neue Tour an Fahrer; Geräte-Registrierung `/api/v1/me/push-token`.
+- **Aufräum-Job**: alte Rate-Limit-Zähler, OTP-Challenges und Sessions.
+- Tests: Adapter (SMS, WhatsApp, Push, Erstattungen) und E2E (Passwort-Reset, Zustellnachweis, Push-Token, Erstattung).
+
+### Behoben
+- CI: Web-Build hatte seine `NODE_ENV`-Einstellung verloren (doppelter `env`-Schlüssel); E2E-Job startet jetzt Mailpit.
+
 ## [0.6.0] – 2026-10-27 – Phase 6: Mobile-App & Zahlungs-Gateway
 
 ### Hinzugefügt

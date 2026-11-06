@@ -309,6 +309,7 @@ enum GatewayIntentStatus {
   CAPTURED
   FAILED
   CANCELLED
+  REFUNDED // über die Gateway-API erstattet
 }
 
 // -----------------------------------------------------------------------------
@@ -494,6 +495,7 @@ model User {
   quotesCreated    Quote[]            @relation("QuoteCreatedBy")
   customerNotes    CustomerNote[]
   uploadedFiles    FileObject[]
+  pushTokens       PushToken[]
 }
 
 model Session {
@@ -1791,4 +1793,17 @@ model NotificationLog {
   createdAt DateTime            @default(now())
 
   @@index([to, createdAt])
+}
+
+/// Push-Token der Mobile-App (Expo Push) – je Gerät ein Eintrag
+model PushToken {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token      String   @unique
+  platform   String // "ios" | "android"
+  createdAt  DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+
+  @@index([userId])
 }

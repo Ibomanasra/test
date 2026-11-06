@@ -89,8 +89,12 @@ export const deliverStopSchema = z.object({
   receivedByName: optionalText(120),
   /** kassierter Bargeldbetrag (Nachnahme) */
   cashAmount: nonNegativeAgorotSchema.default(0),
-  /** Unterschrift als PNG-data:-URL (Canvas) */
+  /** Unterschrift als PNG-data:-URL (Canvas im Web) */
   signature: z.string().max(400_000).regex(/^data:image\/png;base64,/).optional(),
+  /** Unterschrift aus der App als Pfade (M/L-Befehle, Koordinaten 0–1000); das SVG baut der Server */
+  signaturePaths: z.array(z.string().max(20_000).regex(/^[ML][\d.\s,MLml-]*$/, "invalid_signature")).max(100).optional(),
+  /** Foto der Zustellung (JPEG, data:-URL, ≤ ~4 MB) */
+  photo: z.string().max(6_000_000).regex(/^data:image\/jpeg;base64,/).optional(),
 });
 
 export const failStopSchema = z.object({ reason: z.string().trim().min(3).max(300) });

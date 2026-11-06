@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { I18nManager } from "react-native";
 import { api, type ApiOptions } from "./api";
 import { translator, type Locale } from "./i18n";
+import { registerForPush, unregisterPush } from "./push";
 
 export interface Me {
   user: { id: string; name: string; phone: string; locale: Locale };
@@ -37,6 +38,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [me, setMe] = useState<Me | null>(null);
   const [locale, setLocaleState] = useState<Locale>("ar");
+  const [pushToken, setPushToken] = useState<string | null>(null);
+
+  // Push-Registrierung, sobald angemeldet (Fehler – z. B. Emulator – werden ignoriert)
+  useEffect(() => {
+    if (!token || !me) return;
+    registerForPush(token, locale).then(setPushToken).catch(() => undefined);
+  }, [token, me, locale]);
 
   const call = useCallback(<T,>(path: string, opts: ApiOptions = {}) => api<T>(path, { token, locale, ...opts }), [token, locale]);
 
@@ -85,6 +93,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         await loadMe(t, locale);
       },
       signOut: async () => {
+        if (token && pushToken) await unregisterPush(token, pushToken);
         try {
           await api("/api/v1/auth/logout", { token, method: "POST", body: {} });
         } catch {
@@ -96,7 +105,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       },
       refresh: () => loadMe(token, locale),
     }),
-    [ready, token, me, locale, call, loadMe],
+    [ready, token, me, locale, call, loadMe, pushToken],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

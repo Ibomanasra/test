@@ -7,11 +7,34 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "ios": { "bundleIdentifier": "ps.sholataljanoub.app", "supportsTablet": false },
-    "android": { "package": "ps.sholataljanoub.app" },
-    "locales": { "ar": "./src/lib/locales/ar.json", "en": "./src/lib/locales/en.json" },
-    "extra": { "supportsRTL": true },
-    "plugins": ["expo-router", "expo-secure-store", "expo-localization"],
-    "experiments": { "typedRoutes": false }
+    "ios": {
+      "bundleIdentifier": "ps.sholataljanoub.app",
+      "supportsTablet": false
+    },
+    "android": {
+      "package": "ps.sholataljanoub.app"
+    },
+    "locales": {
+      "ar": "./src/lib/locales/ar.json",
+      "en": "./src/lib/locales/en.json"
+    },
+    "extra": {
+      "supportsRTL": true
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-localization",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "التطبيق يحتاج الكاميرا لتصوير إثبات التسليم / The app uses the camera for delivery photos."
+        }
+      ],
+      "expo-notifications"
+    ],
+    "experiments": {
+      "typedRoutes": false
+    }
   }
 }

@@ -3,6 +3,7 @@ import { businessDate, cashDifference, invoiceOpenAmount, sumDenominations } fro
 import type { cashClosingSubmitSchema, deliverStopSchema, tourCreateSchema } from "@sa/contracts";
 import { allocateDocumentNumber, prisma, type Prisma, type Tx } from "@sa/db";
 import type { z } from "zod";
+import { pushToUsers } from "../adapters/push";
 import { storeFile } from "../adapters/storage";
 import { audit } from "../audit";
 import type { AuthContext } from "../auth/context";
@@ -67,6 +68,9 @@ export async function createTour(ctx: AuthContext, input: z.infer<typeof tourCre
     const tour = await tx.tour.create({ data: { number, date: dbDate(businessDate(input.date)), driverId: input.driverId, zoneId: input.zoneId ?? null, note: input.note } });
     await addStops(tx, tour.id, input.shipmentIds);
     await audit(ctx, { action: "tour.create", entityType: "Tour", entityId: tour.id, after: { number, stops: input.shipmentIds.length } }, tx);
+    return tour;
+  }).then(async (tour) => {
+    await pushToUsers([input.driverId], { title: tour.number, body: `جولة جديدة: ${input.shipmentIds.length} محطات / New tour: ${input.shipmentIds.length} stops`, data: { tourId: tour.id } });
     return tour;
   });
 }
@@ -157,19 +161,33 @@ export async function deliverStop(ctx: AuthContext, stopId: string, input: z.inf
     const data = Buffer.from(input.signature.split(",")[1] ?? "", "base64");
     if (data.subarray(0, 8).toString("hex") !== "89504e470d0a1a0a") throw badRequest("invalid_file_type");
     signatureFileId = (await storeFile({ data, mimeType: "image/png", originalName: `${stop.shipment.number}-signature.png`, purpose: "signature", uploadedById: ctx.user.id })).id;
+  } else if (input.signaturePaths?.length) {
+    signatureFileId = (await storeFile({ data: Buffer.from(signatureSvg(input.signaturePaths)), mimeType: "image/svg+xml", originalName: `${stop.shipment.number}-signature.svg`, purpose: "signature", uploadedById: ctx.user.id })).id;
+  }
+  let photoFileId: string | null = null;
+  if (input.photo) {
+    const data = Buffer.from(input.photo.split(",")[1] ?? "", "base64");
+    if (!(data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff)) throw badRequest("invalid_file_type");
+    photoFileId = (await storeFile({ data, mimeType: "image/jpeg", originalName: `${stop.shipment.number}-photo.jpg`, purpose: "delivery-photo", uploadedById: ctx.user.id })).id;
   }
   // Lieferung abschließen (Bestellstatus, Benachrichtigung, Auto-Druck) – bestehender Ablauf
   if (stop.shipment.order.status === "OUT_FOR_DELIVERY") await markDelivered(ctx, stop.shipment.orderId, input.receivedByName);
   await prisma.$transaction(async (tx) => {
-    await tx.shipment.update({ where: { id: stop.shipmentId }, data: { status: "DELIVERED", deliveredAt: new Date(), receivedByName: input.receivedByName ?? null, ...(signatureFileId ? { signatureFileId } : {}) } });
+    await tx.shipment.update({ where: { id: stop.shipmentId }, data: { status: "DELIVERED", deliveredAt: new Date(), receivedByName: input.receivedByName ?? null, ...(signatureFileId ? { signatureFileId } : {}), ...(photoFileId ? { photoFileId } : {}) } });
     if (input.cashAmount > 0) {
       const p = await recordPayment(ctx, { customerId: stop.shipment.order.customerId, method: "CASH_ON_DELIVERY", amount: input.cashAmount, receivedAt: null, note: undefined, reference: stop.shipment.number, invoiceIds: stop.shipment.invoice && invoiceOpenAmount(stop.shipment.invoice) > 0 ? [stop.shipment.invoice.id] : undefined }, tx);
       await tx.cashCollection.create({ data: { driverId: stop.tour.driverId ?? ctx.user.id, tourStopId: stop.id, amount: input.cashAmount, paymentId: p.id } });
     }
     await tx.tourStop.update({ where: { id: stop.id }, data: { status: "DELIVERED", completedAt: new Date() } });
-    await audit(ctx, { action: "delivery.confirm", entityType: "TourStop", entityId: stop.id, after: { shipment: stop.shipment.number, cash: input.cashAmount, signature: !!signatureFileId } }, tx);
+    await audit(ctx, { action: "delivery.confirm", entityType: "TourStop", entityId: stop.id, after: { shipment: stop.shipment.number, cash: input.cashAmount, signature: !!signatureFileId, photo: !!photoFileId } }, tx);
   });
   await maybeCompleteTour(stop.tourId);
+}
+
+/** SVG aus geprüften Pfaddaten (nur Zahlen und M/L) – kein fremdes Markup */
+export function signatureSvg(paths: string[]): string {
+  const d = paths.map((p) => p.replace(/[^\d.\sMLml,-]/g, "")).join(" ");
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 400" width="500" height="200"><path d="${d}" fill="none" stroke="#111" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 }
 
 export async function failStop(ctx: AuthContext, stopId: string, reason: string) {

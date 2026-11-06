@@ -2,6 +2,7 @@ import { hasPermission, isOrderEditable, type OrderStatusKey } from "@sa/core";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Forbidden } from "@/components/admin/Forbidden";
+import { ApiButton } from "@/components/admin/ApiForm";
 import { OrderActions } from "@/components/admin/OrderActions";
 import { OrderItemsEditor } from "@/components/admin/OrderItemsEditor";
 import { PrintButton } from "@/components/print/PrintButton";
@@ -75,6 +76,9 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ loc
         <Card title={t("payment")}>
           <p className="text-sm">{tAll(`paymentMethod.${o.paymentMethod}`)}</p>
           <p className="text-sm text-ink-600">{t(`paymentStatus.${o.paymentStatus}`)}{o.paymentTermDays ? ` · ${t("terms", { days: o.paymentTermDays })}` : ""}</p>
+          {o.paymentMethod === "CARD_GATEWAY" && o.paymentStatus === "PAID" && (o.status === "CANCELLED" || o.invoices.some((i) => i.status === "CREDITED")) && can("finance.payment") ? (
+            <div className="mt-2"><ApiButton endpoint={`/api/v1/admin/orders/${o.id}/refund`} label={t("refundCard")} variant="danger" confirmText={t("refundConfirm")} testId="refund-card" /></div>
+          ) : null}
           {o.invoices.map((inv) => (
             <div key={inv.id} className="mt-2 flex flex-wrap items-center gap-2 text-sm">
               <span className="num font-medium">{inv.number}</span> · <span className="num">{money(inv.totalGross)}</span>
@@ -129,6 +133,8 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ loc
               <li key={s.id}>
                 <span className="num font-medium">{s.number}</span> · {t(`shipmentStatus.${s.status}`)} · <Num>{dateTimeText(s.deliveredAt ?? s.createdAt)}</Num>
                 {s.receivedByName ? ` · ${s.receivedByName}` : ""}
+                {s.signatureFileId ? <> · <a href={`/api/v1/files/${s.signatureFileId}`} target="_blank" rel="noopener" className="text-brand-700 underline" data-testid="proof-signature">{t("signature")}</a></> : null}
+                {s.photoFileId ? <> · <a href={`/api/v1/files/${s.photoFileId}`} target="_blank" rel="noopener" className="text-brand-700 underline" data-testid="proof-photo">{t("photo")}</a></> : null}
                 {can("order.print") ? (
                   <span className="mt-1 flex flex-wrap gap-2">
                     <PrintButton href={`/api/v1/documents/delivery-note/${s.id}`} label={t("print.deliveryNote")} testId="print-delivery-note" />

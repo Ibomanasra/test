@@ -47,6 +47,23 @@ export interface PaymentGateway {
   verifyCallback(rawBody: string, headers: Headers): Promise<GatewayResult>;
   /** Status aktiv abfragen (Rückkehr des Kunden, Nachprüfung) */
   fetchStatus(intentId: string, providerRef: string | null): Promise<GatewayResult>;
+  /** Erstattung (voll oder teilweise) einer erfolgreichen Zahlung */
+  refund(input: RefundInput): Promise<RefundResult>;
+}
+
+export interface RefundInput {
+  intentId: string;
+  providerRef: string | null;
+  /** Agorot */
+  amount: number;
+  currency: "ILS";
+  reason: string;
+}
+
+export interface RefundResult {
+  ok: boolean;
+  providerRef: string | null;
+  raw: unknown;
 }
 
 export class GatewayError extends Error {}
@@ -96,6 +113,10 @@ export class FakeGateway implements PaymentGateway {
 
   async fetchStatus(intentId: string, providerRef: string | null): Promise<GatewayResult> {
     return { intentId, providerRef, status: "PENDING", amount: null, raw: null };
+  }
+
+  async refund(r: RefundInput): Promise<RefundResult> {
+    return { ok: true, providerRef: `fake_refund_${r.intentId}`, raw: { amount: r.amount } };
   }
 }
 
@@ -158,6 +179,23 @@ export class PayTabsGateway implements PaymentGateway {
     const data = await this.post("/payment/query", { profile_id: Number(this.cfg.profileId) || this.cfg.profileId, tran_ref: providerRef });
     return { ...PayTabsGateway.parse(data), intentId };
   }
+
+  /** Erstattung: neue Transaktion vom Typ refund mit Verweis auf die ursprüngliche tran_ref */
+  async refund(r: RefundInput): Promise<RefundResult> {
+    if (!r.providerRef) throw new GatewayError("paytabs refund needs tran_ref");
+    const data = await this.post("/payment/request", {
+      profile_id: Number(this.cfg.profileId) || this.cfg.profileId,
+      tran_type: "refund",
+      tran_class: "ecom",
+      cart_id: `${r.intentId}-refund`,
+      cart_currency: r.currency,
+      cart_amount: toDecimal(r.amount),
+      cart_description: r.reason.slice(0, 120),
+      tran_ref: r.providerRef,
+    });
+    const status = ((data.payment_result ?? {}) as { response_status?: string }).response_status;
+    return { ok: status === "A", providerRef: typeof data.tran_ref === "string" ? data.tran_ref : null, raw: data };
+  }
 }
 
 // --- Arab Bank (Mastercard Gateway / MPGS) -------------------------------------
@@ -219,6 +257,18 @@ export class ArabBankGateway implements PaymentGateway {
     if (res.status === 404) return { intentId, providerRef: null, status: "PENDING", amount: null, raw: data };
     if (!res.ok) throw new GatewayError(`arabbank order ${res.status}`);
     return ArabBankGateway.parseOrder(intentId, data);
+  }
+
+  /** Erstattung: Transaktion REFUND auf der Gateway-Order (= Intent-ID) */
+  async refund(r: RefundInput): Promise<RefundResult> {
+    const txId = `refund-${Date.now()}`;
+    const res = await this.http(this.url(`/order/${encodeURIComponent(r.intentId)}/transaction/${txId}`), {
+      method: "PUT",
+      headers: { authorization: this.auth(), "content-type": "application/json" },
+      body: JSON.stringify({ apiOperation: "REFUND", transaction: { amount: toDecimal(r.amount).toFixed(2), currency: r.currency } }),
+    });
+    const data = (await res.json().catch(() => ({}))) as { result?: string };
+    return { ok: res.ok && data.result === "SUCCESS", providerRef: txId, raw: data };
   }
 }
 

@@ -15,13 +15,9 @@ Stand: alle 6 Phasen abgeschlossen. Alles, was noch nicht umgesetzt ist, steht h
 
 ## Phase 6 – erledigt (siehe CHANGELOG 0.6.0)
 - TODO: Gateway-Zugang bei Arab Bank / PayTabs beantragen, im Sandbox-Modus des Anbieters abnehmen (Adapter sind nach den öffentlichen API-Beschreibungen umgesetzt und mit simulierten Antworten getestet)
-- TODO: Erstattungen (Refund) über die Gateway-API statt manuell im Portal
-- TODO: Store-Builds mit EAS (App-Icons, Splash, Signierschlüssel), Push-Benachrichtigungen (Expo Notifications) für Bestellstatus
-- TODO: Unterschrift und Foto bei Zustellung in der App (im Web-Fahrermodus vorhanden)
-- TODO: Echte SMS-/WhatsApp-Anbieter als Adapter (Schnittstelle `MessageAdapter` existiert)
+- TODO: Store-Builds mit EAS (App-Icons, Splash, Signierschlüssel, EAS-Projekt-ID für Push)
+- TODO: Konkreten SMS-Anbieter (z. B. Jawwal/Ooredoo-Bulk-SMS) anbinden – der generische HTTP-Adapter muss evtl. an dessen Feldnamen angepasst werden; WhatsApp-Vorlagen bei Meta freigeben lassen
 
 ## Technische Schulden / Querschnitt
 - TODO: Upgrade Prisma 6 → 7 (`prisma.config.ts`, Driver-Adapter `@prisma/adapter-pg`)
-- TODO: Passwort-Reset für Mitarbeiter per E-Mail (Mailpit ist vorbereitet, Mail-Adapter fehlt noch)
 - TODO: Docker-Image-Build in einer Umgebung mit Zugriff auf `deb.debian.org` vollständig verifizieren (in der Entwicklungs-Sandbox gesperrt; alle übrigen Schritte und der Standalone-Server sind getestet)
-- TODO: Rate-Limit-Tabelle periodisch aufräumen (Cron/Job), abgelaufene OTP-Challenges und Sessions löschen

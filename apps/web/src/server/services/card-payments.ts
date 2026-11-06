@@ -119,3 +119,35 @@ async function systemContext(): Promise<AuthContext> {
   const owner = await prisma.user.findFirstOrThrow({ where: { kind: "STAFF", roles: { some: { role: { key: "owner" } } } }, orderBy: { createdAt: "asc" } });
   return { sessionId: "system", via: "bearer", user: { id: owner.id, kind: "STAFF", name: "system", phone: owner.phone, locale: owner.locale }, permissions: new Set(ALL_PERMISSIONS), roleKeys: ["owner"], customer: null, channel: "B2C", isStaff: true };
 }
+
+/**
+ * Kartenzahlung einer stornierten, noch nicht berechneten Bestellung über das Gateway erstatten.
+ * (Nach Rechnungsstellung: erst Gutschrift, Erstattung des Betrags dann ebenfalls hier – Teilbetrag.)
+ */
+export async function refundCardPayment(ctx: AuthContext, orderId: string, amount?: number) {
+  const o = await prisma.order.findUnique({ where: { id: orderId }, include: { gatewayIntents: { where: { status: "CAPTURED" }, orderBy: { updatedAt: "desc" } }, invoices: { select: { totalGross: true, creditedAmount: true, paidAmount: true } } } });
+  if (!o) throw notFound();
+  const intent = o.gatewayIntents[0];
+  if (!intent) throw new AppError(409, "nothing_to_refund");
+  // erstattbar: storniert ohne Rechnung (voll) oder gutgeschriebener Teil bezahlter Rechnungen
+  const credited = o.invoices.reduce((a, i) => a + Math.min(i.creditedAmount, i.paidAmount), 0);
+  const refundable = o.status === "CANCELLED" && o.invoices.length === 0 ? intent.amount : credited;
+  const value = amount ?? refundable;
+  if (value <= 0 || value > refundable) throw new AppError(409, "refund_exceeds_refundable", "refund_exceeds_refundable", { refundable });
+  const gw = paymentGateway();
+  if (gw.name !== intent.provider) throw new AppError(409, "gateway_changed");
+  const r = await gw.refund({ intentId: intent.id, providerRef: intent.providerRef, amount: value, currency: "ILS", reason: `refund ${o.number}` });
+  if (!r.ok) {
+    await audit(ctx, { action: "payment_intent.refund_failed", entityType: "PaymentIntent", entityId: intent.id, after: { amount: value, raw: r.raw } });
+    throw new AppError(502, "refund_failed");
+  }
+  await prisma.$transaction(async (tx) => {
+    await tx.paymentIntent.update({ where: { id: intent.id }, data: { status: "REFUNDED", raw: JSON.parse(JSON.stringify({ capture: intent.raw ?? null, refund: r.raw ?? null })) } });
+    await tx.order.update({ where: { id: o.id }, data: { paymentStatus: "REFUNDED" } });
+    if (o.invoices.length) {
+      await tx.customerLedgerEntry.create({ data: { customerId: o.customerId, type: "REFUND", refId: intent.id, refNumber: o.number, date: new Date(), debit: value, note: `card refund ${r.providerRef ?? ""}` } });
+    }
+    await audit(ctx, { action: "payment_intent.refund", entityType: "PaymentIntent", entityId: intent.id, after: { order: o.number, amount: value, providerRef: r.providerRef } }, tx);
+  });
+  return { ok: true, amount: value };
+}

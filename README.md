@@ -127,7 +127,9 @@ e2e/                      Playwright-Tests
 |---|---|
 | Händler freigeben | Dashboard → „Händler, die auf Freigabe warten“ oder Kunden → Filter *wartet auf Freigabe* → Kunde öffnen → Gruppe, Zahlungsziel, Kreditlimit → **Freigeben** |
 | Kunden sperren / entsperren | Kunde öffnen → Sperren (mit Grund) |
-| Mitarbeiter anlegen | Benutzer → Neuer Mitarbeiter (Rollen zuweisen) |
+| Mitarbeiter anlegen | Benutzer → Neuer Mitarbeiter (Rollen zuweisen; E-Mail hinterlegen, damit „Passwort vergessen“ funktioniert) |
+| Passwort vergessen | Anmeldeseite → „Passwort vergessen?“ → Link per E-Mail (30 Min., einmalig; in Entwicklung in Mailpit: http://localhost:8025) |
+| Kartenzahlung erstatten | Stornierte bzw. gutgeschriebene Kartenbestellung öffnen → „Erstattung auf die Karte“ |
 | Rechte einer Rolle ändern | Rollen & Rechte → Rolle wählen → Häkchen setzen |
 | MwSt.-Satz ändern | Einstellungen → MwSt. → neuer Satz mit Startdatum (alter Satz endet automatisch; bestehende Rechnungen behalten ihren Satz) |
 | Liefergebiete und Gebühren | Einstellungen → Liefergebiete (Gebühr, Mindestbestellwert, Gratis-Grenze **je Kanal**) |
@@ -170,13 +172,25 @@ EXPO_PUBLIC_API_URL=http://192.168.1.20:3000 pnpm --filter @sa/mobile start
 ```
 
 - **Kunden**: Anmeldung per SMS-Code, Registrierung Privatkunde, Katalog mit Suche (Händler sehen ihre Preise und Staffeln), Warenkorb, Bestellung inkl. Kartenzahlung, Bestellungen mit Status, Belege als PDF (Teilen/Vorschau), „Erneut bestellen“.
-- **Fahrer**: Anmeldung mit Passwort + SMS-Code, eigene Touren, Anruf/Karte/Lieferschein, Zustellung mit Empfänger und Bargeld, Nicht-Zustellung mit Grund, Kassenabschluss nach Stückelung.
+- **Fahrer**: Anmeldung mit Passwort + SMS-Code, eigene Touren, Anruf/Karte/Lieferschein, Zustellung mit Empfänger, **Unterschrift** und **Foto** und Bargeld, Nicht-Zustellung mit Grund, Kassenabschluss nach Stückelung.
+- **Push-Benachrichtigungen** (Bestellstatus, neue Tour) – für echte Geräte wird eine EAS-Projekt-ID in `app.json` (`extra.eas.projectId`) benötigt.
 - Arabisch (RTL) ist Standard; Sprachwechsel unter *Konto* (Richtung gilt nach Neustart).
 - Store-Builds: mit EAS (`eas build`) – siehe ROADMAP.
 
+## Benachrichtigungen
+
+| Kanal | Einstellung | Hinweis |
+|---|---|---|
+| SMS | `SMS_PROVIDER=http`, `SMS_API_URL`, `SMS_API_KEY`, `SMS_SENDER_NAME` | Login-Codes werden im Protokoll geschwärzt; Fehler bei Statusmeldungen blockieren keine Bestellung |
+| WhatsApp | `WHATSAPP_PROVIDER=cloud`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_TOKEN` | Freitext nur innerhalb von 24 h nach Kundenkontakt, sonst freigegebene Vorlagen |
+| App-Push | `PUSH_PROVIDER=expo` (optional `EXPO_ACCESS_TOKEN`) | Bestellstatus an Kunden, neue Tour an Fahrer |
+| E-Mail | `SMTP_*` | Passwort-Reset für Mitarbeiter |
+
+Alle Nachrichten stehen im `NotificationLog` (Status SENT/FAILED/LOGGED).
+
 ## Zahlungen per Karte
 
-`PAYMENT_GATEWAY` in `.env`: `fake` (Entwicklung: Testseite mit „Zahlung bestätigen/ablehnen“), `paytabs` (PayTabs Hosted Payment Page) oder `arabbank` (Mastercard Gateway Hosted Checkout). Zugangsdaten über `PAYMENT_GATEWAY_MERCHANT_ID` / `PAYMENT_GATEWAY_API_KEY`, Callback-URL beim Anbieter: `https://<domain>/api/v1/payments/callback/<gateway>`. Die Zahlart „Karte“ wird unter *Einstellungen → Zahlungsarten* je Kanal aktiviert. Kartendaten berühren den Server nie; der Betrag wird serverseitig gegen die Bestellung geprüft, unbezahlte Kartenbestellungen werden nach `PAYMENT_TIMEOUT_MINUTES` storniert.
+`PAYMENT_GATEWAY` in `.env`: `fake` (Entwicklung: Testseite mit „Zahlung bestätigen/ablehnen“), `paytabs` (PayTabs Hosted Payment Page) oder `arabbank` (Mastercard Gateway Hosted Checkout). Zugangsdaten über `PAYMENT_GATEWAY_MERCHANT_ID` / `PAYMENT_GATEWAY_API_KEY`, Callback-URL beim Anbieter: `https://<domain>/api/v1/payments/callback/<gateway>`. Die Zahlart „Karte“ wird unter *Einstellungen → Zahlungsarten* je Kanal aktiviert. Kartendaten berühren den Server nie; der Betrag wird serverseitig gegen die Bestellung geprüft, unbezahlte Kartenbestellungen werden nach `PAYMENT_TIMEOUT_MINUTES` storniert. Erstattungen laufen über die Gateway-API (Bestellung → „Erstattung auf die Karte“).
 
 ## Betrieb
 

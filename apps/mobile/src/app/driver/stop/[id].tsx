@@ -1,6 +1,8 @@
 import { Stack, router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
-import { Linking, Text, View } from "react-native";
+import * as ImagePicker from "expo-image-picker";
+import { useCallback, useEffect, useState } from "react";
+import { Image, Linking, Text, View } from "react-native";
+import { SignaturePad } from "@/components/SignaturePad";
 import { Button, Card, ErrorText, Field, Loading, Muted, Num, Screen, colors, styles } from "@/components/ui";
 import { openDocument } from "@/lib/documents";
 import { errorMessage } from "@/lib/i18n";
@@ -16,6 +18,17 @@ export default function StopScreen() {
   const [cash, setCash] = useState("");
   const [reason, setReason] = useState("");
   const [mode, setMode] = useState<"deliver" | "fail">("deliver");
+  const [signature, setSignature] = useState<string[]>([]);
+  const [photo, setPhoto] = useState<string | null>(null);
+  const onSignature = useCallback((p: string[]) => setSignature(p), []);
+
+  async function takePhoto() {
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) return;
+    const r = await ImagePicker.launchCameraAsync({ quality: 0.5, base64: true, exif: false });
+    const b64 = r.canceled ? null : r.assets[0]?.base64;
+    if (b64) setPhoto(`data:image/jpeg;base64,${b64}`);
+  }
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -40,7 +53,7 @@ export default function StopScreen() {
       if (mode === "deliver") {
         const cashAmount = cash.trim() ? Math.round(Number(cash.replace(",", ".")) * 100) : 0;
         if (!Number.isFinite(cashAmount) || cashAmount < 0) throw { body: { code: "invalid_amount" } };
-        await call(`/api/v1/driver/stops/${stop!.id}/deliver`, { body: { receivedByName: name || undefined, cashAmount } });
+        await call(`/api/v1/driver/stops/${stop!.id}/deliver`, { body: { receivedByName: name || undefined, cashAmount, signaturePaths: signature.length ? signature : undefined, photo: photo ?? undefined } });
       } else {
         await call(`/api/v1/driver/stops/${stop!.id}/fail`, { body: { reason } });
       }
@@ -76,6 +89,10 @@ export default function StopScreen() {
             <>
               <Field label={tr.t("receivedBy")} value={name} onChangeText={setName} />
               {stop.codExpected > 0 ? <Field label={tr.t("cash")} value={cash} onChangeText={setCash} keyboardType="decimal-pad" /> : null}
+              <Muted>{tr.t("signature")}</Muted>
+              <SignaturePad onChange={onSignature} clearLabel={tr.t("clearSignature")} />
+              <Button title={`📷 ${photo ? tr.t("retakePhoto") : tr.t("takePhoto")}`} variant="secondary" onPress={() => void takePhoto()} />
+              {photo ? <Image source={{ uri: photo }} style={{ width: 120, height: 120, borderRadius: 8 }} /> : null}
             </>
           ) : (
             <Field label={tr.t("reason")} value={reason} onChangeText={setReason} />

@@ -42,13 +42,13 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: pnpm test
       - run: pnpm --filter @sa/web build
+        env:
+          NODE_ENV: production
       # Mobile-App: JavaScript-Bundle (Hermes) muss sich erzeugen lassen
       - run: pnpm --filter @sa/mobile exec expo export --platform android --output-dir /tmp/mobile-dist
         env:
           EXPO_OFFLINE: "1"
           EXPO_NO_TELEMETRY: "1"
-        env:
-          NODE_ENV: production
 
   e2e:
     runs-on: ubuntu-latest
@@ -63,9 +63,14 @@ jobs:
         ports: ["5432:5432"]
         options: >-
           --health-cmd "pg_isready -U sa" --health-interval 5s --health-timeout 5s --health-retries 20
+      mailpit:
+        image: axllent/mailpit:v1.27
+        ports: ["1025:1025", "8025:8025"]
     env:
       NODE_ENV: production
       APP_URL: http://localhost:3000
+      SMTP_HOST: localhost
+      SMTP_PORT: "1025"
       S3_ENDPOINT: http://localhost:9000
       S3_ACCESS_KEY: sa_minio
       S3_SECRET_KEY: sa_minio_secret

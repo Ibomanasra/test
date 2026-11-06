@@ -80,3 +80,20 @@ describe("arab bank (MPGS)", () => {
     expect(ArabBankGateway.parseOrder("pi_1", { status: "DECLINED", result: "FAILURE" }).status).toBe("FAILED");
   });
 });
+
+describe("refunds", () => {
+  it("paytabs refunds reference the original transaction", async () => {
+    const m = mockFetch([{ body: { tran_ref: "TST9", payment_result: { response_status: "A" } } }]);
+    const g = new PayTabsGateway({ baseUrl: "https://secure.paytabs.com", profileId: "1001", serverKey: "SKEY" }, m.fn);
+    expect(await g.refund({ intentId: "pi_1", providerRef: "TST1", amount: 5_000, currency: "ILS", reason: "cancel" })).toMatchObject({ ok: true, providerRef: "TST9" });
+    expect(JSON.parse(String(m.calls[0]!.init!.body))).toMatchObject({ tran_type: "refund", tran_ref: "TST1", cart_amount: 50 });
+  });
+  it("mastercard gateway refunds via a REFUND transaction", async () => {
+    const m = mockFetch([{ body: { result: "SUCCESS" } }]);
+    const g = new ArabBankGateway({ baseUrl: "https://ap-gateway.mastercard.com", merchantId: "TEST1", password: "pw", merchantName: "SA" }, m.fn);
+    expect((await g.refund({ intentId: "pi_1", providerRef: null, amount: 5_000, currency: "ILS", reason: "x" })).ok).toBe(true);
+    expect(m.calls[0]!.url).toMatch(/\/merchant\/TEST1\/order\/pi_1\/transaction\/refund-\d+$/);
+    expect(m.calls[0]!.init!.method).toBe("PUT");
+    expect(JSON.parse(String(m.calls[0]!.init!.body))).toEqual({ apiOperation: "REFUND", transaction: { amount: "50.00", currency: "ILS" } });
+  });
+});

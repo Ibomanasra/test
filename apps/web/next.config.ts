@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 
@@ -13,7 +14,8 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   output: "standalone",
   // Monorepo: Tracing ab Repo-Wurzel, damit packages/* im Standalone-Build landen
-  outputFileTracingRoot: new URL("../../", import.meta.url).pathname,
+  // fileURLToPath statt .pathname: unter Windows wäre .pathname "/C:/…" (ungültig)
+  outputFileTracingRoot: fileURLToPath(new URL("../../", import.meta.url)),
   transpilePackages: ["@sa/core", "@sa/db", "@sa/contracts", "@sa/pdf"],
   serverExternalPackages: ["@node-rs/argon2", "@prisma/client", ".prisma/client", "playwright-core", "pdf-lib", "qrcode"],
   // playwright-core lädt browsers.json u. a. dynamisch – vollständig ins Standalone-Paket übernehmen (PDF-Druck)

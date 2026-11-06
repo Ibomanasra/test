@@ -1,7 +1,8 @@
 import { normalizePhone } from "@sa/core";
 import { router } from "expo-router";
 import { useState } from "react";
-import { Pressable, Text } from "react-native";
+import { Pressable, Text, View } from "react-native";
+import { LogoMark } from "@/components/LogoMark";
 import { Button, Card, ErrorText, Field, H1, Muted, Screen, colors } from "@/components/ui";
 import { errorMessage } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
@@ -67,7 +68,10 @@ export default function Login() {
 
   return (
     <Screen>
-      <H1>{tr.t("appName")}</H1>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+        <LogoMark size={56} />
+        <H1>{tr.t("appName")}</H1>
+      </View>
       <Card>
         <Muted>{staff ? tr.t("staffLogin") : tr.t("customerLogin")}</Muted>
         <Field label={tr.t("phone")} value={phone} onChangeText={setPhone} keyboardType="phone-pad" autoComplete="tel" placeholder="059…" editable={!sent} style={{ writingDirection: "ltr" }} />

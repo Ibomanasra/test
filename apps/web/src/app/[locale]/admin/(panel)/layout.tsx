@@ -1,6 +1,7 @@
 import { hasAnyPermission } from "@sa/core";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Suspense } from "react";
+import { Logo } from "@/components/brand/Logo";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { ADMIN_NAV } from "@/components/admin/nav";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
@@ -14,14 +15,13 @@ export default async function AdminLayout({ children, params }: { children: Reac
   const { locale } = await params;
   setRequestLocale(locale);
   const auth = await requireStaffPage(locale);
-  const [t, tc] = await Promise.all([getTranslations("admin"), getTranslations("common")]);
+  const t = await getTranslations("admin");
   const items = ADMIN_NAV.filter((i) => hasAnyPermission(auth.permissions, i.anyOf));
 
   const sidebar = (
     <>
       <div className="mb-6 px-3">
-        <p className="text-lg font-bold text-white">{tc("appName")}</p>
-        <p className="text-xs text-ink-400">{t("title")}</p>
+        <Logo tone="dark" size={40} subtitle={t("title")} />
       </div>
       <AdminSidebar items={items} />
     </>

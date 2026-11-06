@@ -2,6 +2,7 @@ import "server-only";
 import { businessDate, formatMoney, hasPermission, type Permission } from "@sa/core";
 import { prisma, type DocType } from "@sa/db";
 import { mergePdfs, renderDocumentPdf, type CompanyInfo, type DocLang, type DocTable, type DocumentModel, type I18nText } from "@sa/pdf";
+import { FLAME_INNER, FLAME_OUTER } from "@/lib/brand";
 import { readFileBuffer } from "../adapters/storage";
 import type { AuthContext } from "../auth/context";
 import { env } from "../env";
@@ -232,14 +233,19 @@ async function unitNames(): Promise<Map<string, I18nText>> {
   return unitCache.map;
 }
 
-async function logoDataUrl(): Promise<string | null> {
+/** Standard: Markenzeichen „Glut“ (wenn in den Einstellungen kein eigenes Logo hochgeladen ist) */
+const DEFAULT_LOGO = `data:image/svg+xml;base64,${Buffer.from(
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="o" x1=".2" y1="1" x2=".5" y2="0"><stop offset="0" stop-color="#9a3412"/><stop offset=".5" stop-color="#ea580c"/><stop offset="1" stop-color="#fbbf24"/></linearGradient><linearGradient id="i" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#fef3c7"/><stop offset="1" stop-color="#fb923c"/></linearGradient></defs><rect width="64" height="64" rx="16" fill="#1c1917"/><path d="${FLAME_OUTER}" fill="url(#o)"/><path d="${FLAME_INNER}" fill="url(#i)"/></svg>`,
+).toString("base64")}`;
+
+async function logoDataUrl(): Promise<string> {
   const c = await prisma.companySettings.findUnique({ where: { id: 1 }, select: { logoFileId: true } });
-  if (!c?.logoFileId) return null;
+  if (!c?.logoFileId) return DEFAULT_LOGO;
   try {
     const f = await readFileBuffer(c.logoFileId);
     return `data:${f.mimeType};base64,${f.data.toString("base64")}`;
   } catch {
-    return null;
+    return DEFAULT_LOGO;
   }
 }
 

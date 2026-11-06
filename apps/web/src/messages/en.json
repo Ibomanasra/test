@@ -196,6 +196,12 @@
       "belowMinimum": "The minimum order in your area is {amount}.",
       "creditShort": "Your credit limit is not sufficient for this order. Choose another payment method.",
       "placeOrder": "Place order"
+    },
+    "home": {
+      "offers": "Current offers",
+      "allOffers": "All offers →",
+      "showAll": "Show all ({count}) →",
+      "allProducts": "Browse all products"
     }
   },
   "auth": {

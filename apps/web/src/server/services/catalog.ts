@@ -192,6 +192,8 @@ export interface CatalogFilter {
   category?: string;
   promo?: boolean;
   page: number;
+  /** Anzahl je Seite (Standard 24) – Startseite zeigt kürzere Reihen */
+  take?: number;
 }
 
 export async function listCatalog(viewer: PricingViewer, f: CatalogFilter) {
@@ -210,7 +212,7 @@ export async function listCatalog(viewer: PricingViewer, f: CatalogFilter) {
       : {}),
   };
   const [rows, total] = await prisma.$transaction([
-    prisma.product.findMany({ where, select: productSelect, orderBy: [{ category: { sortOrder: "asc" } }, { nameEn: "asc" }], skip: (f.page - 1) * CATALOG_PAGE_SIZE, take: CATALOG_PAGE_SIZE }),
+    prisma.product.findMany({ where, select: productSelect, orderBy: [{ category: { sortOrder: "asc" } }, { nameEn: "asc" }], skip: (f.page - 1) * (f.take ?? CATALOG_PAGE_SIZE), take: f.take ?? CATALOG_PAGE_SIZE }),
     prisma.product.count({ where }),
   ]);
   let items = await priceProducts(rows, viewer, false);

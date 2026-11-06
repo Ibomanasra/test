@@ -1,13 +1,41 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { ProductCard } from "@/components/shop/ProductCard";
 import { Link } from "@/i18n/navigation";
-import { listCategories } from "@/server/services/catalog";
+import { listCatalog, listCategories, type ProductDto } from "@/server/services/catalog";
+import { currentTaxRateBps } from "@/server/services/pricing";
+import { currentViewer } from "@/server/viewer";
+
+const ROW = 4;
+
+function ProductRow({ title, href, more, items, vatBps, testId }: { title: string; href: string; more: string; items: ProductDto[]; vatBps: number; testId?: string }) {
+  if (!items.length) return null;
+  return (
+    <section data-testid={testId}>
+      <div className="mb-3 flex items-end justify-between gap-3">
+        <h2 className="text-xl font-bold">{title}</h2>
+        <Link href={href} className="text-sm font-medium whitespace-nowrap text-brand-700 hover:underline">{more}</Link>
+      </div>
+      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {items.map((p) => <ProductCard key={p.id} product={p} vatBps={vatBps} />)}
+      </ul>
+    </section>
+  );
+}
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const [t, categories] = await Promise.all([getTranslations("shop"), listCategories()]);
+  const viewer = await currentViewer();
+  const [t, categories, vat, promos] = await Promise.all([
+    getTranslations("shop"),
+    listCategories(),
+    currentTaxRateBps(new Date()),
+    listCatalog(viewer, { promo: true, page: 1 }),
+  ]);
+  // je Kategorie eine kurze Reihe (Preise für den Kanal des Betrachters)
+  const rows = await Promise.all(categories.filter((c) => c._count.products > 0).map(async (c) => ({ c, items: (await listCatalog(viewer, { category: c.slug, page: 1, take: ROW })).items })));
   const benefits = [t("benefits.delivery"), t("benefits.wholesale"), t("benefits.payment")];
   return (
     <div className="space-y-8">
@@ -43,6 +71,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           ))}
         </ul>
       </section>
+      <ProductRow title={t("home.offers")} href="/products?promo=1" more={t("home.allOffers")} items={promos.items.slice(0, ROW)} vatBps={vat} testId="home-offers" />
+      {rows.map(({ c, items }) => (
+        <ProductRow key={c.id} title={locale === "ar" ? c.nameAr : c.nameEn} href={`/products?category=${c.slug}`} more={t("home.showAll", { count: c._count.products })} items={items} vatBps={vat} testId="home-category" />
+      ))}
+      <div className="text-center">
+        <Link href="/products" className="inline-block rounded-lg bg-brand-700 px-6 py-3 font-semibold text-white hover:bg-brand-800">{t("home.allProducts")}</Link>
+      </div>
     </div>
   );
 }

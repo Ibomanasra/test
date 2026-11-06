@@ -2,6 +2,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Suspense } from "react";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Alert } from "@/components/ui";
+import { Logo } from "@/components/brand/Logo";
 import { Link } from "@/i18n/navigation";
 import { getAuth } from "@/server/auth/context";
 import { cartCount, cartOwner } from "@/server/services/cart";
@@ -18,9 +19,8 @@ export default async function ShopLayout({ children, params }: { children: React
     <div className="flex min-h-dvh flex-col">
       <header className="sticky top-0 z-20 border-b border-ink-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-3">
-          <Link href="/" className="flex items-center gap-2 text-lg font-bold text-brand-800">
-            <span aria-hidden className="grid size-9 place-items-center rounded-lg bg-brand-700 text-white">ش</span>
-            {t("appName")}
+          <Link href="/" aria-label={t("appName")} data-testid="site-logo">
+            <Logo size={40} />
           </Link>
           <nav className="order-3 flex w-full gap-4 overflow-x-auto text-sm font-medium text-ink-700 sm:order-none sm:ms-6 sm:w-auto">
             <Link href="/products" className="whitespace-nowrap hover:text-brand-700">{ts("nav.catalog")}</Link>

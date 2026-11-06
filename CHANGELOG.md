@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.7.1] – 2026-11-06 – Logo & Startseite
+
+### Hinzugefügt
+- **Logo „Glut“**: Flamme auf dunkler Kachel (شعلة الجنوب = Flamme des Südens) mit arabischer und lateinischer Wortmarke – im Shop-Kopf, in der Admin-Seitenleiste, auf den Anmeldeseiten, als Favicon/Apple-Icon, als Standardlogo auf allen A4-Dokumenten (bis ein eigenes Logo hochgeladen wird) und als App-Icon.
+- **Startseite**: beim Scrollen Angebote und je Kategorie eine Reihe Produkte (mit Preis für den Kanal des Besuchers und „In den Warenkorb“), „Alle anzeigen“ je Kategorie.
+
+### Geändert
+- Produktkarte als gemeinsame Komponente für Katalog und Startseite.
+- Windows: `pnpm dev` startet direkt, Projektpfad und `.env` werden plattformunabhängig gelesen; Einrichtung mit `pnpm setup:dev` (siehe TESTEN.md).
+
 ## [0.7.0] – 2026-11-06 – Restpunkte
 
 ### Hinzugefügt

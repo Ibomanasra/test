@@ -1,11 +1,8 @@
 import { catalogQuerySchema } from "@sa/contracts";
 import { getLocale, getTranslations, setRequestLocale } from "next-intl/server";
 import { Pagination } from "@/components/admin/Pagination";
-import { AddToCart } from "@/components/shop/AddToCart";
-import { AvailabilityBadge } from "@/components/shop/AvailabilityBadge";
-import { PriceTag } from "@/components/shop/PriceTag";
-import { ProductImage } from "@/components/shop/ProductImage";
-import { Badge, Button, EmptyState, Input, PageHeader, cn } from "@/components/ui";
+import { ProductCard } from "@/components/shop/ProductCard";
+import { Button, EmptyState, Input, PageHeader, cn } from "@/components/ui";
 import { Link } from "@/i18n/navigation";
 import { listCatalog, listCategories } from "@/server/services/catalog";
 import { currentTaxRateBps } from "@/server/services/pricing";
@@ -55,33 +52,7 @@ export default async function ProductsPage({ params, searchParams }: { params: P
         <EmptyState>{tc("noResults")}</EmptyState>
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {data.items.map((p) => {
-            const v = p.variants[0];
-            if (!v) return null;
-            const unit = v.units.find((u) => u.code === v.defaultUnit) ?? v.units[0];
-            return (
-              <li key={p.id} className="flex flex-col rounded-xl bg-white p-4 shadow-sm ring-1 ring-ink-200" data-testid="product-card">
-                <Link href={`/products/${p.slug}`} className="block">
-                  <ProductImage imageId={p.imageIds[0]} name={nm(p) ?? ""} />
-                  <div className="mt-3 flex flex-wrap gap-1">
-                    {v.promotion ? <Badge tone="brand">{t("promo")}</Badge> : null}
-                    <AvailabilityBadge value={v.availability} />
-                  </div>
-                  <h2 className="mt-2 line-clamp-2 font-semibold">{nm(p)}</h2>
-                  <p className="text-xs text-ink-500">
-                    <span className="num">{v.sku}</span>
-                    {p.variants.length > 1 ? ` · ${t("variants", { count: p.variants.length })}` : ""}
-                  </p>
-                </Link>
-                <div className="mt-3">
-                  <PriceTag channel={p.channel} unitPrice={v.unitPrice} listUnitPrice={v.listUnitPrice} factor={unit?.factor} unitName={unit ? nm(unit) ?? "" : ""} vatBps={vat} />
-                </div>
-                <div className="mt-auto pt-3">
-                  <AddToCart variantId={v.id} units={v.units} defaultUnit={v.defaultUnit} minQtyBase={v.minQtyBase} qtyStepBase={v.qtyStepBase} disabled={v.availability === "out"} compact />
-                </div>
-              </li>
-            );
-          })}
+          {data.items.map((p) => <ProductCard key={p.id} product={p} vatBps={vat} />)}
         </ul>
       )}
       <Pagination page={f.page} total={data.total} pageSize={data.pageSize} />

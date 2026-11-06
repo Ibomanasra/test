@@ -8,6 +8,8 @@ Arabisch (Standard, RTL) und Englisch, Beträge in ₪ (intern Agorot), MwSt. 16
 
 ---
 
+> **Zum Ausprobieren am eigenen Rechner:** Schritt-für-Schritt-Anleitung in [TESTEN.md](TESTEN.md) (`pnpm setup:dev`, `pnpm dev`, `pnpm app`).
+
 ## Schnellstart (Docker)
 
 Voraussetzung: Docker mit Compose v2.

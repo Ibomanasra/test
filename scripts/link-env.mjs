@@ -1,21 +1,26 @@
 #!/usr/bin/env node
 /**
- * Monorepo-Komfort: Next.js liest .env nur aus apps/web. Wir verlinken die
- * gemeinsame Root-.env dorthin (nur wenn vorhanden; in Docker/CI wird nichts getan).
- * Windows ohne Entwicklermodus darf keine Symlinks anlegen → dann wird kopiert.
+ * Früher wurde die Root-.env nach apps/web/.env verlinkt bzw. kopiert. Next.js lädt die
+ * Root-.env inzwischen selbst (apps/web/next.config.ts). Eine alte Verknüpfung oder Kopie
+ * würde veraltete Werte liefern (unter Windows auch kaputte Links) → hier entfernen.
  */
-import { copyFileSync, existsSync, lstatSync, symlinkSync } from "node:fs";
+import { lstatSync, readFileSync, unlinkSync } from "node:fs";
 
 const target = "apps/web/.env";
-if (!existsSync(".env")) process.exit(0);
 try {
-  lstatSync(target);
-} catch {
-  try {
-    symlinkSync("../../.env", target);
-    console.log(`linked ${target} → ../../.env`);
-  } catch {
-    copyFileSync(".env", target);
-    console.log(`copied .env → ${target} (nach Änderungen an .env erneut: pnpm setup:dev)`);
+  const st = lstatSync(target);
+  let ours = st.isSymbolicLink();
+  if (!ours) {
+    try {
+      ours = readFileSync(target, "utf8").includes("Sholat Aljanoub – Umgebungsvariablen");
+    } catch {
+      ours = true;
+    }
   }
+  if (ours) {
+    unlinkSync(target);
+    console.log(`removed ${target} (Next.js liest jetzt direkt die .env im Projektordner)`);
+  }
+} catch {
+  // nichts vorhanden
 }

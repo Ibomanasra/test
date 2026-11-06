@@ -11,7 +11,7 @@
  */
 import { spawnSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
-import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { networkInterfaces } from "node:os";
 
 const isWin = process.platform === "win32";
@@ -58,15 +58,8 @@ if (!existsSync(".env")) {
 } else {
   console.log("✓ .env existiert bereits – unverändert");
 }
-// apps/web/.env aktualisieren (Verknüpfung oder Kopie)
+// alte apps/web/.env (Verknüpfung/Kopie) entfernen – Next.js liest die Root-.env direkt
 spawnSync(process.execPath, ["scripts/link-env.mjs"], { stdio: "inherit" });
-if (existsSync("apps/web/.env")) {
-  try {
-    if (readFileSync("apps/web/.env", "utf8") !== readFileSync(".env", "utf8")) copyFileSync(".env", "apps/web/.env");
-  } catch {
-    /* Verknüpfung */
-  }
-}
 
 // 2 ── Docker ────────────────────────────────────────────────────────────────
 step(2, "Datenbank, Dateispeicher und Mailpit starten (Docker)");

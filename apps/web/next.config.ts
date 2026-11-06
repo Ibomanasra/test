@@ -1,6 +1,12 @@
+import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
+
+// Gemeinsame .env aus dem Projektordner laden (Monorepo). Bereits gesetzte Variablen
+// (Docker, CI) haben Vorrang. Ersetzt die Verknüpfung apps/web/.env, die unter Windows scheitern kann.
+const rootEnv = fileURLToPath(new URL("../../.env", import.meta.url));
+if (existsSync(rootEnv)) process.loadEnvFile(rootEnv);
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 

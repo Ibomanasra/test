@@ -46,6 +46,24 @@ export async function addTaxRate(ctx: AuthContext, input: z.infer<typeof taxRate
   });
 }
 
+/**
+ * MwSt.-Schalter: neuer Satz gilt ab sofort (nicht erst ab Mitternacht).
+ * Bereits geplante künftige Sätze müssen vorher gelöscht werden.
+ */
+export async function setVatNow(ctx: AuthContext, rateBps: number, code = "STANDARD") {
+  return prisma.$transaction(async (tx) => {
+    const now = new Date();
+    const existing = await tx.taxRate.findMany({ where: { code } });
+    if (existing.some((r) => r.validFrom > now)) throw badRequest("tax_rate_planned");
+    const open = existing.find((r) => r.validTo === null);
+    if (open?.rateBps === rateBps) return open;
+    if (open) await tx.taxRate.update({ where: { id: open.id }, data: { validTo: now } });
+    const created = await tx.taxRate.create({ data: { code, rateBps, validFrom: now } });
+    await audit(ctx, { action: "settings.vat_switch", entityType: "TaxRate", entityId: created.id, before: open ?? null, after: created }, tx);
+    return created;
+  });
+}
+
 /** Geplante (noch nicht gültige) Sätze dürfen gelöscht werden; der Vorgänger wird wieder offen. */
 export async function deleteFutureTaxRate(ctx: AuthContext, id: string) {
   const rate = await prisma.taxRate.findUnique({ where: { id } });

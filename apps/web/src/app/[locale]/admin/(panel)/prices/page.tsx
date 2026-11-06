@@ -1,10 +1,12 @@
 import { priceListQuerySchema } from "@sa/contracts";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { CrudManager } from "@/components/admin/CrudManager";
+import { hasPermission } from "@sa/core";
+import { PriceGrid } from "@/components/admin/PriceGrid";
+import { Link } from "@/i18n/navigation";
 import { Forbidden } from "@/components/admin/Forbidden";
 import { Pagination } from "@/components/admin/Pagination";
 import { Button, Input, Num, Select } from "@/components/ui";
-import { money, moneyInput, pct } from "@/server/format";
+import { pct } from "@/server/format";
 import { listVariantPrices } from "@/server/services/prices-admin";
 import { priceOptions } from "@/server/services/price-options";
 import { pricePage } from "./guard";
@@ -24,36 +26,6 @@ export default async function PriceOverviewPage({
   const filter = parsed.success ? parsed.data : { page: 1 };
   const [t, tc, data, opts] = await Promise.all([getTranslations("admin.prices"), getTranslations("common"), listVariantPrices(filter), priceOptions(locale)]);
 
-  const fields = [
-    ...(g.canSeeCost ? [{ name: "costPrice", label: t("cost"), type: "money" as const, required: true }] : []),
-    { name: "b2cPrice", label: t("b2c"), type: "money" as const, required: true, hint: t("b2cHint") },
-    { name: "b2bBasePrice", label: t("b2b"), type: "money" as const, required: true, hint: t("b2bHint") },
-  ];
-  const columns = [
-    { key: "sku", label: t("sku"), className: "num" },
-    { key: "name", label: t("product"), className: "min-w-56" },
-    { key: "category", label: t("category") },
-    ...(g.canSeeCost ? [{ key: "cost", label: t("cost"), className: "num" }] : []),
-    { key: "b2c", label: t("b2c"), className: "num" },
-    { key: "b2b", label: t("b2b"), className: "num" },
-    ...(g.canSeeCost ? [{ key: "margin", label: t("margin"), className: "num" }, { key: "flag", label: "" }] : []),
-  ];
-  const rows = data.items.map((v) => ({
-    id: v.id,
-    tone: g.canSeeCost && v.belowMargin ? ("warn" as const) : undefined,
-    values: { costPrice: moneyInput(v.costPrice), b2cPrice: moneyInput(v.b2cPrice), b2bBasePrice: moneyInput(v.b2bBasePrice) },
-    cells: {
-      sku: v.sku,
-      name: opts.variantLabel.get(v.id)?.split(" · ")[1] ?? "",
-      category: locale === "ar" ? v.product.category.nameAr : v.product.category.nameEn,
-      cost: money(v.costPrice),
-      b2c: money(v.b2cPrice),
-      b2b: money(v.b2bBasePrice),
-      margin: `${pct(v.marginB2cBps)} / ${pct(v.marginB2bBps)}`,
-      flag: v.belowMargin ? t("belowMarginBadge") : "",
-    },
-  }));
-
   return (
     <div className="space-y-4">
       <form method="get" className="flex flex-wrap gap-2">
@@ -72,19 +44,29 @@ export default async function PriceOverviewPage({
         ) : null}
         <Button type="submit" variant="secondary">{tc("filter")}</Button>
       </form>
-      <p className="text-sm text-ink-500">
-        <Num>{data.total}</Num> · {t("vatNote", { rate: pct(data.taxRateBps) })} {g.canSeeCost ? `· ${t("minMarginNote", { margin: pct(data.minMarginBps) })}` : ""}
-      </p>
-      <CrudManager
-        endpoint="/api/v1/admin/prices/variants"
-        fields={fields}
-        columns={columns}
-        rows={rows}
+      <div className="flex flex-wrap items-center gap-2 text-sm text-ink-600">
+        <span><Num>{data.total}</Num> {t("grid.products")}</span>
+        <Link href="/admin/settings/tax" className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${data.taxRateBps > 0 ? "bg-green-100 text-green-800" : "bg-ink-100 text-ink-700"}`} data-testid="vat-pill">
+          {data.taxRateBps > 0 ? t("grid.vatOn", { rate: pct(data.taxRateBps) }) : t("grid.vatOff")}
+        </Link>
+        {g.canSeeCost ? <span className="text-ink-500">· {t("minMarginNote", { margin: pct(data.minMarginBps) })}</span> : null}
+        {g.canEdit ? <span className="ms-auto text-xs text-ink-500">{t("grid.hint")}</span> : null}
+      </div>
+      <PriceGrid
+        taxRateBps={data.taxRateBps}
+        minMarginBps={data.minMarginBps}
+        canSeeCost={g.canSeeCost}
         canEdit={g.canEdit}
-        allowCreate={false}
-        deletable={false}
-        createLabel=""
-        testId="variant-prices"
+        canConfirmBelow={hasPermission(g.auth.permissions, "price.confirm_below_margin")}
+        rows={data.items.map((v) => ({
+          id: v.id,
+          sku: v.sku,
+          name: opts.variantLabel.get(v.id)?.split(" · ")[1] ?? "",
+          category: locale === "ar" ? v.product.category.nameAr : v.product.category.nameEn,
+          costPrice: v.costPrice,
+          b2cPrice: v.b2cPrice,
+          b2bBasePrice: v.b2bBasePrice,
+        }))}
       />
       <Pagination page={filter.page} total={data.total} pageSize={data.pageSize} />
     </div>

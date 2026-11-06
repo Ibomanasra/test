@@ -260,7 +260,10 @@
     "submit": "Create account",
     "verifiedPhone": "Verified phone: <num>{phone}</num>",
     "expired": "Verification expired. Please log in again.",
-    "b2bPendingNote": "After registering we review your details. You will get a message once approved."
+    "b2bPendingNote": "After registering we review your details. You will get a message once approved.",
+    "cityHint": "Type your city, town or village freely.",
+    "zoneOptional": "Delivery area (optional)",
+    "zoneAuto": "Automatic from city"
   },
   "account": {
     "title": "My account",
@@ -425,7 +428,44 @@
       "revenueNote": "By order date, excluding cancelled orders.",
       "lowStock": "Items below minimum stock",
       "receivables": "Open receivables",
-      "driverCash": "Cash held by drivers"
+      "driverCash": "Cash held by drivers",
+      "greetMorning": "Good morning, {name}",
+      "greetDay": "Hello, {name}",
+      "greetEvening": "Good evening, {name}",
+      "kpiRevenueToday": "Sales today",
+      "vsYesterday": "vs. yesterday",
+      "vsYesterdayNone": "No sales yesterday to compare",
+      "kpiOrdersToday": "Orders today",
+      "kpiOrdersTodaySub": "All orders placed today",
+      "kpiToProcess": "To process",
+      "kpiToProcessSub": "{n} waiting for confirmation",
+      "kpiOverdue": "Overdue invoices",
+      "kpiOverdueSub": "{n} invoices past due",
+      "chartTitle": "Sales, last 14 days",
+      "chartNote": "Net excl. delivery, in ₪",
+      "total": "Total",
+      "showTable": "Show as table",
+      "day": "Day",
+      "marginMonth": "Margin this month",
+      "attention": "Needs your attention",
+      "allClear": "All clear — nothing urgent.",
+      "attnConfirm": "New orders to confirm",
+      "attnDealers": "Dealers awaiting approval",
+      "attnLowStock": "Items below minimum stock",
+      "attnOverdue": "Overdue invoices",
+      "attnOnTheWay": "Shipments on the way",
+      "attnClosings": "Cash closings to review",
+      "quickOrders": "Orders",
+      "quickQuote": "Quote",
+      "quickProduct": "New product",
+      "quickPrices": "Prices",
+      "pipeline": "Open order pipeline",
+      "openOrdersLink": "Go to orders",
+      "latest": "Latest orders",
+      "all": "All",
+      "noOrders": "No orders yet.",
+      "topProducts": "Top sellers this month",
+      "noSales": "No sales this month yet."
     },
     "customers": {
       "title": "Customers",
@@ -452,7 +492,14 @@
       "rejectedReason": "Rejection reason",
       "blockedReason": "Blocking reason",
       "lastLogin": "Last login",
-      "statementComing": "Statement, open items, revenue and documents – phases 4 and 5."
+      "statementComing": "Statement, open items, revenue and documents – phases 4 and 5.",
+      "displayName": "Display name",
+      "phoneLoginHint": "This number is also the account owner's login.",
+      "language": "Language",
+      "addAddress": "Add address",
+      "addressLabel": "Label (e.g. shop, warehouse)",
+      "defaultAddress": "Default address",
+      "deleteAddressConfirm": "Delete this address?"
     },
     "users": {
       "title": "Users (staff)",
@@ -583,7 +630,15 @@
           "ORDER": "Order",
           "RETURN": "Return"
         }
-      }
+      },
+      "vatTitle": "VAT",
+      "vatOn": "On – {rate}",
+      "vatOff": "Off (0%)",
+      "vatEnable": "Enable VAT now",
+      "vatDisable": "Turn VAT off (0%)",
+      "vatEnableConfirm": "Enable VAT at {rate} from now on? Earlier orders and invoices stay unchanged.",
+      "vatDisableConfirm": "Turn VAT off (0%) from now on? Earlier orders and invoices stay unchanged.",
+      "vatHint": "The change applies immediately to new prices and orders. The consumer price you enter is the final price; dealer prices are net and VAT is added on top when enabled."
     },
     "audit": {
       "title": "Audit log",
@@ -613,7 +668,8 @@
         "scheduled": "Scheduled prices",
         "bulk": "Bulk & import",
         "history": "History",
-        "preview": "Price preview"
+        "preview": "Price preview",
+        "advanced": "Advanced"
       },
       "cost": "Cost price (net)",
       "b2c": "Consumer price (gross)",
@@ -794,6 +850,20 @@
         "CATEGORY_DISCOUNT": "Category discount",
         "B2C_PRICE": "Consumer price",
         "MANUAL_OVERRIDE": "Manual price"
+      },
+      "grid": {
+        "products": "products",
+        "vatOn": "VAT {rate}",
+        "vatOff": "No VAT (0%)",
+        "hint": "Edit a price, then press Enter or “Save”.",
+        "b2c": "Consumer price",
+        "b2cSub": "final price",
+        "b2b": "Dealer price",
+        "b2bSub": "net, before discounts",
+        "marginSub": "consumer / dealer",
+        "saved": "Saved",
+        "belowMarginConfirm": "This price is below the minimum margin. Save anyway?",
+        "belowMarginError": "Price is below the minimum margin."
       }
     },
     "quotes": {
@@ -918,7 +988,32 @@
       "refundCard": "Refund to card",
       "refundConfirm": "The amount will be refunded to the customer's card via the payment gateway. Continue?",
       "signature": "Signature",
-      "photo": "Delivery photo"
+      "photo": "Delivery photo",
+      "board": {
+        "tabOpen": "Open",
+        "results": "orders",
+        "deliveryFilter": "Delivery:",
+        "moreFilters": "More filters",
+        "selectHint": "Select orders for bulk actions",
+        "advanceSelected": "Move to next step ({count})",
+        "advanced": "{count} orders updated.",
+        "order": "Order",
+        "action": "Action",
+        "items": "{count} items",
+        "when": {
+          "today": "Today",
+          "tomorrow": "Tomorrow",
+          "late": "Late"
+        },
+        "next": {
+          "CONFIRMED": "Confirm",
+          "PICKING": "Start picking",
+          "READY": "Mark ready"
+        },
+        "toDispatch": "Dispatch",
+        "toDelivery": "Delivery",
+        "open": "Open"
+      }
     },
     "products": {
       "title": "Products",
@@ -1500,7 +1595,10 @@
     "nothing_to_refund": "No refundable card payment",
     "refund_exceeds_refundable": "Amount exceeds the refundable amount",
     "refund_failed": "The payment gateway rejected the refund",
-    "gateway_changed": "The payment gateway changed since this payment"
+    "gateway_changed": "The payment gateway changed since this payment",
+    "dealer_number_taken": "This dealer number belongs to another customer.",
+    "last_address": "The customer's only address cannot be deleted.",
+    "tax_rate_planned": "A future rate is planned – delete it first."
   },
   "permissions": {
     "dashboard_view": "View dashboard",

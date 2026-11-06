@@ -2,28 +2,31 @@ import { getTranslations } from "next-intl/server";
 import { SubTabs } from "@/components/admin/SubTabs";
 import { PageHeader } from "@/components/ui";
 
-const TABS = ["", "groups", "price-lists", "tiers", "customer-prices", "category-discounts", "promotions", "rounding", "scheduled", "bulk", "history", "preview"] as const;
-const KEYS: Record<(typeof TABS)[number], string> = {
-  "": "overview",
-  groups: "groups",
-  "price-lists": "priceLists",
-  tiers: "tiers",
-  "customer-prices": "customerPrices",
-  "category-discounts": "categoryDiscounts",
-  promotions: "promotions",
-  rounding: "rounding",
-  scheduled: "scheduled",
-  bulk: "bulk",
-  history: "history",
-  preview: "preview",
-};
+/** Tägliche Arbeit vorn, Regelwerk unter „إعدادات متقدمة“ */
+const MAIN = [
+  ["", "overview"],
+  ["promotions", "promotions"],
+  ["customer-prices", "customerPrices"],
+  ["bulk", "bulk"],
+  ["preview", "preview"],
+] as const;
+const MORE = [
+  ["groups", "groups"],
+  ["price-lists", "priceLists"],
+  ["tiers", "tiers"],
+  ["category-discounts", "categoryDiscounts"],
+  ["rounding", "rounding"],
+  ["scheduled", "scheduled"],
+  ["history", "history"],
+] as const;
 
 export default async function PricesLayout({ children }: { children: React.ReactNode }) {
   const t = await getTranslations("admin.prices");
+  const tab = ([k, key]: readonly [string, string]) => ({ href: k ? `/admin/prices/${k}` : "/admin/prices", label: t(`tabs.${key}`) });
   return (
     <div>
       <PageHeader title={t("title")} />
-      <SubTabs tabs={TABS.map((k) => ({ href: k ? `/admin/prices/${k}` : "/admin/prices", label: t(`tabs.${KEYS[k]}`) }))} />
+      <SubTabs tabs={MAIN.map(tab)} more={MORE.map(tab)} moreLabel={t("tabs.advanced")} />
       {children}
     </div>
   );

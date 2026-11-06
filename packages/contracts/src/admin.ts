@@ -9,6 +9,7 @@ import {
   permissionSchema,
   phoneSchema,
 } from "./common";
+import { dealerNumberSchema } from "./auth";
 
 export const customerStatusSchema = z.enum(["ACTIVE", "PENDING_APPROVAL", "REJECTED", "BLOCKED"]);
 export const customerTypeSchema = z.enum(["B2C", "B2B"]);
@@ -32,6 +33,18 @@ export const rejectCustomerSchema = z.object({ reason: z.string().trim().min(3).
 export const blockCustomerSchema = z.object({ reason: z.string().trim().min(3).max(500) });
 
 export const updateCustomerCreditSchema = approveCustomerSchema;
+
+/** Stammdaten durch die Verwaltung; Telefon ändert auch die Anmeldenummer des Inhabers */
+export const customerUpdateSchema = z.object({
+  displayName: nameSchema,
+  companyName: nameSchema.optional().or(z.literal("").transform(() => undefined)),
+  ownerName: nameSchema.optional().or(z.literal("").transform(() => undefined)),
+  dealerNumber: dealerNumberSchema.optional().or(z.literal("").transform(() => undefined)),
+  phone: phoneSchema,
+  email: z.string().trim().email().max(160).optional().or(z.literal("").transform(() => undefined)),
+  preferredLocale: z.enum(["ar", "en"]),
+});
+export type CustomerUpdate = z.infer<typeof customerUpdateSchema>;
 
 export const customerNoteSchema = z.object({ body: z.string().trim().min(1).max(2000) });
 
@@ -130,3 +143,6 @@ export const auditQuerySchema = z.object({
   action: z.string().max(80).optional(),
   page: z.coerce.number().int().min(1).default(1),
 });
+
+/** MwSt.-Schalter: Satz gilt ab sofort */
+export const vatSwitchSchema = z.object({ rateBps: z.number().int().min(0).max(5000) });

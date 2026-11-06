@@ -65,3 +65,74 @@ export async function getDashboardBasics() {
     driverCash: driverCash._sum.amount ?? 0,
   };
 }
+
+export interface DayRevenue {
+  day: string;
+  B2C: number;
+  B2B: number;
+}
+
+/** Netto-Umsatz je Geschäftstag (Asia/Hebron) und Kanal für die letzten `days` Tage, lückenlos */
+export async function dailyRevenue(days = 14): Promise<DayRevenue[]> {
+  const todayYmd = businessDate(new Date());
+  const from = new Date(startOfBusinessDay(todayYmd).getTime() - (days - 1) * 86_400_000);
+  const rows = await prisma.$queryRaw<{ day: string; channel: "B2C" | "B2B"; net: bigint | null }[]>`
+    SELECT to_char((o."placedAt" AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Hebron', 'YYYY-MM-DD') AS day, o."channel",
+           SUM(CASE WHEN i."qtyBase" > 0 THEN i."lineNet" * (i."qtyBase" - i."qtyCancelledBase") / i."qtyBase" ELSE 0 END)::bigint AS net
+    FROM "Order" o JOIN "OrderItem" i ON i."orderId" = o.id
+    WHERE o."status" <> 'CANCELLED' AND o."placedAt" >= ${from}
+    GROUP BY 1, 2`;
+  const out: DayRevenue[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const day = businessDate(new Date(startOfBusinessDay(todayYmd).getTime() - i * 86_400_000 + 12 * 3_600_000));
+    out.push({ day, B2C: 0, B2B: 0 });
+  }
+  for (const r of rows) {
+    const d = out.find((x) => x.day === r.day);
+    if (d) d[r.channel] = Number(r.net ?? 0);
+  }
+  return out;
+}
+
+/** Alles für die Startseite der Verwaltung */
+export async function getDashboard() {
+  const now = new Date();
+  const todayYmd = businessDate(now);
+  const today = startOfBusinessDay(todayYmd);
+  const yesterday = new Date(today.getTime() - 86_400_000);
+  const tomorrow = new Date(today.getTime() + 86_400_000);
+  const monthStart = startOfBusinessDay(`${todayYmd.slice(0, 7)}-01`);
+  const [basics, revYesterday, ordersToday, overdue, latest, top, series, outForDelivery, unsettledClosings] = await Promise.all([
+    getDashboardBasics(),
+    revenue(yesterday, today),
+    prisma.order.count({ where: { placedAt: { gte: today, lt: tomorrow } } }),
+    prisma.invoice.findMany({ where: { status: { in: ["ISSUED", "PARTIALLY_PAID"] }, dueDate: { lt: now } }, select: { totalGross: true, paidAmount: true, creditedAmount: true } }),
+    prisma.order.findMany({ orderBy: { placedAt: "desc" }, take: 6, select: { id: true, number: true, status: true, channel: true, totalGross: true, placedAt: true, customer: { select: { displayName: true } } } }),
+    prisma.$queryRaw<{ sku: string; nameAr: string; nameEn: string; net: bigint; qty: bigint }[]>`
+      SELECT i."skuSnapshot" AS sku, MIN(i."nameArSnapshot") AS "nameAr", MIN(i."nameEnSnapshot") AS "nameEn",
+             SUM(CASE WHEN i."qtyBase" > 0 THEN i."lineNet" * (i."qtyBase" - i."qtyCancelledBase") / i."qtyBase" ELSE 0 END)::bigint AS net,
+             SUM(i."qtyBase" - i."qtyCancelledBase")::bigint AS qty
+      FROM "OrderItem" i JOIN "Order" o ON o.id = i."orderId"
+      WHERE o."status" <> 'CANCELLED' AND o."placedAt" >= ${monthStart}
+      GROUP BY i."skuSnapshot" ORDER BY net DESC LIMIT 5`,
+    dailyRevenue(14),
+    prisma.shipment.count({ where: { status: "LOADED" } }),
+    prisma.cashClosing.count({ where: { status: "SUBMITTED" } }),
+  ]);
+  const sum = (b: Record<"B2C" | "B2B", RevenueBucket>) => b.B2C.net + b.B2B.net;
+  return {
+    ...basics,
+    revenueToday: sum(basics.revenue.today),
+    revenueYesterday: sum(revYesterday),
+    ordersToday,
+    overdue: overdue.reduce((a, i) => a + Math.max(0, i.totalGross - i.paidAmount - i.creditedAmount), 0),
+    overdueCount: overdue.length,
+    latest,
+    top: top.map((t) => ({ ...t, net: Number(t.net), qty: Number(t.qty) })),
+    series,
+    outForDelivery,
+    unsettledClosings,
+    toConfirm: basics.ordersByStatus.NEW ?? 0,
+    inProgress: (basics.ordersByStatus.CONFIRMED ?? 0) + (basics.ordersByStatus.PICKING ?? 0) + (basics.ordersByStatus.READY ?? 0),
+  };
+}

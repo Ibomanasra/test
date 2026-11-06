@@ -31,7 +31,7 @@ export default function Register() {
     setBusy(true);
     setError("");
     try {
-      const r = await call<{ token: string }>("/api/v1/auth/register/b2c", { body: { registrationToken: token, name, locale, address: { zoneId, city, street: street || undefined } } });
+      const r = await call<{ token: string }>("/api/v1/auth/register/b2c", { body: { registrationToken: token, name, locale, address: { zoneId: zoneId || undefined, city, street: street || undefined } } });
       await signIn(r.token);
       router.replace("/");
     } catch (e) {
@@ -45,16 +45,16 @@ export default function Register() {
     <Screen>
       <Card>
         <Field label={tr.t("name")} value={name} onChangeText={setName} />
+        <Field label={tr.t("city")} value={city} onChangeText={setCity} />
         <Muted>{tr.t("zone")}</Muted>
         {zones.map((z) => (
-          <Pressable key={z.id} onPress={() => setZoneId(z.id)} style={{ padding: 10, borderRadius: 8, borderWidth: 1, borderColor: zoneId === z.id ? colors.brand : colors.ink300, backgroundColor: zoneId === z.id ? colors.brandSoft : colors.white }}>
+          <Pressable key={z.id} onPress={() => setZoneId(zoneId === z.id ? "" : z.id)} style={{ padding: 10, borderRadius: 8, borderWidth: 1, borderColor: zoneId === z.id ? colors.brand : colors.ink300, backgroundColor: zoneId === z.id ? colors.brandSoft : colors.white }}>
             <Text style={{ textAlign: "left" }}>{tr.pick(z)}</Text>
           </Pressable>
         ))}
-        <Field label={tr.t("city")} value={city} onChangeText={setCity} />
         <Field label={tr.t("street")} value={street} onChangeText={setStreet} />
         <ErrorText>{error}</ErrorText>
-        <Button title={tr.t("createAccount")} onPress={() => void submit()} disabled={busy || name.length < 2 || !zoneId || city.length < 2} />
+        <Button title={tr.t("createAccount")} onPress={() => void submit()} disabled={busy || name.length < 2 || city.length < 2} />
       </Card>
     </Screen>
   );

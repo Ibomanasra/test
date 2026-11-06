@@ -1,8 +1,9 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
+import { CityZoneFields } from "@/components/shared/CityZoneFields";
 import { useState } from "react";
-import { Alert, Button, Field, Input, Select, cn } from "@/components/ui";
+import { Alert, Button, Field, Input, cn } from "@/components/ui";
 import { useRouter } from "@/i18n/navigation";
 import { apiFetch, useApi } from "@/lib/api-client";
 import { useHydrated } from "@/lib/use-hydrated";
@@ -114,21 +115,7 @@ export function RegisterForm({
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label={t("zone")} htmlFor="zoneId">
-          <Select id="zoneId" name="zoneId" required defaultValue="">
-            <option value="" disabled>
-              {t("chooseZone")}
-            </option>
-            {zones.map((z) => (
-              <option key={z.id} value={z.id}>
-                {z.name}
-              </option>
-            ))}
-          </Select>
-        </Field>
-        <Field label={t("city")} htmlFor="city">
-          <Input id="city" name="city" required minLength={2} autoComplete="address-level2" />
-        </Field>
+        <CityZoneFields zones={zones} />
         <Field label={t("street")} htmlFor="street">
           <Input id="street" name="street" autoComplete="address-line1" />
         </Field>

@@ -258,6 +258,10 @@ export const ORDER_PAGE_SIZE = 25;
 
 export interface OrderFilter {
   status?: OrderStatus;
+  /** mehrere Status (z. B. alle offenen) – hat Vorrang vor status */
+  statuses?: OrderStatus[];
+  /** gewünschter Liefertag (UTC-Mitternacht, @db.Date) */
+  deliveryDate?: Date;
   channel?: PricingChannel;
   q?: string;
   customerId?: string;
@@ -266,16 +270,27 @@ export interface OrderFilter {
   page: number;
 }
 
-export async function listOrders(f: OrderFilter) {
-  const where: Prisma.OrderWhereInput = {
-    status: f.status,
+function orderWhere(f: Omit<OrderFilter, "page">): Prisma.OrderWhereInput {
+  return {
+    status: f.statuses ? { in: f.statuses } : f.status,
     channel: f.channel,
+    requestedDeliveryDate: f.deliveryDate,
     customerId: f.customerId,
     placedAt: f.from || f.to ? { gte: f.from, lt: f.to } : undefined,
     ...(f.q
       ? { OR: [{ number: { contains: f.q, mode: "insensitive" } }, { customer: { displayName: { contains: f.q, mode: "insensitive" } } }, { customer: { phone: { contains: f.q } } }] }
       : {}),
   };
+}
+
+/** Anzahl je Status für die Reiter – mit denselben Filtern außer dem Status */
+export async function orderStatusCounts(f: Omit<OrderFilter, "page" | "status" | "statuses">) {
+  const rows = await prisma.order.groupBy({ by: ["status"], where: orderWhere(f), orderBy: { status: "asc" }, _count: { _all: true } });
+  return Object.fromEntries(rows.map((r) => [r.status, typeof r._count === "object" ? (r._count._all ?? 0) : 0])) as Partial<Record<OrderStatus, number>>;
+}
+
+export async function listOrders(f: OrderFilter) {
+  const where = orderWhere(f);
   const [items, total] = await prisma.$transaction([
     prisma.order.findMany({
       where,

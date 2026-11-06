@@ -27,7 +27,8 @@ export const staffVerifySchema = z.object({
 });
 
 export const addressInputSchema = z.object({
-  zoneId: idSchema,
+  /** leer = automatisch nach Ort, sonst Sammelzone „مناطق أخرى“ (OTHER) */
+  zoneId: idSchema.optional().or(z.literal("").transform(() => undefined)),
   label: optionalText(60),
   recipient: nameSchema,
   phone: phoneSchema,

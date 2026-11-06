@@ -52,7 +52,8 @@ async function seedTax() {
   await prisma.taxRate.upsert({
     where: { code_validFrom: { code: "STANDARD", validFrom: new Date("2020-01-01T00:00:00+02:00") } },
     update: {},
-    create: { code: "STANDARD", rateBps: 1600, validFrom: new Date("2020-01-01T00:00:00+02:00") },
+    // Vorerst 0 % – in der Verwaltung (Einstellungen → Steuer) jederzeit auf 16 % umschaltbar
+    create: { code: "STANDARD", rateBps: Number(process.env.SEED_VAT_BPS ?? 0), validFrom: new Date("2020-01-01T00:00:00+02:00") },
   });
 }
 
@@ -78,6 +79,8 @@ const ZONES: [string, string, string, (number | null)[]][] = [
   ["JENIN", "جنين", "Jenin", [3500, 12000, 60000, 5000, 120000, 350000]],
   ["TULKARM", "طولكرم", "Tulkarm", [3500, 12000, 60000, 5000, 120000, 350000]],
   ["JERICHO", "أريحا", "Jericho", [3000, 10000, 50000, 4500, 100000, 300000]],
+  // Sammelzone für alle übrigen Orte (freie Ortseingabe)
+  ["OTHER", "مناطق أخرى", "Other areas", [3500, 12000, 60000, 5000, 120000, 350000]],
 ];
 
 async function seedZones() {
@@ -89,7 +92,7 @@ async function seedZones() {
         code,
         nameAr,
         nameEn,
-        sortOrder: (i + 1) * 10,
+        sortOrder: code === "OTHER" ? 990 : (i + 1) * 10,
         deliveryWeekdays: [],
         rates: {
           create: [

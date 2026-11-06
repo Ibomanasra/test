@@ -1,5 +1,7 @@
 import "server-only";
-import type { ApproveCustomer, RegisterB2B, RegisterB2C } from "@sa/contracts";
+import type { ApproveCustomer, CustomerUpdate, RegisterB2B, RegisterB2C } from "@sa/contracts";
+import type { z } from "zod";
+import type { addressCreateSchema } from "@sa/contracts";
 import { businessDate, invoiceOpenAmount, startOfBusinessDay } from "@sa/core";
 import { nextCustomerNumber, prisma, type CustomerStatus, type CustomerType, type Locale, type Prisma } from "@sa/db";
 import { smsAdapter } from "../adapters/sms";
@@ -8,20 +10,17 @@ import { audit } from "../audit";
 import type { AuthContext } from "../auth/context";
 import { env } from "../env";
 import { AppError, badRequest, conflict, notFound } from "../errors";
+import { resolveZoneId } from "./zones";
 
 async function assertPhoneFree(phone: string) {
   if (await prisma.user.findUnique({ where: { phone }, select: { id: true } })) throw conflict("phone_already_registered");
 }
 
-async function assertZone(zoneId: string) {
-  const zone = await prisma.deliveryZone.findFirst({ where: { id: zoneId, active: true }, select: { id: true } });
-  if (!zone) throw badRequest("invalid_zone");
-}
 
 /** Privatkunde: sofort aktiv. */
 export async function registerB2C(phone: string, input: RegisterB2C) {
   await assertPhoneFree(phone);
-  await assertZone(input.address.zoneId);
+  const zoneId = await resolveZoneId(input.address.city, input.address.zoneId);
   return prisma.$transaction(async (tx) => {
     const user = await tx.user.create({
       data: { kind: "CUSTOMER", phone, phoneVerifiedAt: new Date(), name: input.name, locale: input.locale },
@@ -35,7 +34,7 @@ export async function registerB2C(phone: string, input: RegisterB2C) {
         phone,
         preferredLocale: input.locale,
         members: { create: { userId: user.id, role: "OWNER" } },
-        addresses: { create: { ...input.address, recipient: input.name, phone, isDefault: true } },
+        addresses: { create: { ...input.address, zoneId, recipient: input.name, phone, isDefault: true } },
       },
     });
     await audit({ user: { id: user.id } }, { action: "customer.register", entityType: "Customer", entityId: customer.id, after: customer }, tx);
@@ -51,7 +50,7 @@ export interface LicenseUpload {
 /** Händler: Status "wartet auf Freigabe" – sieht bis dahin B2C-Preise. */
 export async function registerB2B(phone: string, input: RegisterB2B, license: LicenseUpload) {
   await assertPhoneFree(phone);
-  await assertZone(input.address.zoneId);
+  const zoneId = await resolveZoneId(input.address.city, input.address.zoneId);
   const maxBytes = env().UPLOAD_MAX_MB * 1024 * 1024;
   if (license.data.length === 0) throw badRequest("license_required");
   if (license.data.length > maxBytes) throw badRequest("file_too_large");
@@ -85,7 +84,7 @@ export async function registerB2B(phone: string, input: RegisterB2B, license: Li
         email: input.email,
         preferredLocale: input.locale,
         members: { create: { userId: user.id, role: "OWNER" } },
-        addresses: { create: { ...input.address, recipient: input.ownerName, phone, isDefault: true } },
+        addresses: { create: { ...input.address, zoneId, recipient: input.ownerName, phone, isDefault: true } },
         files: { create: { fileId: file.id, title: "Trade license / رخصة المهن" } },
       },
     });
@@ -252,6 +251,73 @@ export async function updateCustomerCredit(ctx: AuthContext, id: string, input: 
     await audit(ctx, { action: "customer.update_credit", entityType: "Customer", entityId: id, before, after: updated }, tx);
     return updated;
   });
+}
+
+/** Stammdaten ändern (Verwaltung). Telefonänderung gilt auch für die Anmeldung des Inhabers. */
+export async function updateCustomerMaster(ctx: AuthContext, id: string, input: CustomerUpdate) {
+  const before = await prisma.customer.findUnique({ where: { id }, include: { members: { where: { role: "OWNER" }, select: { userId: true, user: { select: { phone: true } } } } } });
+  if (!before) throw notFound();
+  const owner = before.members[0];
+  if (input.phone !== before.phone || (owner && owner.user.phone !== input.phone)) {
+    const taken = await prisma.user.findUnique({ where: { phone: input.phone }, select: { id: true } });
+    if (taken && taken.id !== owner?.userId) throw conflict("phone_already_registered");
+  }
+  const b2b = before.type === "B2B";
+  if (b2b && input.dealerNumber && input.dealerNumber !== before.dealerNumber) {
+    const dup = await prisma.customer.findFirst({ where: { dealerNumber: input.dealerNumber, id: { not: id } }, select: { id: true } });
+    if (dup) throw conflict("dealer_number_taken");
+  }
+  return prisma.$transaction(async (tx) => {
+    const updated = await tx.customer.update({
+      where: { id },
+      data: {
+        displayName: input.displayName,
+        phone: input.phone,
+        email: input.email ?? null,
+        preferredLocale: input.preferredLocale,
+        ...(b2b ? { companyName: input.companyName ?? null, ownerName: input.ownerName ?? null, dealerNumber: input.dealerNumber ?? null } : {}),
+      },
+    });
+    if (owner && owner.user.phone !== input.phone) {
+      await tx.user.update({ where: { id: owner.userId }, data: { phone: input.phone, phoneVerifiedAt: null } });
+    }
+    const { members: _m, ...plainBefore } = before;
+    await audit(ctx, { action: "customer.update", entityType: "Customer", entityId: id, before: plainBefore, after: updated }, tx);
+    return updated;
+  });
+}
+
+type AddressBody = z.infer<typeof addressCreateSchema>;
+
+export async function saveCustomerAddress(ctx: AuthContext, customerId: string, input: AddressBody, addressId?: string) {
+  if (!(await prisma.customer.findUnique({ where: { id: customerId }, select: { id: true } }))) throw notFound();
+  const zoneId = await resolveZoneId(input.city, input.zoneId);
+  const before = addressId ? await prisma.address.findFirst({ where: { id: addressId, customerId } }) : null;
+  if (addressId && !before) throw notFound();
+  const hasDefault = await prisma.address.count({ where: { customerId, isDefault: true, id: addressId ? { not: addressId } : undefined } });
+  return prisma.$transaction(async (tx) => {
+    const isDefault = input.isDefault || hasDefault === 0;
+    if (isDefault) await tx.address.updateMany({ where: { customerId }, data: { isDefault: false } });
+    const data = { ...input, zoneId, isDefault };
+    const a = addressId ? await tx.address.update({ where: { id: addressId }, data }) : await tx.address.create({ data: { ...data, customerId } });
+    await audit(ctx, { action: addressId ? "address.update" : "address.create", entityType: "Address", entityId: a.id, before, after: a }, tx);
+    return a;
+  });
+}
+
+export async function deleteCustomerAddress(ctx: AuthContext, customerId: string, addressId: string) {
+  const a = await prisma.address.findFirst({ where: { id: addressId, customerId } });
+  if (!a) throw notFound();
+  if ((await prisma.address.count({ where: { customerId } })) <= 1) throw badRequest("last_address");
+  await prisma.$transaction(async (tx) => {
+    await tx.address.delete({ where: { id: addressId } });
+    if (a.isDefault) {
+      const next = await tx.address.findFirst({ where: { customerId }, orderBy: { createdAt: "asc" } });
+      if (next) await tx.address.update({ where: { id: next.id }, data: { isDefault: true } });
+    }
+    await audit(ctx, { action: "address.delete", entityType: "Address", entityId: addressId, before: a }, tx);
+  });
+  return { ok: true };
 }
 
 export async function addCustomerNote(ctx: AuthContext, id: string, body: string) {

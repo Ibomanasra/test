@@ -2,6 +2,7 @@
 
 import { formatBps, parsePercentToBps } from "@sa/core";
 import { useFormatter, useTranslations } from "next-intl";
+import { useState } from "react";
 import { Alert, Badge, Button, Card, Field, Input, Num, Table, Td, Th } from "@/components/ui";
 import { useRouter } from "@/i18n/navigation";
 import { useApi } from "@/lib/api-client";
@@ -48,12 +49,52 @@ export function TaxRates({ rates, canEdit, now }: { rates: TaxRateRow[]; canEdit
     }
   }
 
+  const current = rates.find((r) => state(r).label === t("current"));
+  const vatOn = (current?.rateBps ?? 0) > 0;
+  // Letzter Satz > 0 als Vorschlag zum Wiedereinschalten, sonst 16 %
+  const lastPositive = rates.find((r) => r.rateBps > 0)?.rateBps ?? 1600;
+  const [onRate, setOnRate] = useState(formatBps(lastPositive).replace("%", ""));
+
+  async function switchVat(enable: boolean) {
+    let rateBps = 0;
+    if (enable) {
+      try {
+        rateBps = parsePercentToBps(onRate);
+      } catch {
+        return setError(te("validation_error"));
+      }
+      if (rateBps <= 0) return setError(te("validation_error"));
+    }
+    if (!window.confirm(enable ? t("vatEnableConfirm", { rate: formatBps(rateBps) }) : t("vatDisableConfirm"))) return;
+    if (await call("/api/v1/admin/settings/vat", { method: "PUT", body: { rateBps } })) router.refresh();
+  }
+
   async function remove(id: string) {
     if (await call(`/api/v1/admin/settings/tax-rates/${id}`, { method: "DELETE" })) router.refresh();
   }
 
   return (
     <div className="space-y-6">
+      <Card title={t("vatTitle")}>
+        <div className="flex flex-wrap items-center gap-4" data-testid="vat-switch">
+          <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-semibold ${vatOn ? "bg-green-100 text-green-800" : "bg-ink-100 text-ink-700"}`}>
+            <span className={`size-2 rounded-full ${vatOn ? "bg-green-600" : "bg-ink-400"}`} />
+            {vatOn ? t("vatOn", { rate: formatBps(current?.rateBps ?? 0) }) : t("vatOff")}
+          </span>
+          {canEdit ? (
+            vatOn ? (
+              <Button variant="secondary" disabled={pending} onClick={() => void switchVat(false)}>{t("vatDisable")}</Button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Input aria-label={t("rate")} value={onRate} onChange={(e) => setOnRate(e.target.value)} dir="ltr" className="num w-20" />
+                <span className="text-sm text-ink-600">%</span>
+                <Button disabled={pending} onClick={() => void switchVat(true)} data-testid="vat-enable">{t("vatEnable")}</Button>
+              </div>
+            )
+          ) : null}
+        </div>
+        <p className="mt-3 text-sm text-ink-500">{t("vatHint")}</p>
+      </Card>
       <Alert tone="blue">{t("taxNote")}</Alert>
       {error ? <Alert tone="red">{error}</Alert> : null}
       <Table>

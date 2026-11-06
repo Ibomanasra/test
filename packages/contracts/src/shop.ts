@@ -24,7 +24,8 @@ export const reorderSchema = z.object({ orderId: idSchema });
 export const listCreateSchema = z.object({ name: nameSchema });
 
 export const addressCreateSchema = z.object({
-  zoneId: idSchema,
+  /** leer = automatisch nach Ort, sonst Sammelzone „مناطق أخرى“ (OTHER) */
+  zoneId: idSchema.optional().or(z.literal("").transform(() => undefined)),
   label: optionalText(60),
   recipient: nameSchema,
   phone: phoneSchema,

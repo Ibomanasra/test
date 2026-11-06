@@ -2,8 +2,9 @@
 
 import { formatMoney } from "@sa/core";
 import { useLocale, useTranslations } from "next-intl";
+import { CityZoneFields } from "@/components/shared/CityZoneFields";
 import { useEffect, useState } from "react";
-import { Alert, Button, Card, Field, Input, Select, Textarea } from "@/components/ui";
+import { Alert, Button, Card, Field, Input, Textarea } from "@/components/ui";
 import { useRouter } from "@/i18n/navigation";
 import { apiFetch, useApi } from "@/lib/api-client";
 
@@ -125,17 +126,9 @@ export function CheckoutForm({ options, zones }: { options: Options; zones: { id
           </div>
           {newAddress ? (
             <form method="post" onSubmit={addAddress} className="mt-4 grid gap-3 sm:grid-cols-2">
-              <Field label={tr("zone")} htmlFor="na-zone">
-                <Select id="na-zone" name="zoneId" required defaultValue="">
-                  <option value="" disabled>{tr("chooseZone")}</option>
-                  {zones.map((z) => (
-                    <option key={z.id} value={z.id}>{z.name}</option>
-                  ))}
-                </Select>
-              </Field>
               <Field label={t("recipient")} htmlFor="na-rec"><Input id="na-rec" name="recipient" required minLength={2} /></Field>
               <Field label={tc("phone")} htmlFor="na-phone"><Input id="na-phone" name="phone" type="tel" dir="ltr" className="num" required /></Field>
-              <Field label={tr("city")} htmlFor="na-city"><Input id="na-city" name="city" required minLength={2} /></Field>
+              <CityZoneFields zones={zones} idPrefix="na-" />
               <Field label={tr("street")} htmlFor="na-street"><Input id="na-street" name="street" /></Field>
               <Field label={tr("details")} htmlFor="na-details"><Input id="na-details" name="details" /></Field>
               <div className="sm:col-span-2"><Button type="submit" variant="secondary" disabled={pending}>{t("saveAddress")}</Button></div>

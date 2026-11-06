@@ -2,6 +2,8 @@ import { formatPhone, hasPermission } from "@sa/core";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { CustomerActions } from "@/components/admin/CustomerActions";
+import { CustomerAddresses, CustomerMasterCard } from "@/components/admin/CustomerEditor";
+import { prisma } from "@sa/db";
 import { Forbidden } from "@/components/admin/Forbidden";
 import { CUSTOMER_STATUS_TONE } from "@/components/admin/status";
 import { PrintButton } from "@/components/print/PrintButton";
@@ -32,6 +34,8 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
     getCompanySettings(),
   ]);
   const name = (o: { nameAr: string; nameEn: string }) => (locale === "ar" ? o.nameAr : o.nameEn);
+  const canEdit = hasPermission(auth.permissions, "customer.edit");
+  const zones = await prisma.deliveryZone.findMany({ where: { active: true }, orderBy: { sortOrder: "asc" }, select: { id: true, nameAr: true, nameEn: true } });
 
   return (
     <div className="space-y-6">
@@ -48,7 +52,11 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
       />
       <div className="grid gap-6 xl:grid-cols-3">
         <div className="space-y-6 xl:col-span-2">
-          <Card title={tc("details")}>
+          <CustomerMasterCard
+            title={tc("details")}
+            canEdit={canEdit}
+            c={{ id: c.id, type: c.type, displayName: c.displayName, companyName: c.companyName, ownerName: c.ownerName, dealerNumber: c.dealerNumber, phone: c.phone ? formatPhone(c.phone) : "", email: c.email, preferredLocale: c.preferredLocale }}
+          >
             <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-[auto_1fr]">
               <dt className="text-ink-500">{tc("type")}</dt>
               <dd>{tAll(`customerType.${c.type}`)}</dd>
@@ -101,7 +109,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
                 </>
               ) : null}
             </dl>
-          </Card>
+          </CustomerMasterCard>
 
           <Card title={t("members")}>
             <ul className="divide-y divide-ink-100 text-sm">
@@ -116,15 +124,16 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
             </ul>
           </Card>
 
-          <Card title={(await getTranslations("account"))("addresses")}>
-            <ul className="space-y-2 text-sm">
-              {c.addresses.map((a) => (
-                <li key={a.id} className="rounded-lg bg-ink-50 p-3">
-                  <span className="font-medium">{name(a.zone)} – {a.city}</span> · {[a.street, a.details].filter(Boolean).join("، ")} · <Num>{formatPhone(a.phone)}</Num>
-                </li>
-              ))}
-            </ul>
-          </Card>
+          <CustomerAddresses
+            title={(await getTranslations("account"))("addresses")}
+            customerId={c.id}
+            canEdit={canEdit}
+            zones={zones.map((z) => ({ id: z.id, name: name(z) }))}
+            addresses={c.addresses.map((a) => ({
+              id: a.id, label: a.label, recipient: a.recipient, phone: formatPhone(a.phone), phoneText: formatPhone(a.phone), city: a.city,
+              street: a.street, details: a.details, zoneId: a.zoneId, zoneName: name(a.zone), isDefault: a.isDefault,
+            }))}
+          />
 
           <Card title={tc("notes")}>
             {c.notes.length === 0 ? <p className="text-sm text-ink-500">{tc("none")}</p> : null}

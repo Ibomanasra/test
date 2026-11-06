@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.8.0] – 2026-11-07 – Verwaltung für die tägliche Arbeit
+
+### Hinzugefügt
+- **Dashboard neu**: Begrüßung mit Schnellaktionen, vier Kennzahlen (Umsatz heute ggü. gestern, Bestellungen heute, zu bearbeiten, überfällige Rechnungen), Umsatzverlauf 14 Tage (Endkunden/Händler gestapelt, Werte beim Überfahren, Tabellenansicht), Liste „Braucht deine Aufmerksamkeit“, Bestell-Pipeline, neueste Bestellungen, Top-Produkte des Monats.
+- **Bestellungen als Arbeitsliste**: Reiter je Status mit Zählern (Standard: offene), Suche, Schnellfilter „Lieferung heute/morgen“, Liefertag-Hinweis (heute/morgen/verspätet), Knopf für den nächsten Schritt direkt in der Zeile (Bestätigen → Kommissionieren → Bereit), Sammel-Weiterschalten und Sammeldruck.
+- **Kunden-Stammdaten bearbeiten** (Recht `customer.edit`): Name, Firma, Inhaber, Händlernummer, Telefon (= Anmeldenummer des Inhabers, mit Dublettenprüfung), E-Mail, Sprache; Adressen hinzufügen, ändern, löschen, Standardadresse setzen – alles im Audit-Log.
+- **Preise in der Zeile pflegen**: Einkauf, Endkundenpreis und Händlerpreis direkt in der Tabelle, Marge live, Speichern mit Enter; Rückfrage unter Mindestmarge. Regelwerk (Gruppen, Preislisten, Staffeln …) unter „Erweiterte Einstellungen“.
+- **MwSt.-Schalter** (Einstellungen → Steuer): ab sofort ein/aus, z. B. 0 % ↔ 16 %; ausgestellte Belege behalten ihren Satz.
+
+### Geändert
+- **MwSt. vorerst 0 %**: Migration beendet den bisherigen Satz jetzt und setzt 0 % (neue Datenbanken: `SEED_VAT_BPS`, Standard 0). Endkundenpreise bleiben Endpreise; Händlerpreise sind netto.
+- **Ort frei eingeben**: Registrierung, Kasse, App und Verwaltung nehmen jeden Ort (mit Vorschlägen); die Lieferzone ist optional und wird über den Ortsnamen zugeordnet, sonst in die neue Sammelzone „مناطق أخرى“ (Gebühren in Einstellungen → Lieferzonen änderbar). Die Verwaltung kann die Zone je Adresse ändern.
+
+### Behoben
+- Datenbank-Sitzungen laufen jetzt in UTC (Migration). Mit `TZ=Asia/Hebron` im Postgres-Container waren Zeitvergleiche in Berichten/Dashboard um 2–3 Stunden verschoben (z. B. „Umsatz heute“ nach Mitternacht 0).
+
 ## [0.7.1] – 2026-11-06 – Logo & Startseite
 
 ### Hinzugefügt

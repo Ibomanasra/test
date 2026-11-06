@@ -19,13 +19,12 @@ test("price preview explains the B2C promotion price", async ({ page }) => {
 test("saving a price below minimum margin needs explicit confirmation and is logged", async ({ page }) => {
   await staffLogin(page, OWNER.phone, OWNER.password);
   await page.goto("/en/admin/prices?q=PA-004");
-  const row = page.getByTestId("crud-row").first();
-  await row.getByRole("button", { name: "Edit" }).click();
-  await page.locator("#f-b2bBasePrice").fill("4.00");
-  await page.getByTestId("crud-save").click();
-  await expect(page.getByTestId("confirm-below-margin")).toBeVisible();
-  await page.getByTestId("confirm-below-margin").click();
-  await expect(page.getByTestId("crud-save")).toHaveCount(0);
+  const row = page.getByTestId("price-row").first();
+  await row.getByTestId("price-b2bBasePrice").fill("4.00");
+  // Rückfrage „unter Mindestmarge“ bestätigen
+  page.once("dialog", (d) => void d.accept());
+  await row.getByTestId("price-save").click();
+  await expect(row.getByTestId("price-save")).toHaveCount(0);
   const h = await db.priceHistory.findFirst({ where: { variant: { sku: "PA-004" }, field: "B2B_BASE" }, orderBy: { changedAt: "desc" } });
   expect(h?.newPrice).toBe(400);
   expect(h?.belowMarginConfirmed).toBe(true);

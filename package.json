@@ -6,7 +6,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "turbo run dev --filter=@sa/web",
+    "dev": "pnpm --filter @sa/web dev",
     "build": "turbo run build",
     "test": "turbo run test",
     "typecheck": "turbo run typecheck",

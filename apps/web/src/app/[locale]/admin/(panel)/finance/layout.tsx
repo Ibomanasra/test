@@ -12,6 +12,7 @@ export default async function FinanceLayout({ children }: { children: React.Reac
         tabs={[
           { href: "/admin/finance", label: t("tabs.overview") },
           { href: "/admin/finance/open", label: t("tabs.openItems") },
+          { href: "/admin/finance/couriers", label: t("tabs.couriers") },
           { href: "/admin/finance/payments", label: t("tabs.payments") },
           { href: "/admin/documents", label: t("tabs.invoices") },
         ]}

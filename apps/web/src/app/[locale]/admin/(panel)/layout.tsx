@@ -10,6 +10,7 @@ import { LogoutButton } from "@/components/LogoutButton";
 import { PushToggle } from "@/components/notifications/PushToggle";
 import { Link } from "@/i18n/navigation";
 import { requireStaffPage } from "@/server/auth/page-guards";
+import { ownDriversEnabled } from "@/server/services/delivery-mode";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,9 @@ export default async function AdminLayout({ children, params }: { children: Reac
   setRequestLocale(locale);
   const auth = await requireStaffPage(locale);
   const t = await getTranslations("admin");
-  const items = ADMIN_NAV.filter((i) => hasAnyPermission(auth.permissions, i.anyOf));
+  const ownDrivers = await ownDriversEnabled();
+  // „Lieferung & Fahrer“ nur, wenn eigene Fahrer eingeschaltet sind (sonst externe Zustellfirmen)
+  const items = ADMIN_NAV.filter((i) => hasAnyPermission(auth.permissions, i.anyOf) && (i.key !== "delivery" || ownDrivers));
 
   const sidebar = (
     <>

@@ -10,6 +10,7 @@ import { Link, redirect } from "@/i18n/navigation";
 import { requireStaffPage, staffPagePermission } from "@/server/auth/page-guards";
 import { dateTimeText, money } from "@/server/format";
 import { getDashboard } from "@/server/services/dashboard";
+import { ownDriversEnabled } from "@/server/services/delivery-mode";
 
 const PIPELINE = ["NEW", "CONFIRMED", "PICKING", "READY", "OUT_FOR_DELIVERY"] as const;
 
@@ -23,7 +24,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
     if (hasPermission(ctx.permissions, "delivery.driver")) redirect({ href: "/driver", locale });
     return <Forbidden />;
   }
-  const [t, tAll, d] = await Promise.all([getTranslations("admin.dashboard"), getTranslations(), getDashboard()]);
+  const [t, tAll, d, ownDrivers] = await Promise.all([getTranslations("admin.dashboard"), getTranslations(), getDashboard(), ownDriversEnabled()]);
   const showMargin = hasPermission(auth.permissions, "dashboard.view_margin");
   const can = (p: Parameters<typeof hasPermission>[1]) => hasPermission(auth.permissions, p);
 
@@ -60,8 +61,8 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
     { n: d.pendingDealers, label: t("attnDealers"), href: "/admin/customers?status=PENDING_APPROVAL", icon: "users" as const, show: true, testId: "tile-pending" },
     { n: d.lowStock, label: t("attnLowStock"), href: "/admin/stock", icon: "box" as const, show: true },
     { n: d.overdueCount, label: t("attnOverdue"), href: "/admin/finance", icon: "file" as const, show: true },
-    { n: d.outForDelivery, label: t("attnOnTheWay"), href: "/admin/delivery", icon: "truck" as const, show: true },
-    { n: d.unsettledClosings, label: t("attnClosings"), href: "/admin/delivery", icon: "cash" as const, show: true },
+    { n: d.outForDelivery, label: t("attnOnTheWay"), href: ownDrivers ? "/admin/delivery" : "/admin/orders?status=OUT_FOR_DELIVERY", icon: "truck" as const, show: true },
+    { n: d.unsettledClosings, label: t("attnClosings"), href: "/admin/delivery", icon: "cash" as const, show: ownDrivers },
   ].filter((a) => a.show);
   const allClear = attention.every((a) => a.n === 0);
 
@@ -227,7 +228,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
           { label: t("customersB2C"), value: d.customers.B2C ?? 0, href: "/admin/customers?type=B2C" },
           { label: t("customersB2B"), value: d.customers.B2B ?? 0, href: "/admin/customers?type=B2B" },
           { label: t("receivables"), value: money(d.receivables), href: "/admin/finance" },
-          { label: t("driverCash"), value: money(d.driverCash), href: "/admin/delivery" },
+          ownDrivers
+            ? { label: t("driverCash"), value: money(d.driverCash), href: "/admin/delivery" }
+            : { label: t("withCourier"), value: d.outForDelivery, href: "/admin/orders?status=OUT_FOR_DELIVERY" },
         ].map((s) => (
           <Link key={s.label} href={s.href} className="flex items-center justify-between rounded-xl bg-white px-4 py-3 ring-1 ring-ink-200 hover:ring-ink-300">
             <span className="text-sm text-ink-600">{s.label}</span>

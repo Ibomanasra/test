@@ -35,6 +35,8 @@ export interface OrderRow {
   paid: boolean;
   /** Zustellfirma des offenen Lieferscheins (unterwegs) */
   company?: string;
+  /** Betrag, den die Zustellfirma beim Kunden kassiert */
+  cod?: string;
 }
 
 type Step = "CONFIRMED" | "READY";
@@ -228,6 +230,7 @@ export function OrderBoard({ rows, canConfirm, canStatus, companies = [] }: { ro
                     ) : r.status === "OUT_FOR_DELIVERY" && canStatus ? (
                       <div className="flex flex-col items-end gap-1">
                         {r.company ? <span className="whitespace-nowrap text-xs text-ink-500">🚚 {r.company}</span> : null}
+                        {r.cod ? <span className="whitespace-nowrap text-xs font-medium text-amber-800" data-testid="row-cod">💵 {t("board.collects", { amount: r.cod })}</span> : null}
                         <Button size="sm" variant="secondary" disabled={busy != null} onClick={() => void delivered(r.id)} data-testid="row-delivered" className="whitespace-nowrap">
                           {busy === r.id ? "…" : `✓ ${t("board.markDelivered")}`}
                         </Button>

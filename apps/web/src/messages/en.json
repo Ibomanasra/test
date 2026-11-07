@@ -565,7 +565,8 @@
       "all": "All",
       "noOrders": "No orders yet.",
       "topProducts": "Top sellers this month",
-      "noSales": "No sales this month yet."
+      "noSales": "No sales this month yet.",
+      "withCourier": "With courier"
     },
     "customers": {
       "title": "Customers",
@@ -1149,7 +1150,8 @@
           "OUT_FOR_DELIVERY": "With courier"
         },
         "goods": "Goods",
-        "delivery": "Delivery"
+        "delivery": "Delivery",
+        "collects": "collects {amount}"
       },
       "driver": "Driver",
       "noDriver": "No driver – assign later",
@@ -1172,7 +1174,8 @@
       "pick": {
         "got": "Got it",
         "bigPhoto": "Show photo large"
-      }
+      },
+      "partialOnly": "Partial delivery (optional)"
     },
     "products": {
       "title": "Products",
@@ -1565,7 +1568,8 @@
         "exports": "Export for accountant",
         "invoices": "Invoices",
         "overview": "Overview",
-        "more": "More"
+        "more": "More",
+        "couriers": "Couriers"
       },
       "aging": {
         "current": "Not due",
@@ -1688,6 +1692,23 @@
         "unallocated": "{amount} extra is kept as customer credit.",
         "printReceipt": "Print receipt",
         "another": "Another payment"
+      },
+      "couriers": {
+        "owedTile": "Held by couriers",
+        "owedTileSub": "Collected from customers, not handed over yet",
+        "actTitle": "Collect money from courier",
+        "actText": "Amounts they collected from customers",
+        "none": "No couriers yet. Add them under Settings → Couriers.",
+        "intro": "The courier collects cash from the customer on delivery. When they hand the money to you, select the orders and press “Received” – payments are booked to the invoices automatically.",
+        "onTheWay": "On the way ({count})",
+        "owes": "They owe us",
+        "collectedList": "Delivered and collected – waiting for the money:",
+        "notePlaceholder": "Note (e.g. cash, transfer)",
+        "received": "Received {amount}",
+        "settled": "Recorded {amount} for {count} orders.",
+        "nothingOwed": "They hold no money right now",
+        "history": "Previous settlements",
+        "ordersCount": "{count} orders"
       }
     },
     "reports": {
@@ -1907,7 +1928,9 @@
       "inactive": "Inactive",
       "activate": "Activate",
       "deactivate": "Deactivate",
-      "open": "{count} orders with them now"
+      "open": "{count} orders with them now",
+      "ownDrivers": "We also have our own drivers",
+      "ownDriversHint": "Shows “Delivery & drivers” (tours, driver cash, driver selection). Leave off if you only deliver through external couriers."
     }
   },
   "driver": {
@@ -2093,7 +2116,8 @@
     "password_not_set": "This account has no password yet – use “Forgot password?” or contact us.",
     "delivery_company_required": "Choose the courier company.",
     "invalid_delivery_company": "This courier is not available.",
-    "name_taken": "This name is already in use."
+    "name_taken": "This name is already in use.",
+    "nothing_to_settle": "Nothing to settle."
   },
   "permissions": {
     "dashboard_view": "View dashboard",

@@ -6,6 +6,8 @@ import { Card, cn } from "@/components/ui";
 import { Link } from "@/i18n/navigation";
 import { staffPagePermission } from "@/server/auth/page-guards";
 import { dateTimeText, money } from "@/server/format";
+import { courierOwedTotal } from "@/server/services/delivery-companies";
+import { ownDriversEnabled } from "@/server/services/delivery-mode";
 import { financeOverview } from "@/server/services/finance";
 
 export default async function FinanceOverviewPage({ params }: { params: Promise<{ locale: string }> }) {
@@ -13,18 +15,21 @@ export default async function FinanceOverviewPage({ params }: { params: Promise<
   setRequestLocale(locale);
   const auth = await staffPagePermission(locale, "finance.view");
   if (!auth) return <Forbidden />;
-  const [t, tAll, d] = await Promise.all([getTranslations("admin.finance"), getTranslations(), financeOverview()]);
+  const [t, tAll, d, ownDrivers, courierOwed] = await Promise.all([getTranslations("admin.finance"), getTranslations(), financeOverview(), ownDriversEnabled(), courierOwedTotal()]);
   const can = (p: Parameters<typeof hasPermission>[1]) => hasPermission(auth.permissions, p);
 
   const tiles: { label: string; value: string; sub: string; href: string; tone: string }[] = [
     { label: t("simple.owedToUs"), value: money(d.owedToUs), sub: t("simple.customersCount", { count: d.debtorCount }), href: "/admin/finance/open", tone: "bg-white ring-ink-200" },
     { label: t("simple.overdue"), value: money(d.overdue), sub: t("simple.overdueCustomers", { count: d.overdueCustomers }), href: "/admin/finance/open?view=overdue", tone: d.overdue > 0 ? "bg-red-50 ring-red-200" : "bg-white ring-ink-200" },
     { label: t("simple.paidToday"), value: money(d.paidToday), sub: t("simple.paymentsCount", { count: d.paidTodayCount }), href: "/admin/finance/payments", tone: "bg-green-50 ring-green-200" },
-    { label: t("simple.paidMonth"), value: money(d.paidMonth), sub: t("simple.driverCash", { amount: money(d.driverCash) }), href: "/admin/finance/payments", tone: "bg-white ring-ink-200" },
+    { label: t("simple.paidMonth"), value: money(d.paidMonth), sub: ownDrivers ? t("simple.driverCash", { amount: money(d.driverCash) }) : "", href: "/admin/finance/payments", tone: "bg-white ring-ink-200" },
+    // Nachnahme-Geld, das die Zustellfirmen kassiert und uns noch nicht gegeben haben
+    { label: t("couriers.owedTile"), value: money(courierOwed), sub: t("couriers.owedTileSub"), href: "/admin/finance/couriers", tone: courierOwed > 0 ? "bg-amber-50 ring-amber-200" : "bg-white ring-ink-200" },
   ];
 
   const actions: { href: string; icon: IconName; title: string; text: string; show: boolean; primary?: boolean; testId?: string }[] = [
     { href: "/admin/finance/payments?new=1", icon: "cash", title: t("simple.actPay"), text: t("simple.actPayText"), show: can("finance.payment"), primary: true, testId: "act-pay" },
+    { href: "/admin/finance/couriers", icon: "truck", title: t("couriers.actTitle"), text: t("couriers.actText"), show: can("finance.view") },
     { href: "/admin/finance/open", icon: "users", title: t("simple.actDebtors"), text: t("simple.actDebtorsText"), show: true },
     { href: "/admin/finance/returns", icon: "arrow", title: t("simple.actReturn"), text: t("simple.actReturnText"), show: can("finance.credit_note") },
     { href: "/admin/finance/exports", icon: "file", title: t("simple.actExport"), text: t("simple.actExportText"), show: can("finance.export") },
@@ -32,7 +37,7 @@ export default async function FinanceOverviewPage({ params }: { params: Promise<
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {tiles.map((k) => (
           <Link key={k.label} href={k.href} className={cn("rounded-2xl p-5 shadow-sm ring-1 transition hover:shadow-md", k.tone)}>
             <p className="text-sm font-medium text-ink-600">{k.label}</p>

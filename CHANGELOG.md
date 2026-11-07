@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.17.0] – 2026-11-08 – Lieferung nur über Zustellfirmen & Abrechnung des Nachnahme-Gelds
+
+### Geändert
+- **Eigene Fahrer ausgeblendet** (Lieferung läuft über externe Zustellfirmen): Menüpunkt „Lieferung & Fahrer“, Fahrerauswahl beim Übergeben, Fahrer-Kassenabschluss und Fahrer-Kacheln auf Dashboard/Finanzen sind weg. Schalter „لدينا سائقون خاصون أيضاً“ unter Einstellungen → Zustellfirmen bringt alles zurück (Standard: aus).
+- Dashboard: statt „Bargeld bei Fahrern“ jetzt „Bei der Zustellfirma“ (Anzahl), „Unterwegs“ führt zur Bestellliste.
+
+### Hinzugefügt
+- **Abrechnung mit der Zustellfirma**: Die Firma kassiert bei Nachnahme den Rechnungsbetrag beim Kunden. Beim Übergeben merkt sich das System den zu kassierenden Betrag (in der Liste „💵 يحصّل …“).
+- **Finanzen → شركات التوصيل**: je Firma „unterwegs“ und **„يجب أن يدفعوا لنا“** (zugestellt und kassiert, Geld noch nicht bei uns) mit Liste der Bestellungen. **„استلمنا …“** bucht für jede gewählte Bestellung die Zahlung auf die Rechnung (Kunde = bezahlt, Quittung) und schließt die Abrechnung; Verlauf der früheren Abrechnungen.
+- Finanz-Übersicht: neue Kachel „عند شركات التوصيل“ (Geld, das die Firmen noch geben müssen) und Aktion „استلام المال من شركة التوصيل“.
+
+### Behoben
+- Doppelter Import in einem E2E-Test aus 0.16.2.
+
 ## [0.16.2] – 2026-11-08 – Bestellung vorbereiten mit Foto & Beschreibung
 
 ### Hinzugefügt

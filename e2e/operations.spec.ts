@@ -115,6 +115,8 @@ test("finance: payment allocates to the oldest invoice, stocktake posts differen
 });
 
 test("dispatch: driver is chosen while loading and the shipment lands in the driver's tour for today", async ({ page, browser }) => {
+  // Fahrerauswahl gibt es nur mit eingeschalteten eigenen Fahrern
+  await db.setting.upsert({ where: { key: "delivery.ownDrivers" }, create: { key: "delivery.ownDrivers", value: true }, update: { value: true } });
   await customerLogin(page, B2C);
   const orderId = await placeCodOrder(page.request, B2C.e164, "BA-001", 3);
   const staff = await browser.newPage();
@@ -130,4 +132,5 @@ test("dispatch: driver is chosen while loading and the shipment lands in the dri
   const shipment = await db.shipment.findFirstOrThrow({ where: { orderId }, include: { tourStop: { include: { tour: true } } } });
   expect(shipment.tourStop?.tour.driverId).toBe(driver.id);
   expect(shipment.tourStop?.tour.status).not.toBe("CLOSED");
+  await db.setting.update({ where: { key: "delivery.ownDrivers" }, data: { value: false } });
 });

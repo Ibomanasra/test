@@ -172,6 +172,7 @@ export default async function OrdersPage({ params, searchParams }: { params: Pro
             payment: tAll(`paymentMethod.${o.paymentMethod}`),
             paid: o.paymentStatus === "PAID",
             company: o.shipments[0]?.deliveryCompany?.name,
+            cod: o.shipments[0]?.codAmount ? money(o.shipments[0].codAmount) : undefined,
           };
         })}
       />

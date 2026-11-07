@@ -91,7 +91,7 @@ export function OrderActions({
               <Input id="dispatch-tracking" dir="ltr" value={tracking} onChange={(e) => setTracking(e.target.value)} className="max-w-xs" data-testid="dispatch-tracking" />
             </Field>
             <details className="rounded-lg bg-ink-50 p-3 text-sm">
-              <summary className="cursor-pointer font-medium text-ink-700" data-testid="dispatch-more">{t("partialTitle")}</summary>
+              <summary className="cursor-pointer font-medium text-ink-700" data-testid="dispatch-more">{drivers.length ? t("partialTitle") : t("partialOnly")}</summary>
               <p className="my-2 text-ink-600">{t("dispatchText")}</p>
               <Table>
                 <thead>

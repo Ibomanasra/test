@@ -13,6 +13,7 @@ import { Link } from "@/i18n/navigation";
 import { staffPagePermission } from "@/server/auth/page-guards";
 import { dateTimeText, day, money, pct } from "@/server/format";
 import { listDrivers } from "@/server/services/delivery";
+import { ownDriversEnabled } from "@/server/services/delivery-mode";
 import { listDeliveryCompanies } from "@/server/services/delivery-companies";
 import { getOrder } from "@/server/services/orders";
 import { quoteEditorOptions } from "@/server/services/quote-options";
@@ -32,7 +33,8 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ loc
   // beim Vorbereiten: Positionen abhaken
   const preparing = o.status === "CONFIRMED" || o.status === "PICKING";
   const handOver = o.status === "READY" && can("order.status");
-  const [drivers, companies] = handOver ? await Promise.all([listDrivers(), listDeliveryCompanies(true)]) : [[], []];
+  const ownDrivers = handOver && (await ownDriversEnabled());
+  const [drivers, companies] = handOver ? await Promise.all([ownDrivers ? listDrivers() : Promise.resolve([]), listDeliveryCompanies(true)]) : [[], []];
   const margin = o.subtotalNet > 0 ? Math.round(((o.subtotalNet - o.costTotal) * 10_000) / o.subtotalNet) : 0;
   return (
     <div className="space-y-6">

@@ -350,7 +350,7 @@ export async function listOrders(f: OrderFilter) {
         customer: { select: { id: true, displayName: true, number: true } },
         zone: { select: { nameAr: true, nameEn: true } },
         _count: { select: { items: true } },
-        shipments: { where: { status: "LOADED" }, orderBy: { createdAt: "desc" }, take: 1, select: { deliveryCompany: { select: { name: true } } } },
+        shipments: { where: { status: "LOADED" }, orderBy: { createdAt: "desc" }, take: 1, select: { codAmount: true, deliveryCompany: { select: { name: true } } } },
       },
     }),
     prisma.order.count({ where }),

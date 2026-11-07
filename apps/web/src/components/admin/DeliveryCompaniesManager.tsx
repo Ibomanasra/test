@@ -19,7 +19,7 @@ interface Company {
 const EMPTY = { name: "", phone: "", note: "" };
 
 /** Einstellungen → Zustellfirmen: anlegen, bearbeiten, deaktivieren */
-export function DeliveryCompaniesManager({ items, canEdit }: { items: Company[]; canEdit: boolean }) {
+export function DeliveryCompaniesManager({ items, canEdit, ownDrivers }: { items: Company[]; canEdit: boolean; ownDrivers: boolean }) {
   const t = useTranslations("admin.companies");
   const tc = useTranslations("common");
   const router = useRouter();
@@ -86,6 +86,26 @@ export function DeliveryCompaniesManager({ items, canEdit }: { items: Company[];
           </li>
         ))}
       </ul>
+      {canEdit ? (
+        <Card>
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              checked={ownDrivers}
+              disabled={pending}
+              onChange={async (e) => {
+                if (await call("/api/v1/admin/settings/own-drivers", { method: "PUT", body: { enabled: e.target.checked } })) router.refresh();
+              }}
+              className="mt-1 size-5 accent-brand-700"
+              data-testid="own-drivers"
+            />
+            <span>
+              <span className="block font-medium text-ink-900">{t("ownDrivers")}</span>
+              <span className="block text-sm text-ink-500">{t("ownDriversHint")}</span>
+            </span>
+          </label>
+        </Card>
+      ) : null}
       {canEdit ? (
         editing === "new" ? <Card title={t("new")}>{editor()}</Card> : <Button onClick={() => start()} data-testid="dc-new">＋ {t("new")}</Button>
       ) : null}

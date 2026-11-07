@@ -1455,23 +1455,28 @@ model OrderStatusEvent {
 
 /// Eine (Teil-)Lieferung = ein Lieferschein (DN-…)
 model Shipment {
-  id                String           @id @default(cuid())
-  number            String           @unique // DN-2026-000001
-  orderId           String
-  order             Order            @relation(fields: [orderId], references: [id])
-  status            ShipmentStatus   @default(PENDING)
-  deliveredAt       DateTime?
-  receivedByName    String?
-  signatureFileId   String?
-  signatureFile     FileObject?      @relation("ShipmentSignature", fields: [signatureFileId], references: [id])
-  photoFileId       String?
-  photoFile         FileObject?      @relation("ShipmentPhoto", fields: [photoFileId], references: [id])
+  id                  String             @id @default(cuid())
+  number              String             @unique // DN-2026-000001
+  orderId             String
+  order               Order              @relation(fields: [orderId], references: [id])
+  status              ShipmentStatus     @default(PENDING)
+  deliveredAt         DateTime?
+  receivedByName      String?
+  signatureFileId     String?
+  signatureFile       FileObject?        @relation("ShipmentSignature", fields: [signatureFileId], references: [id])
+  photoFileId         String?
+  photoFile           FileObject?        @relation("ShipmentPhoto", fields: [photoFileId], references: [id])
   /// Übergabe an eine externe Zustellfirma
-  deliveryCompanyId String?
-  deliveryCompany   DeliveryCompany? @relation(fields: [deliveryCompanyId], references: [id])
-  trackingNumber    String?
-  handedOverAt      DateTime?
-  createdAt         DateTime         @default(now())
+  deliveryCompanyId   String?
+  deliveryCompany     DeliveryCompany?   @relation(fields: [deliveryCompanyId], references: [id])
+  trackingNumber      String?
+  handedOverAt        DateTime?
+  /// Nachnahme: Betrag, den die Zustellfirma beim Kunden kassiert (Agorot, brutto)
+  codAmount           Int?
+  /// Abrechnung mit der Zustellfirma (Geld an uns übergeben)
+  courierSettlementId String?
+  courierSettlement   CourierSettlement? @relation(fields: [courierSettlementId], references: [id])
+  createdAt           DateTime           @default(now())
 
   items    ShipmentItem[]
   tourStop TourStop?
@@ -1482,13 +1487,28 @@ model Shipment {
 
 /// Externe Zustellfirma (Kurier), an die fertige Bestellungen übergeben werden
 model DeliveryCompany {
-  id        String     @id @default(cuid())
-  name      String     @unique
-  phone     String?
-  note      String?
-  active    Boolean    @default(true)
-  createdAt DateTime   @default(now())
-  shipments Shipment[]
+  id          String              @id @default(cuid())
+  name        String              @unique
+  phone       String?
+  note        String?
+  active      Boolean             @default(true)
+  createdAt   DateTime            @default(now())
+  shipments   Shipment[]
+  settlements CourierSettlement[]
+}
+
+/// Geldübergabe der Zustellfirma an uns (kassierte Nachnahmen)
+model CourierSettlement {
+  id          String          @id @default(cuid())
+  companyId   String
+  company     DeliveryCompany @relation(fields: [companyId], references: [id])
+  amount      Int
+  note        String?
+  createdById String
+  createdAt   DateTime        @default(now())
+  shipments   Shipment[]
+
+  @@index([companyId, createdAt])
 }
 
 model ShipmentItem {

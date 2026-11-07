@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { ORIGIN, OWNER, customerLogin, db, placeCodOrder, staffLogin } from "./helpers";
+import { OWNER, customerLogin, db, placeCodOrder, staffLogin } from "./helpers";
 
 const ORIGIN = { Origin: "http://localhost:3000" };
 
@@ -173,11 +173,25 @@ test("3-step flow: confirm → prepared → hand over to a courier company → d
   expect(shipment.handedOverAt).not.toBeNull();
   await expect(row()).toContainText(company);
 
+  // Nachnahme: die Firma kassiert den Rechnungsbetrag
+  expect(shipment.codAmount).toBeGreaterThan(0);
+  await expect(row().getByTestId("row-cod")).toBeVisible();
+
   // Zugestellt direkt aus der Liste
   await row().getByTestId("row-delivered").click();
   await expect.poll(async () => (await db.order.findUniqueOrThrow({ where: { id: orderId } })).status).toBe("DELIVERED");
-  await db.shipment.update({ where: { id: shipment.id }, data: { deliveryCompanyId: null } });
-  await db.deliveryCompany.delete({ where: { name: company } });
+
+  // Abrechnung: Die Firma schuldet uns das Geld → „استلمنا“ bucht die Zahlung auf die Rechnung
+  await page.goto("/ar/admin/finance/couriers");
+  const account = page.getByTestId("courier-account").filter({ hasText: company });
+  await expect(account.getByTestId("courier-owed")).not.toHaveText(/^0\.00/);
+  await account.getByTestId("courier-settle").click();
+  await expect.poll(async () => (await db.shipment.findUniqueOrThrow({ where: { id: shipment.id } })).courierSettlementId).not.toBeNull();
+  const inv = await db.invoice.findFirstOrThrow({ where: { orderId } });
+  expect(inv.status).toBe("PAID");
+  expect((await db.order.findUniqueOrThrow({ where: { id: orderId } })).paymentStatus).toBe("PAID");
+  // Testfirma ausschalten (bleibt wegen der Abrechnungs-Historie erhalten)
+  await db.deliveryCompany.update({ where: { name: company }, data: { active: false } });
 });
 
 test("preparing an order: lines show description, bin and a tick box that is remembered", async ({ page, browser }) => {

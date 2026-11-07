@@ -12,7 +12,29 @@ export interface I18nText {
   en: string;
 }
 
-export type Cell = string | number | null | undefined | I18nText | { barcode: string } | { strong: string | I18nText };
+export type Cell =
+  | string
+  | number
+  | null
+  | undefined
+  | I18nText
+  | { barcode: string }
+  | { strong: string | I18nText }
+  /** Hauptzeile + kleine zweite Zeile (z. B. Artikelname + SKU) */
+  | { main: string | I18nText; sub?: string | I18nText | null };
+
+/** Farbton für Status/Summen: bezahlt (grün), offen, teilweise, überfällig (rot), Info, Gutschrift */
+export type Tone = "paid" | "open" | "partial" | "overdue" | "info" | "credit";
+
+/** Großer Kasten oben: „Zu zahlen 913,85 ₪ · fällig bis … · [Offen]“ */
+export interface DocSummary {
+  label: I18nText;
+  /** Agorot */
+  amount: number;
+  caption?: string | I18nText;
+  status?: { text: I18nText; tone: Tone };
+  tone?: Tone;
+}
 
 export type ColumnKind = "text" | "num" | "money" | "barcode" | "check";
 
@@ -59,6 +81,8 @@ export interface DocTotal {
   /** Agorot */
   amount: number;
   strong?: boolean;
+  /** farbige Zeile (z. B. „bezahlt“ grün, „offen“ rot) */
+  tone?: Tone;
 }
 
 export interface DocParty {
@@ -92,4 +116,10 @@ export interface DocumentModel {
   footerText?: I18nText;
   /** Bankdaten in der Fußzeile anzeigen (Standard: true) */
   showBanks?: boolean;
+  /** Kasten mit dem wichtigsten Betrag und Status direkt unter dem Kopf */
+  summary?: DocSummary;
+  /** Kasten „So bezahlen Sie“ mit den Bankkonten (bei offenen Beträgen) */
+  payInfo?: { title: I18nText; text?: I18nText };
+  /** Abschlusszeile, z. B. „Vielen Dank für Ihren Einkauf“ */
+  thanks?: I18nText;
 }

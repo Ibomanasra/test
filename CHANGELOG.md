@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.9.2] – 2026-11-07 – Rechnungen & Belege verständlich
+
+### Geändert
+- **Neue A4-Vorlage** für alle Belege in den Logofarben (Anthrazit/Rot): großes Logo, Dokumentkasten mit Titel, Nummer und QR, Eckdaten als Leiste, Tabellen mit dunklem Kopf und Zebrastreifen, Summen als Kasten.
+- **Großer Betrags-Kasten** oben mit dem Wichtigsten in einem Satz:
+  - Rechnung: „Zu zahlen … ₪ – bitte bis … zahlen“ bzw. „bar an den Fahrer“; auf Kopien zusätzlich der Status (offen, teilweise bezahlt, überfällig, bezahlt ✓, gutgeschrieben). Das eingefrorene Original zeigt bewusst keinen Status.
+  - Quittung „Betrag erhalten ✓“, Kontoauszug „Ihr offener Saldo“ (mit Überfällig-Anteil), Mahnung „Zu zahlen bis …“, Auftragsbestätigung/Angebot „Gesamtbetrag“, Lieferschein „Bei Lieferung zu zahlen“, Gutschrift „Betrag der Gutschrift“.
+- **„So bezahlen Sie per Überweisung“**: Bankkonten mit IBAN und Hinweis, welche Nummer in den Verwendungszweck gehört (Rechnung auf Ziel/Überweisung, Kontoauszug, Mahnung).
+- Rechnung zeigt **bezahlt / gutgeschrieben / noch offen** in den Summen.
+- Weniger Spalten: Artikelname mit SKU darunter, Menge mit Einheit („2 × Karton (10)“); ohne MwSt. (0 %) entfallen Netto-/MwSt.-Spalten und -Zeilen, stattdessen ein klarer Hinweis.
+- Kontoauszug: „Rechnungen (an Sie)“ / „Zahlungen & Gutschriften“ statt Soll/Haben.
+- Zweisprachig kompakter (Englisch in derselben Zeile), Telefonnummern im arabischen Text richtig herum, Dankeszeile.
+
 ## [0.9.1] – 2026-11-07 – Eigenes Logo
 
 ### Geändert

@@ -14,4 +14,7 @@ export const L = {
   name: { ar: "الاسم", en: "Name" },
   currency: { ar: "₪", en: "ILS" },
   noRows: { ar: "لا توجد بيانات", en: "No data" },
+  accountName: { ar: "اسم الحساب", en: "Account name" },
+  accountNo: { ar: "رقم الحساب", en: "Account no." },
+  branch: { ar: "الفرع", en: "Branch" },
 } satisfies Record<string, I18nText>;

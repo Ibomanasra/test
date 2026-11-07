@@ -194,6 +194,35 @@ const L = {
   note: t("ملاحظة", "Note"),
   b2bNet: t("الأسعار بدون ضريبة القيمة المضافة", "Prices exclude VAT"),
   b2cGross: t("الأسعار شاملة ضريبة القيمة المضافة", "Prices include VAT"),
+  noVat: t("ضريبة القيمة المضافة 0% – لا تُضاف ضريبة على هذه الأسعار.", "VAT 0% – no VAT is added to these prices."),
+  amountDue: t("المبلغ المطلوب دفعه", "Amount to pay"),
+  invoiceTotal: t("قيمة الفاتورة", "Invoice total"),
+  paid: t("المدفوع", "Paid"),
+  remaining: t("المتبقي للدفع", "Left to pay"),
+  credited: t("إشعارات دائنة", "Credited"),
+  payBy: (d: string) => t(`يرجى الدفع حتى ${d}`, `Please pay by ${d}`),
+  payOnDelivery: t("يُدفع نقداً للسائق عند الاستلام", "Pay the driver in cash on delivery"),
+  paidThanks: t("تم سداد هذه الفاتورة بالكامل – شكراً لكم", "This invoice has been paid in full – thank you"),
+  statusPaid: t("مدفوعة ✓", "PAID ✓"),
+  statusOpen: t("غير مدفوعة", "UNPAID"),
+  statusPartial: t("مدفوعة جزئياً", "PARTLY PAID"),
+  statusOverdue: t("متأخرة", "OVERDUE"),
+  statusCredited: t("ملغاة بإشعار دائن", "CREDITED"),
+  howToPay: t("كيف تدفع بالتحويل البنكي؟", "How to pay by bank transfer"),
+  payRef: (n: string) => t(`حوّل المبلغ إلى أحد الحسابات التالية واذكر رقم ${n} في ملاحظة التحويل.`, `Transfer the amount to one of these accounts and mention ${n} in the transfer note.`),
+  thanks: t("شكراً لتعاملكم معنا 🧡", "Thank you for your business"),
+  orderTotal: t("إجمالي الطلب", "Order total"),
+  quoteTotal: t("إجمالي العرض", "Quote total"),
+  received: t("المبلغ المستلم", "Amount received"),
+  receivedOk: t("تم الاستلام ✓", "RECEIVED ✓"),
+  balanceDue: t("الرصيد المستحق عليكم", "Balance you owe"),
+  balanceNone: t("لا يوجد رصيد مستحق ✓", "Nothing due ✓"),
+  balanceCredit: t("رصيد لصالحكم", "Credit in your favour"),
+  creditTotal: t("قيمة الإشعار الدائن", "Credit note amount"),
+  creditCaption: (n: string) => t(`يُخصم من الفاتورة ${n}`, `Deducted from invoice ${n}`),
+  itemsCount: (n: number) => t(`${n} صنف`, `${n} items`),
+  dunningDue: t("المبلغ المطلوب سداده", "Amount to pay"),
+  unitPrice: t("سعر الوحدة", "Unit price"),
 } as const;
 
 const PAYMENT_METHOD: Record<string, I18nText> = {
@@ -290,6 +319,9 @@ async function withTexts(slug: DocSlug, m: DocumentModel): Promise<DocumentModel
   };
 }
 
+/** Telefonnummer in arabischem Text richtig herum anzeigen (LRI … PDI) */
+const ltr = (v: string) => `\u2066${v}\u2069`;
+
 const qr = (slug: DocSlug, id: string, number: string) => `${number}\n${env().APP_URL}/api/v1/documents/${slug}/${id}`;
 
 function customerParty(c: CustomerSnapshot, label: I18nText = L.customer) {
@@ -298,7 +330,7 @@ function customerParty(c: CustomerSnapshot, label: I18nText = L.customer) {
   if (c.ownerName && c.ownerName !== c.companyName) lines.push(c.ownerName);
   if (c.dealerNumber) lines.push(t(`${L.dealer.ar}: ${c.dealerNumber}`, `${L.dealer.en}: ${c.dealerNumber}`));
   lines.push(t(`${L.customerNo.ar}: ${c.number}`, `${L.customerNo.en}: ${c.number}`));
-  if (c.phone) lines.push(t(`${L.phone.ar}: ${c.phone}`, `${L.phone.en}: ${c.phone}`));
+  if (c.phone) lines.push(t(`${L.phone.ar}: ${ltr(c.phone)}`, `${L.phone.en}: ${ltr(c.phone)}`));
   return { label, lines };
 }
 
@@ -307,7 +339,7 @@ function addressParty(a: CustomerSnapshot["address"]) {
   const zone = a.zoneAr || a.zoneEn ? t(a.zoneAr ?? a.zoneEn ?? "", a.zoneEn ?? a.zoneAr ?? "") : null;
   return {
     label: L.deliveryTo,
-    lines: [a.recipient ?? "", [a.city, a.street, a.details].filter(Boolean).join("، "), ...(zone ? [zone] : []), ...(a.phone ? [t(`${L.phone.ar}: ${a.phone}`, `${L.phone.en}: ${a.phone}`)] : [])],
+    lines: [a.recipient ?? "", [a.city, a.street, a.details].filter(Boolean).join("، "), ...(zone ? [zone] : []), ...(a.phone ? [t(`${L.phone.ar}: ${ltr(a.phone)}`, `${L.phone.en}: ${ltr(a.phone)}`)] : [])],
   };
 }
 
@@ -317,7 +349,11 @@ function snapshotFromCustomer(c: { number: string; type: "B2C" | "B2B"; displayN
 
 const langOf = (l: string | null | undefined): DocLang => (l === "en" || l === "EN" ? "en" : l === "BILINGUAL" ? "bi" : "ar");
 
+/** Summen; ohne MwSt. (0 %) nur Lieferung + Gesamt – kürzer und verständlicher */
 function taxTotals(net: number, vat: number, gross: number, rateBps: number, deliveryFeeGross = 0) {
+  if (!vat && !rateBps) {
+    return [...(deliveryFeeGross ? [{ label: L.deliveryFee, amount: deliveryFeeGross }] : []), { label: L.total, amount: gross, strong: true }];
+  }
   return [
     ...(deliveryFeeGross ? [{ label: L.deliveryFee, amount: deliveryFeeGross }] : []),
     { label: L.subtotalNet, amount: net },
@@ -325,6 +361,8 @@ function taxTotals(net: number, vat: number, gross: number, rateBps: number, del
     { label: L.total, amount: gross, strong: true },
   ];
 }
+
+const priceNote = (channel: "B2B" | "B2C", rateBps: number) => (!rateBps ? L.noVat : channel === "B2B" ? L.b2bNet : L.b2cGross);
 
 /** Positionen für Angebot/Auftrag/Lieferschein mit Preisen (Kanaldarstellung) */
 function salesTable(
@@ -336,25 +374,35 @@ function salesTable(
   return {
     columns: [
       { key: "pos", label: L.pos, kind: "num", width: "7mm" },
-      { key: "sku", label: L.sku, width: "22mm" },
       { key: "item", label: L.item },
-      { key: "unit", label: L.unit, width: "20mm" },
-      { key: "qty", label: L.qty, kind: "num", width: "14mm" },
-      { key: "price", label: b2b ? L.unitNet : L.unitGross, kind: "money", width: "26mm" },
-      { key: "total", label: b2b ? L.lineNet : L.lineTotal, kind: "money", width: "28mm" },
+      { key: "qty", label: L.qty, width: "30mm" },
+      { key: "price", label: b2b ? L.unitNet : L.unitPrice, kind: "money", width: "26mm" },
+      { key: "total", label: L.lineTotal, kind: "money", width: "28mm" },
     ],
     rows: rows.map((r, i) => ({
       cells: {
         pos: i + 1,
-        sku: r.sku,
-        item: t(r.nameAr, r.nameEn),
-        unit: unitLabel(units, r.unitCode, r.unitFactor),
-        qty: r.qty,
+        item: { main: t(r.nameAr, r.nameEn), sub: r.sku },
+        qty: qtyWithUnit(units, r.unitCode, r.unitFactor, r.qty),
         price: (b2b ? r.unitNet : r.unitGross) * r.unitFactor,
         total: r.total,
       },
     })),
   };
+}
+
+/** „2 × كرتونة (10)“ – Menge und Einheit in einer Spalte */
+function qtyWithUnit(units: Map<string, I18nText>, code: string, factor: number, qty: number): I18nText {
+  const u = unitLabel(units, code, factor);
+  return t(`${qty} × ${u.ar}`, `${qty} × ${u.en}`);
+}
+
+/** Zahlungsstatus einer Rechnung (live) */
+function invoiceStatus(inv: { status: string; dueDate: Date }, open: number) {
+  if (inv.status === "CREDITED") return { text: L.statusCredited, tone: "credit" as const };
+  if (open <= 0) return { text: L.statusPaid, tone: "paid" as const };
+  if (inv.status === "PARTIALLY_PAID") return { text: L.statusPartial, tone: inv.dueDate < new Date() ? ("overdue" as const) : ("partial" as const) };
+  return inv.dueDate < new Date() ? { text: L.statusOverdue, tone: "overdue" as const } : { text: L.statusOpen, tone: "open" as const };
 }
 
 function unitLabel(units: Map<string, I18nText>, code: string, factor: number): I18nText {
@@ -402,8 +450,10 @@ async function buildQuote(id: string): Promise<Built> {
         })),
       ),
     ],
-    totals: taxTotals(q.subtotalNet, q.vatTotal, q.totalGross, rate),
-    notes: [L.b2bNet, ...(q.requestNote ? [q.requestNote] : [])],
+    summary: { label: L.quoteTotal, amount: q.totalGross, caption: t(`${L.validUntil.ar}: ${day(q.validUntil)}`, `${L.validUntil.en}: ${day(q.validUntil)}`), tone: "info" },
+    totals: taxTotals(q.subtotalNet, q.vatTotal, q.totalGross, q.vatTotal ? rate : 0),
+    notes: [priceNote("B2B", q.vatTotal ? rate : 0), ...(q.requestNote ? [q.requestNote] : [])],
+    thanks: L.thanks,
     qr: qr("quote", q.id, q.number),
     stamp: q.status === "REJECTED" || q.status === "EXPIRED" ? t(q.status === "EXPIRED" ? "منتهي" : "مرفوض", q.status) : undefined,
   };
@@ -445,8 +495,15 @@ async function buildOrderConfirmation(id: string): Promise<Built> {
         o.items.map((i) => ({ sku: i.skuSnapshot, nameAr: i.nameArSnapshot, nameEn: i.nameEnSnapshot, unitCode: i.unitCode, unitFactor: i.unitFactor, qty: i.qty, unitNet: i.unitPriceNet, unitGross: i.unitPriceGross, total: o.channel === "B2B" ? i.lineNet : i.lineGross })),
       ),
     ],
+    summary: {
+      label: L.orderTotal,
+      amount: o.totalGross,
+      caption: t(`${L.deliveryDate.ar}: ${day(o.requestedDeliveryDate)} · ${PAYMENT_METHOD[o.paymentMethod]!.ar}`, `${L.deliveryDate.en}: ${day(o.requestedDeliveryDate)} · ${PAYMENT_METHOD[o.paymentMethod]!.en}`),
+      tone: "info",
+    },
     totals: taxTotals(o.subtotalNet, o.vatTotal, o.totalGross, o.taxRateBps, o.deliveryFeeGross),
-    notes: [o.channel === "B2B" ? L.b2bNet : L.b2cGross, ...(o.customerNote ? [o.customerNote] : [])],
+    notes: [priceNote(o.channel, o.taxRateBps), ...(o.customerNote ? [o.customerNote] : [])],
+    thanks: L.thanks,
     qr: qr("order-confirmation", o.id, o.number),
     stamp: o.status === "CANCELLED" ? L.cancelled : undefined,
   };
@@ -534,12 +591,11 @@ async function buildDeliveryNote(id: string, opts: DocOptions): Promise<Built> {
     : {
         columns: [
           { key: "pos", label: L.pos, kind: "num", width: "7mm" },
-          { key: "sku", label: L.sku, width: "24mm" },
           { key: "item", label: L.item },
-          { key: "unit", label: L.unit, width: "24mm" },
-          { key: "qty", label: L.qtyDelivered, kind: "num", width: "18mm" },
+          { key: "qty", label: L.qtyDelivered, width: "34mm" },
+          { key: "check", label: t("✓", "✓"), kind: "check", width: "10mm" },
         ],
-        rows: rows.map((r, idx) => ({ cells: { pos: idx + 1, sku: r.i.skuSnapshot, item: t(r.i.nameArSnapshot, r.i.nameEnSnapshot), unit: unitLabel(units, r.unitCode, r.factor), qty: r.qty } })),
+        rows: rows.map((r, idx) => ({ cells: { pos: idx + 1, item: { main: t(r.i.nameArSnapshot, r.i.nameEnSnapshot), sub: r.i.skuSnapshot }, qty: qtyWithUnit(units, r.unitCode, r.factor, r.qty), check: null } })),
       };
   const model: DocumentModel = {
     kind: "DELIVERY_NOTE",
@@ -555,7 +611,10 @@ async function buildDeliveryNote(id: string, opts: DocOptions): Promise<Built> {
     ],
     parties: [customerParty(c), ...[addressParty(c.address)].filter((p) => p !== null)],
     tables: [table],
-    notes: withPrices ? [o.channel === "B2B" ? L.b2bNet : L.b2cGross] : [L.withoutPrices],
+    summary: withPrices
+      ? { label: o.paymentMethod === "CASH_ON_DELIVERY" ? L.amountDue : L.orderTotal, amount: o.totalGross, caption: o.paymentMethod === "CASH_ON_DELIVERY" ? L.payOnDelivery : PAYMENT_METHOD[o.paymentMethod]!, tone: o.paymentMethod === "CASH_ON_DELIVERY" ? "open" : "info" }
+      : undefined,
+    notes: withPrices ? [priceNote(o.channel, o.taxRateBps)] : [L.withoutPrices, L.itemsCount(rows.length)],
     signatures: [L.signCustomer, L.signDriver],
     qr: qr("delivery-note", s.id, s.number),
     stamp: s.status === "FAILED" ? t("لم يتم التسليم", "NOT DELIVERED") : undefined,
@@ -572,6 +631,10 @@ async function buildInvoice(id: string, opts: DocOptions): Promise<Built> {
   const rate = inv.lines[0]?.vatRateBps ?? 1600;
   const term = Math.round((inv.dueDate.getTime() - inv.issueDate.getTime()) / 86_400_000);
   const extra = seller.taxInvoiceFields as { notesAr?: string; notesEn?: string };
+  const open = Math.max(0, inv.totalGross - inv.paidAmount - inv.creditedAmount);
+  const status = invoiceStatus(inv, open);
+  const hasVat = inv.vatTotal > 0 || rate > 0;
+  const transfer = inv.paymentMethod === "BANK_TRANSFER" || inv.paymentMethod === "ON_ACCOUNT";
   const model: DocumentModel = {
     kind: "INVOICE",
     title: TITLES.invoice,
@@ -590,22 +653,49 @@ async function buildInvoice(id: string, opts: DocOptions): Promise<Built> {
       {
         columns: [
           { key: "pos", label: L.pos, kind: "num", width: "7mm" },
-          { key: "sku", label: L.sku, width: "20mm" },
           { key: "item", label: L.item },
-          { key: "unit", label: L.unit, width: "18mm" },
-          { key: "qty", label: L.qty, kind: "num", width: "12mm" },
-          { key: "price", label: L.unitNet, kind: "money", width: "22mm" },
-          { key: "net", label: L.lineNet, kind: "money", width: "22mm" },
-          { key: "vat", label: L.vat, kind: "money", width: "18mm" },
-          { key: "gross", label: L.lineTotal, kind: "money", width: "22mm" },
+          { key: "qty", label: L.qty, width: "28mm" },
+          { key: "price", label: hasVat ? L.unitNet : L.unitPrice, kind: "money", width: "22mm" },
+          ...(hasVat
+            ? ([
+                { key: "net", label: L.lineNet, kind: "money", width: "22mm" },
+                { key: "vat", label: L.vat, kind: "money", width: "18mm" },
+              ] as const)
+            : []),
+          { key: "gross", label: L.lineTotal, kind: "money", width: "24mm" },
         ],
         rows: inv.lines.map((l, i) => ({
-          cells: { pos: i + 1, sku: l.sku === "DELIVERY" ? "" : l.sku, item: t(l.nameAr, l.nameEn), unit: unitLabel(units, l.unitCode, l.unitFactor), qty: l.qty, price: l.unitPriceNet * l.unitFactor, net: l.lineNet, vat: l.lineVat, gross: l.lineGross },
+          cells: {
+            pos: i + 1,
+            item: { main: t(l.nameAr, l.nameEn), sub: l.sku === "DELIVERY" ? null : l.sku },
+            qty: l.sku === "DELIVERY" ? "" : qtyWithUnit(units, l.unitCode, l.unitFactor, l.qty),
+            // ohne MwSt. ist netto = brutto
+            price: l.unitPriceNet * l.unitFactor,
+            net: l.lineNet,
+            vat: l.lineVat,
+            gross: l.lineGross,
+          },
         })),
       },
     ],
-    totals: taxTotals(inv.subtotalNet, inv.vatTotal, inv.totalGross, rate),
-    notes: [...(extra.notesAr || extra.notesEn ? [t(extra.notesAr ?? extra.notesEn ?? "", extra.notesEn ?? extra.notesAr ?? "")] : []), ...(inv.creditNotes.length ? [t(`إشعارات دائنة: ${inv.creditNotes.map((c) => c.number).join("، ")}`, `Credit notes: ${inv.creditNotes.map((c) => c.number).join(", ")}`)] : [])],
+    summary: {
+      label: open > 0 ? L.amountDue : L.invoiceTotal,
+      amount: open > 0 ? open : inv.totalGross,
+      caption: status.tone === "credit" ? L.credited : open <= 0 ? L.paidThanks : inv.paymentMethod === "CASH_ON_DELIVERY" ? L.payOnDelivery : L.payBy(day(inv.dueDate)),
+      // Das Original wird beim Ausstellen eingefroren – ein Zahlungsstatus würde dort veralten
+      status: opts.original ? undefined : status,
+      tone: opts.original ? "open" : undefined,
+    },
+    totals: [
+      ...taxTotals(inv.subtotalNet, inv.vatTotal, inv.totalGross, hasVat ? rate : 0),
+      ...(inv.paidAmount ? [{ label: L.paid, amount: inv.paidAmount, tone: "paid" as const }] : []),
+      ...(inv.creditedAmount ? [{ label: L.credited, amount: inv.creditedAmount, tone: "credit" as const }] : []),
+      ...(inv.paidAmount || inv.creditedAmount ? [{ label: L.remaining, amount: open, tone: open > 0 ? ("overdue" as const) : ("paid" as const) }] : []),
+    ],
+    payInfo: open > 0 && transfer && seller.banks.length ? { title: L.howToPay, text: L.payRef(inv.number) } : undefined,
+    showBanks: !(open > 0 && transfer),
+    thanks: L.thanks,
+    notes: [...(hasVat ? [] : [L.noVat]), ...(extra.notesAr || extra.notesEn ? [t(extra.notesAr ?? extra.notesEn ?? "", extra.notesEn ?? extra.notesAr ?? "")] : []), ...(inv.creditNotes.length ? [t(`إشعارات دائنة: ${inv.creditNotes.map((c) => c.number).join("، ")}`, `Credit notes: ${inv.creditNotes.map((c) => c.number).join(", ")}`)] : [])],
     qr: qr("invoice", inv.id, inv.number),
     stamp: opts.original ? undefined : L.copy,
   };
@@ -632,17 +722,21 @@ async function buildCreditNote(id: string, opts: DocOptions): Promise<Built> {
       {
         columns: [
           { key: "pos", label: L.pos, kind: "num", width: "7mm" },
-          { key: "sku", label: L.sku, width: "22mm" },
           { key: "item", label: L.item },
           { key: "qty", label: L.qty, kind: "num", width: "14mm" },
-          { key: "net", label: L.lineNet, kind: "money", width: "24mm" },
-          { key: "vat", label: L.vat, kind: "money", width: "20mm" },
+          ...(cn.vatTotal
+            ? ([
+                { key: "net", label: L.lineNet, kind: "money", width: "24mm" },
+                { key: "vat", label: L.vat, kind: "money", width: "20mm" },
+              ] as const)
+            : []),
           { key: "gross", label: L.lineTotal, kind: "money", width: "24mm" },
         ],
-        rows: cn.lines.map((l, i) => ({ cells: { pos: i + 1, sku: l.sku === "DELIVERY" ? "" : l.sku, item: t(l.nameAr, l.nameEn), qty: l.qtyBase, net: l.lineNet, vat: l.lineVat, gross: l.lineGross } })),
+        rows: cn.lines.map((l, i) => ({ cells: { pos: i + 1, item: { main: t(l.nameAr, l.nameEn), sub: l.sku === "DELIVERY" ? null : l.sku }, qty: l.qtyBase, net: l.lineNet, vat: l.lineVat, gross: l.lineGross } })),
       },
     ],
-    totals: taxTotals(cn.subtotalNet, cn.vatTotal, cn.totalGross, rate),
+    summary: { label: L.creditTotal, amount: cn.totalGross, caption: L.creditCaption(cn.invoice.number), tone: "credit" },
+    totals: taxTotals(cn.subtotalNet, cn.vatTotal, cn.totalGross, cn.vatTotal ? rate : 0),
     qr: qr("credit-note", cn.id, cn.number),
     stamp: opts.original ? undefined : L.copy,
   };
@@ -678,7 +772,9 @@ async function buildReceipt(id: string): Promise<Built> {
         empty: t("دفعة على الحساب", "Payment on account"),
       },
     ],
+    summary: { label: L.received, amount: p.amount, caption: PAYMENT_METHOD[p.method]!, status: p.voidedAt ? { text: L.cancelled, tone: "overdue" } : { text: L.receivedOk, tone: "paid" } },
     totals: [{ label: L.amount, amount: p.amount, strong: true }],
+    thanks: L.thanks,
     signatures: [t(`${L.signReceiver.ar}${p.receivedBy ? `: ${p.receivedBy.name}` : ""}`, `${L.signReceiver.en}${p.receivedBy ? `: ${p.receivedBy.name}` : ""}`)],
     qr: qr("receipt", p.id, p.number),
     stamp: p.voidedAt ? L.cancelled : undefined,
@@ -804,21 +900,30 @@ async function buildStatement(customerId: string, opts: DocOptions): Promise<Bui
           { key: "type", label: L.type, width: "28mm" },
           { key: "number", label: L.number, width: "36mm" },
           { key: "note", label: L.note },
-          { key: "debit", label: L.debit, kind: "money", width: "24mm" },
-          { key: "credit", label: L.credit, kind: "money", width: "24mm" },
+          // verständlich statt „مدين/دائن“: was berechnet wurde und was bezahlt/gutgeschrieben wurde
+          { key: "debit", label: t("فواتير (عليكم)", "Invoiced to you"), kind: "money", width: "26mm" },
+          { key: "credit", label: t("دفعات وخصومات (لكم)", "Paid / credited"), kind: "money", width: "28mm" },
           { key: "balance", label: L.balance, kind: "money", width: "26mm" },
         ],
         rows: [
           { cells: { date: st.from, type: L.opening, number: "", note: "", debit: null, credit: null, balance: st.opening }, muted: true },
-          ...st.entries.map((e) => ({ cells: { date: day(e.date), type: LEDGER_TYPE[e.type] ?? e.type, number: e.refNumber ?? "", note: e.note ?? "", debit: e.debit || null, credit: e.credit || null, balance: e.balance } })),
+          ...st.entries.map((e) => ({ cells: { date: day(e.date), type: LEDGER_TYPE[e.type] ?? e.type, number: e.refNumber ?? "", note: (e.note ?? "").replace(/(?<=[A-Z0-9])-(?=[A-Z0-9])/g, "\u2011"), debit: e.debit || null, credit: e.credit || null, balance: e.balance } })),
         ],
       },
     ],
+    summary:
+      st.closing > 0
+        ? { label: L.balanceDue, amount: st.closing, caption: st.overdue > 0 ? t(`منها ${plain(st.overdue)} ₪ متأخرة`, `of which ${plain(st.overdue)} ₪ overdue`) : undefined, status: st.overdue > 0 ? { text: L.statusOverdue, tone: "overdue" } : { text: L.statusOpen, tone: "open" } }
+        : st.closing < 0
+          ? { label: L.balanceCredit, amount: -st.closing, tone: "credit" }
+          : { label: L.balanceDue, amount: 0, status: { text: L.balanceNone, tone: "paid" } },
     totals: [
       { label: L.opening, amount: st.opening },
-      { label: L.overdue, amount: st.overdue },
+      ...(st.overdue ? [{ label: L.overdue, amount: st.overdue, tone: "overdue" as const }] : []),
       { label: L.closing, amount: st.closing, strong: true },
     ],
+    payInfo: st.closing > 0 ? { title: L.howToPay, text: L.payRef(c.number) } : undefined,
+    showBanks: !(st.closing > 0),
     qr: qr("statement", c.id, `${c.number} ${st.from}..${st.to}`),
   };
   return { model, access: { staff: ["finance.view", "customer.view"], customerId: c.id }, lang: langOf(c.preferredLocale) };
@@ -852,7 +957,10 @@ async function buildDunning(id: string): Promise<Built> {
         rows: d.invoices.map((i) => ({ cells: { number: i.invoice.number, date: day(i.invoice.issueDate), due: day(i.invoice.dueDate), total: i.invoice.totalGross, open: i.openAmount } })),
       },
     ],
+    summary: { label: L.dunningDue, amount: open + d.feeAgorot, caption: d.dueBy ? L.payBy(day(d.dueBy)) : undefined, status: { text: L.statusOverdue, tone: "overdue" } },
     totals: [...(d.feeAgorot ? [{ label: L.open, amount: open }, { label: L.fee, amount: d.feeAgorot }] : []), { label: L.total, amount: open + d.feeAgorot, strong: true }],
+    payInfo: { title: L.howToPay, text: L.payRef(d.number) },
+    showBanks: false,
     qr: qr("dunning", d.id, d.number),
   };
   return { model, access: { staff: ["finance.view", "finance.dunning"], customerId: d.customerId }, lang: langOf(d.customer.preferredLocale) };

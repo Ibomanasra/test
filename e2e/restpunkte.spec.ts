@@ -75,10 +75,7 @@ test("driver app delivery stores a server-built SVG signature and a photo as pro
   // Fahrer meldet sich wie die App an (Bearer-Token)
   await resetRateLimits();
   const ctx = await browser.newContext();
-  const login = await (await ctx.request.post("http://localhost:3000/api/v1/auth/staff/login", { data: { phone: "0599000005", password: DEMO_PASSWORD } })).json();
-  const started = new Date(Date.now() - 1000);
-  const code = await latestOtp("+970599000005", started).catch(async () => latestOtp("+970599000005", new Date(0)));
-  const { token } = await (await ctx.request.post("http://localhost:3000/api/v1/auth/staff/verify", { data: { ticket: login.ticket, code, client: "MOBILE" } })).json();
+  const { token } = await (await ctx.request.post("http://localhost:3000/api/v1/auth/staff/login", { data: { login: "yousef", password: DEMO_PASSWORD, client: "MOBILE" } })).json();
   const auth = { Authorization: `Bearer ${token}` };
 
   // Push-Token registrieren (gültig/ungültig)

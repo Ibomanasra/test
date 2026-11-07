@@ -14,6 +14,8 @@ const schema = z.object({
   SESSION_TTL_DAYS_CUSTOMER: z.coerce.number().int().min(1).default(60),
   SESSION_TTL_DAYS_STAFF: z.coerce.number().int().min(1).default(1),
   COOKIE_SECURE: bool,
+  /** Mitarbeiter-Login zusätzlich mit SMS-Code (Standard: aus – nur Benutzername + Passwort) */
+  STAFF_LOGIN_OTP: bool,
   SMS_PROVIDER: z.enum(["log", "http", "twilio"]).default("log"),
   TWILIO_ACCOUNT_SID: z.string().default(""),
   TWILIO_AUTH_TOKEN: z.string().default(""),

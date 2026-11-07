@@ -9,7 +9,7 @@ import {
   permissionSchema,
   phoneSchema,
 } from "./common";
-import { dealerNumberSchema } from "./auth";
+import { dealerNumberSchema, usernameSchema } from "./auth";
 
 export const customerStatusSchema = z.enum(["ACTIVE", "PENDING_APPROVAL", "REJECTED", "BLOCKED"]);
 export const customerTypeSchema = z.enum(["B2C", "B2B"]);
@@ -68,6 +68,7 @@ export const passwordSchema = z
 
 export const staffCreateSchema = z.object({
   name: nameSchema,
+  username: usernameSchema,
   phone: phoneSchema,
   email: z.string().trim().email().optional().or(z.literal("").transform(() => undefined)),
   password: passwordSchema,
@@ -77,6 +78,7 @@ export const staffCreateSchema = z.object({
 
 export const staffUpdateSchema = z.object({
   name: nameSchema.optional(),
+  username: usernameSchema.optional(),
   email: z.string().trim().email().optional().or(z.literal("").transform(() => undefined)),
   password: passwordSchema.optional().or(z.literal("").transform(() => undefined)),
   roleIds: z.array(idSchema).min(1).optional(),

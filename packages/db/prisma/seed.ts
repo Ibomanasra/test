@@ -150,15 +150,22 @@ async function seedRoles() {
   }
 }
 
-async function upsertStaff(phone: string, name: string, password: string, roleKey: string) {
+async function upsertStaff(phone: string, name: string, password: string, roleKey: string, username: string) {
   const existing = await prisma.user.findUnique({ where: { phone } });
-  if (existing) return existing;
+  if (existing) {
+    // ältere Konten ohne Benutzername nachziehen (wenn der Name frei ist)
+    // auch automatisch vergebene Namen aus der Migration („user1234_ab12“) durch den gewünschten ersetzen
+    const auto = !existing.username || /^user\d{4}_[a-z0-9]{4}$/.test(existing.username);
+    if (auto && existing.username !== username && !(await prisma.user.findUnique({ where: { username } }))) return prisma.user.update({ where: { id: existing.id }, data: { username } });
+    return existing;
+  }
   const role = await prisma.role.findUniqueOrThrow({ where: { key: roleKey } });
   return prisma.user.create({
     data: {
       kind: "STAFF",
       phone,
       phoneVerifiedAt: new Date(),
+      username,
       name,
       passwordHash: await hash(password, ARGON),
       roles: { create: { roleId: role.id } },
@@ -168,8 +175,9 @@ async function upsertStaff(phone: string, name: string, password: string, roleKe
 
 async function seedOwner() {
   const phone = normalizePhone(env("SEED_OWNER_PHONE", "+970599000001"));
-  const user = await upsertStaff(phone, env("SEED_OWNER_NAME", "المالك"), env("SEED_OWNER_PASSWORD", "ChangeMe!2026"), "owner");
-  log(`owner: ${user.phone}`);
+  const username = env("SEED_OWNER_USERNAME", "admin").trim().toLowerCase();
+  const user = await upsertStaff(phone, env("SEED_OWNER_NAME", "المالك"), env("SEED_OWNER_PASSWORD", "ChangeMe!2026"), "owner", username);
+  log(`owner: ${user.username ?? user.phone}`);
 }
 
 async function seedWarehouse() {
@@ -192,11 +200,11 @@ async function seedGroups() {
 // ---------------------------------------------------------------------------
 
 const DEMO_STAFF = [
-  ["+970599000002", "سامي – المبيعات (مثال)", "sales"],
-  ["+970599000003", "ليلى – الأسعار (مثال)", "pricing"],
-  ["+970599000004", "خالد – المستودع (مثال)", "warehouse"],
-  ["+970599000005", "يوسف – سائق (مثال)", "driver"],
-  ["+970599000006", "منى – المحاسبة (مثال)", "accounting"],
+  ["+970599000002", "سامي – المبيعات (مثال)", "sales", "sami"],
+  ["+970599000003", "ليلى – الأسعار (مثال)", "pricing", "laila"],
+  ["+970599000004", "خالد – المستودع (مثال)", "warehouse", "khaled"],
+  ["+970599000005", "يوسف – سائق (مثال)", "driver", "yousef"],
+  ["+970599000006", "منى – المحاسبة (مثال)", "accounting", "mona"],
 ] as const;
 
 async function nextCustomerNumber(): Promise<string> {
@@ -256,7 +264,7 @@ async function seedDemoBank() {
 async function seedDemo() {
   await seedDemoBank();
   const password = env("SEED_DEMO_PASSWORD", "Demo-2026-pass");
-  for (const [phone, name, role] of DEMO_STAFF) await upsertStaff(phone, name, password, role);
+  for (const [phone, name, role, username] of DEMO_STAFF) await upsertStaff(phone, name, password, role, username);
   log(`demo staff: ${DEMO_STAFF.length} (password from SEED_DEMO_PASSWORD)`);
 
   for (const c of DEMO_CUSTOMERS) {

@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.10.1] – 2026-11-07 – Admin-Login mit Benutzername
+
+### Geändert
+- **Mitarbeiter und Admin melden sich mit Benutzername + Passwort an** – ohne Handynummer und ohne SMS-Code (Web und App). Kunden bleiben bei Telefon + SMS-Code.
+- Neues Feld **Benutzername** in der Mitarbeiterverwaltung (eindeutig, a–z, 0–9, . _ -). Bestehende Konten: Inhaber → `admin`, übrige automatisch; Demo-Mitarbeiter heißen `sami`, `laila`, `khaled`, `yousef`, `mona`.
+- Die Anmeldung mit Telefonnummer statt Benutzername funktioniert weiterhin.
+- Optional wieder mit SMS-Code: `STAFF_LOGIN_OTP=true`.
+- Installationsskript fragt den Admin-Benutzernamen; neue Einstellung `SEED_OWNER_USERNAME`.
+
+### Hinzugefügt
+- `scripts/admin-reset.sh`: Admin-Benutzername und -Passwort auf dem Server neu setzen (hebt auch Sperren durch Fehlversuche auf).
+
 ## [0.10.0] – 2026-11-07 – Produktion & Twilio
 
 ### Hinzugefügt

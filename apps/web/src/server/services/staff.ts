@@ -16,6 +16,7 @@ type RoleUpsert = z.infer<typeof roleUpsertSchema>;
 const staffSelect = {
   id: true,
   name: true,
+  username: true,
   phone: true,
   email: true,
   locale: true,
@@ -47,6 +48,7 @@ async function assertMayGrant(ctx: AuthContext, roleIds: string[]) {
 
 export async function createStaff(ctx: AuthContext, input: StaffCreate) {
   if (await prisma.user.findUnique({ where: { phone: input.phone } })) throw conflict("phone_already_registered");
+  if (await prisma.user.findUnique({ where: { username: input.username } })) throw conflict("username_taken");
   await assertRoles(input.roleIds);
   await assertMayGrant(ctx, input.roleIds);
   const passwordHash = await hashPassword(input.password);
@@ -55,6 +57,7 @@ export async function createStaff(ctx: AuthContext, input: StaffCreate) {
       data: {
         kind: "STAFF",
         name: input.name,
+        username: input.username,
         phone: input.phone,
         email: input.email,
         locale: input.locale,
@@ -94,6 +97,7 @@ export async function updateStaff(ctx: AuthContext, id: string, input: StaffUpda
     const wasOwner = await prisma.user.count({ where: { id, roles: { some: { role: { permissions: { has: WILDCARD } } } } } });
     if (wasOwner && (await ownerCount(id)) === 0) throw new AppError(409, "last_owner");
   }
+  if (input.username && input.username !== before.username && (await prisma.user.findUnique({ where: { username: input.username } }))) throw conflict("username_taken");
   const passwordHash = input.password ? await hashPassword(input.password) : undefined;
 
   const after = await prisma.$transaction(async (tx) => {
@@ -103,7 +107,7 @@ export async function updateStaff(ctx: AuthContext, id: string, input: StaffUpda
     }
     const updated = await tx.user.update({
       where: { id },
-      data: { name: input.name, email: input.email, isActive: input.isActive, passwordHash },
+      data: { name: input.name, username: input.username, email: input.email, isActive: input.isActive, passwordHash },
       select: staffSelect,
     });
     await audit(ctx, { action: "user.update", entityType: "User", entityId: id, before, after: { ...updated, passwordChanged: !!passwordHash } }, tx);

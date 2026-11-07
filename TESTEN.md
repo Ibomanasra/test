@@ -78,27 +78,32 @@ Warten, bis `Ready` erscheint. **Dieses Fenster offen lassen** – solange es l�
 
 Der erste Seitenaufruf dauert ca. 10–20 Sekunden (die Seite wird vorbereitet), danach geht es schnell.
 
-### Zugänge – der SMS-Code ist beim Test immer **123456**
+### Zugänge
 
-| Rolle | Telefon | Passwort |
+Mitarbeiter: **Benutzername + Passwort** unter **/ar/admin** (kein SMS-Code).
+
+| Rolle | Benutzername | Passwort |
 |---|---|---|
-| Inhaber / Admin | 0599000001 | ChangeMe!2026 |
-| Verkauf | 0599000002 | Demo-2026-pass |
-| Preisverwaltung | 0599000003 | Demo-2026-pass |
-| Lager | 0599000004 | Demo-2026-pass |
-| Fahrer | 0599000005 | Demo-2026-pass |
-| Buchhaltung | 0599000006 | Demo-2026-pass |
-| Privatkunde | 0599100001 | – (nur SMS-Code) |
-| Händler „Gold“ | 0599100003 | – (nur SMS-Code) |
-| Händler „Silber“ | 0599100004 | – (nur SMS-Code) |
+| Inhaber / Admin | admin | ChangeMe!2026 |
+| Verkauf | sami | Demo-2026-pass |
+| Preisverwaltung | laila | Demo-2026-pass |
+| Lager | khaled | Demo-2026-pass |
+| Fahrer | yousef | Demo-2026-pass |
+| Buchhaltung | mona | Demo-2026-pass |
 
-Mitarbeiter melden sich unter **/ar/admin** an, Kunden über **„دخول“** im Shop.
+Kunden: Telefon + SMS-Code (beim Test immer **123456**) über **„دخول“** im Shop.
+
+| Kunde | Telefon |
+|---|---|
+| Privatkunde | 0599100001 |
+| Händler „Gold“ | 0599100003 |
+| Händler „Silber“ | 0599100004 |
 
 ## Schritt 8 – Testablauf (Vorschlag)
 
 1. **Als Gast** den Shop ansehen → Preise sind Endkundenpreise inkl. MwSt.
 2. **Als Händler (0599100003)** anmelden → andere Preise und Mengenstaffeln. Etwas in den Warenkorb legen und bestellen („على الحساب“ = auf Rechnung).
-3. **Als Admin (0599000001)** → *الطلبات* (Bestellungen) → die neue Bestellung öffnen →
+3. **Als Admin (admin)** → *الطلبات* (Bestellungen) → die neue Bestellung öffnen →
    Bestätigen → Kommissionierung → Bereit → **Versenden**. Danach gibt es Lieferschein und Rechnung als PDF (Knopf „طباعة / PDF“).
 4. *التوصيل والسائقون* (Lieferung) → neue Tour → Fahrer wählen → Lieferschein ankreuzen → Tour anlegen.
 5. **Als Fahrer (0599000005)** anmelden → Stopp „Zugestellt“, unterschreiben, Bargeld eintragen → abends „Kassenabschluss“.

@@ -42,8 +42,14 @@ export default function Login() {
   const start = () =>
     run(async () => {
       if (staff) {
-        const r = await call<{ ticket: string }>("/api/v1/auth/staff/login", { body: { phone: e164(), password } });
-        setTicket(r.ticket);
+        // Mitarbeiter: Benutzername + Passwort; Code-Schritt nur, wenn der Server einen verlangt
+        const r = await call<{ ticket?: string; token?: string }>("/api/v1/auth/staff/login", { body: { login: phone.trim(), password, client: "MOBILE" } });
+        if (r.token) {
+          await signIn(r.token);
+          router.replace("/");
+          return;
+        }
+        setTicket(r.ticket ?? null);
       } else {
         await call("/api/v1/auth/otp/request", { body: { phone: e164(), purpose: "LOGIN" } });
       }
@@ -73,11 +79,15 @@ export default function Login() {
       </View>
       <Card>
         <Muted>{staff ? tr.t("staffLogin") : tr.t("customerLogin")}</Muted>
-        <Field label={tr.t("phone")} value={phone} onChangeText={setPhone} keyboardType="phone-pad" autoComplete="tel" placeholder="059…" editable={!sent} style={{ writingDirection: "ltr" }} />
+        {staff ? (
+          <Field label={tr.t("username")} value={phone} onChangeText={setPhone} autoCapitalize="none" autoCorrect={false} autoComplete="username" editable={!sent} style={{ writingDirection: "ltr" }} />
+        ) : (
+          <Field label={tr.t("phone")} value={phone} onChangeText={setPhone} keyboardType="phone-pad" autoComplete="tel" placeholder="059…" editable={!sent} style={{ writingDirection: "ltr" }} />
+        )}
         {staff ? <Field label={tr.t("password")} value={password} onChangeText={setPassword} secureTextEntry editable={!sent} /> : null}
         {sent ? <Field label={tr.t("code")} value={code} onChangeText={setCode} keyboardType="number-pad" maxLength={6} autoComplete="sms-otp" textContentType="oneTimeCode" /> : null}
         <ErrorText>{error}</ErrorText>
-        {sent ? <Button title={tr.t("verify")} onPress={() => void verify()} disabled={busy || code.length !== 6} /> : <Button title={staff ? tr.t("continue") : tr.t("sendCode")} onPress={() => void start()} disabled={busy || phone.length < 9} />}
+        {sent ? <Button title={tr.t("verify")} onPress={() => void verify()} disabled={busy || code.length !== 6} /> : <Button title={staff ? tr.t("continue") : tr.t("sendCode")} onPress={() => void start()} disabled={busy || phone.length < (staff ? 2 : 9)} />}
       </Card>
       <Pressable onPress={() => { setStaff(!staff); setSent(false); setCode(""); setError(""); }}>
         <Text style={{ color: colors.brand, textAlign: "center" }}>{staff ? tr.t("customerLogin") : tr.t("staffLogin")}</Text>

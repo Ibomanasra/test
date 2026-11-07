@@ -28,22 +28,18 @@ export async function resetRateLimits() {
   await db.rateLimitBucket.deleteMany({});
 }
 
-export async function staffLogin(page: Page, phone: string, password: string, locale = "ar") {
+/** Mitarbeiter-Login: Benutzername (oder Telefonnummer) + Passwort, ohne SMS-Code */
+export async function staffLogin(page: Page, login: string, password: string, locale = "ar") {
   await resetRateLimits();
-  const e164 = `+970${phone.replace(/^0/, "")}`;
   await page.goto(`/${locale}/admin/login`);
-  await page.locator("#phone").fill(phone);
+  await page.locator("#login").fill(login);
   await page.locator("#password").fill(password);
-  const started = new Date(Date.now() - 1000);
-  await page.locator("button[type=submit]").click();
-  await expect(page.locator("#code")).toBeVisible();
-  await page.locator("#code").fill(await latestOtp(e164, started));
   await page.locator("button[type=submit]").click();
   // Login ist erst abgeschlossen, wenn die Weiterleitung erfolgt ist (Session-Cookie gesetzt)
   await page.waitForURL((url) => !url.pathname.endsWith("/admin/login"));
 }
 
-export const OWNER = { phone: process.env.E2E_OWNER_PHONE ?? "0599000001", password: process.env.E2E_OWNER_PASSWORD ?? "ChangeMe!2026" };
+export const OWNER = { phone: process.env.E2E_OWNER_USERNAME ?? "admin", password: process.env.E2E_OWNER_PASSWORD ?? "ChangeMe!2026" };
 export const DEMO_PASSWORD = process.env.SEED_DEMO_PASSWORD ?? "Demo-2026-pass";
 
 export const ORIGIN = { Origin: "http://localhost:3000" };

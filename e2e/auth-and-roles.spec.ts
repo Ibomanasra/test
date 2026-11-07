@@ -5,24 +5,29 @@ test.afterAll(async () => {
   await db.$disconnect();
 });
 
-test("owner logs in with password + OTP and sees the admin dashboard", async ({ page }) => {
+test("owner logs in with username + password and sees the admin dashboard", async ({ page }) => {
   await staffLogin(page, OWNER.phone, OWNER.password);
   await expect(page).toHaveURL(/\/ar\/admin$/);
   await expect(page.getByTestId("admin-user")).toBeVisible();
   await expect(page.getByTestId("tile-pending")).toBeVisible();
 });
 
-test("wrong staff password is rejected without sending an OTP", async ({ page }) => {
+test("wrong staff password is rejected", async ({ page }) => {
   await page.goto("/en/admin/login");
-  await page.locator("#phone").fill(OWNER.phone);
+  await page.locator("#login").fill(OWNER.phone);
   await page.locator("#password").fill("wrong-password-123");
   await page.locator("button[type=submit]").click();
-  await expect(page.getByText("Wrong phone number or password.")).toBeVisible();
+  await expect(page.getByText("Wrong username or password.")).toBeVisible();
   await expect(page.locator("#code")).toHaveCount(0);
 });
 
+test("staff can still log in with the phone number instead of the username", async ({ page }) => {
+  await staffLogin(page, "0599000002", DEMO_PASSWORD, "en");
+  await expect(page).toHaveURL(/\/en\/admin$/);
+});
+
 test("driver is redirected to the driver view and gets 403 on admin API", async ({ page }) => {
-  await staffLogin(page, "0599000005", DEMO_PASSWORD);
+  await staffLogin(page, "yousef", DEMO_PASSWORD);
   await expect(page).toHaveURL(/\/ar\/driver$/);
   const res = await page.request.get("/api/v1/admin/customers");
   expect(res.status()).toBe(403);

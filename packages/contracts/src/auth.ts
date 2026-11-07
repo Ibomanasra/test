@@ -16,10 +16,22 @@ export const otpVerifySchema = z.object({
 });
 export type OtpVerify = z.infer<typeof otpVerifySchema>;
 
-export const staffLoginSchema = z.object({
-  phone: phoneSchema,
-  password: z.string().min(1).max(200),
-});
+/** Benutzername (z. B. „admin“) oder – für ältere Clients – Telefonnummer */
+export const usernameSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .regex(/^[a-z0-9][a-z0-9._-]{2,31}$/, "invalid_username");
+
+export const staffLoginSchema = z
+  .object({
+    login: z.string().trim().min(2).max(120).optional(),
+    phone: z.string().trim().max(40).optional(),
+    password: z.string().min(1).max(200),
+    client: z.enum(["WEB", "MOBILE"]).default("WEB"),
+  })
+  .refine((v) => Boolean(v.login || v.phone), { message: "login_required", path: ["login"] })
+  .transform((v) => ({ login: (v.login ?? v.phone)!, password: v.password, client: v.client }));
 
 export const staffVerifySchema = z.object({
   phone: phoneSchema,

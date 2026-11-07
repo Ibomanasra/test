@@ -262,7 +262,7 @@
     "resendIn": "Resend in {seconds}s",
     "newHere": "New here? Your account is created after verifying your number.",
     "staffTitle": "Staff login",
-    "staffIntro": "Password, then the verification code sent to your phone.",
+    "staffIntro": "Enter your username and password.",
     "password": "Password",
     "continue": "Continue",
     "staffLink": "Staff login",
@@ -281,7 +281,8 @@
       "save": "Save password",
       "done": "Your password was changed.",
       "toLogin": "Sign in"
-    }
+    },
+    "username": "Username"
   },
   "register": {
     "title": "Create account",
@@ -557,7 +558,8 @@
       "keepPassword": "Leave empty to keep the password",
       "deactivate": "Deactivate",
       "activate": "Activate",
-      "preferredLanguage": "Interface language"
+      "preferredLanguage": "Interface language",
+      "usernameHint": "Used to log in to the admin, lowercase Latin letters and digits (e.g. sami)."
     },
     "roles": {
       "title": "Roles & permissions",
@@ -1736,7 +1738,7 @@
     "csrf": "Invalid request. Please reload the page.",
     "not_found": "Not found.",
     "duplicate": "This record already exists.",
-    "invalid_credentials": "Wrong phone number or password.",
+    "invalid_credentials": "Wrong username or password.",
     "login_expired": "Login expired. Please start again.",
     "account_disabled": "The account is disabled.",
     "use_staff_login": "This number belongs to a staff account. Use the staff login.",
@@ -1866,7 +1868,9 @@
     "coupon_needs_code": "Enter the coupon code.",
     "coupon_code_taken": "This coupon code is already used by another offer.",
     "invalid_coupon_code": "Coupon code: 3–30 Latin letters or digits.",
-    "offer_used_up": "This offer just ran out. Please refresh."
+    "offer_used_up": "This offer just ran out. Please refresh.",
+    "invalid_username": "Username: 3–32 lowercase Latin letters, digits or . _ -",
+    "username_taken": "This username is already taken."
   },
   "permissions": {
     "dashboard_view": "View dashboard",

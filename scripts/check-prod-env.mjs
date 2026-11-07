@@ -30,7 +30,7 @@ err(env.POSTGRES_PASSWORD && env.POSTGRES_PASSWORD !== "sa_dev_password", "POSTG
 err(env.S3_SECRET_KEY && env.S3_SECRET_KEY !== "sa_minio_secret", "S3_SECRET_KEY: eigenes, langes Passwort setzen");
 err(!env.OTP_DEV_FIXED_CODE, "OTP_DEV_FIXED_CODE muss leer sein (sonst kann sich jeder mit 123456 anmelden)");
 err(env.SEED_OWNER_PASSWORD && env.SEED_OWNER_PASSWORD !== "ChangeMe!2026" && env.SEED_OWNER_PASSWORD.length >= 10, "SEED_OWNER_PASSWORD: eigenes Passwort (mind. 10 Zeichen)");
-err(env.SEED_OWNER_PHONE && env.SEED_OWNER_PHONE !== "+970599000001", "SEED_OWNER_PHONE: deine echte Handynummer (+970… oder +972…)");
+warn(env.SEED_OWNER_PHONE && env.SEED_OWNER_PHONE !== "+970599000001", "SEED_OWNER_PHONE: deine echte Handynummer als Kontakt eintragen");
 err((env.COMPOSE_FILE ?? "").includes("docker-compose.prod.yml"), "COMPOSE_FILE muss docker-compose.yml:docker-compose.prod.yml enthalten");
 
 warn(env.SEED_DEMO_DATA === "false", "SEED_DEMO_DATA=true – Demo-Kunden und -Produkte würden angelegt");

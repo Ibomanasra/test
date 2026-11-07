@@ -61,7 +61,7 @@ cd /opt/sholat
 ```
 bash scripts/server-install.sh
 ```
-Das Skript fragt nach **Domain**, **deiner Handynummer** (Admin-Login), **deinem Passwort** und **Namen**, erzeugt alle geheimen Schlüssel selbst, richtet Firewall und tägliches Backup ein und startet alles (erstes Mal 5–10 Minuten).
+Das Skript fragt nach **Domain**, **Admin-Benutzername** (Standard `admin`), **deiner Handynummer** (nur Kontakt), **deinem Passwort** und **Namen**, erzeugt alle geheimen Schlüssel selbst, richtet Firewall und tägliches Backup ein und startet alles (erstes Mal 5–10 Minuten).
 
 ## Teil E – Twilio eintragen
 
@@ -89,7 +89,7 @@ docker compose up -d
 
 ## Teil F – Testen
 
-1. **https://deine-domain/ar/admin** → mit deiner Handynummer + Passwort anmelden (Code kommt per SMS).
+1. **https://deine-domain/ar/admin** → mit **Benutzername + Passwort** anmelden.
 2. Einstellungen → **Firmendaten**, **Bankkonto**, **Lieferzonen**, **Zahlungsarten** (Kartenzahlung aus, solange kein Gateway eingerichtet ist).
 3. Produkte anlegen oder importieren, Preise setzen.
 4. Im Shop mit deiner Nummer als Kunde registrieren und eine Testbestellung machen.
@@ -102,6 +102,7 @@ docker compose up -d
 | Läuft alles? | `docker compose ps` |
 | Fehler ansehen | `docker compose logs --tail 100 web` |
 | Backup jetzt | `./scripts/backup.sh` (liegt in `/opt/sholat-backups`) |
+| Admin-Zugang vergessen / neu setzen | `bash scripts/admin-reset.sh` |
 | Einstellungen prüfen | `docker run --rm -v "$PWD":/w -w /w node:22-alpine node scripts/check-prod-env.mjs` |
 
 Backups zusätzlich regelmäßig **außer Haus** speichern (z. B. Hetzner Storage Box oder herunterladen).

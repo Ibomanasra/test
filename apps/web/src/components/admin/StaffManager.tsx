@@ -14,6 +14,7 @@ interface Role {
 interface Staff {
   id: string;
   name: string;
+  username: string | null;
   phone: string;
   email: string | null;
   isActive: boolean;
@@ -37,6 +38,7 @@ export function StaffManager({ staff, roles, currentUserId }: { staff: Staff[]; 
     const roleIds = fd.getAll("roleIds").map(String);
     const body = {
       name: String(fd.get("name")),
+      username: String(fd.get("username") ?? "").trim().toLowerCase(),
       email: String(fd.get("email") ?? ""),
       password: String(fd.get("password") ?? ""),
       roleIds,
@@ -71,6 +73,9 @@ export function StaffManager({ staff, roles, currentUserId }: { staff: Staff[]; 
           <form method="post" className="grid gap-4 sm:grid-cols-2" onSubmit={save} key={editing === "new" ? "new" : editing.id}>
             <Field label={tc("name")} htmlFor="s-name">
               <Input id="s-name" name="name" required minLength={2} defaultValue={editing === "new" ? "" : editing.name} />
+            </Field>
+            <Field label={ta("username")} htmlFor="s-username" hint={t("usernameHint")}>
+              <Input id="s-username" name="username" dir="ltr" className="text-start" autoCapitalize="none" spellCheck={false} required pattern="[a-z0-9][a-z0-9._\-]{2,31}" defaultValue={editing === "new" ? "" : (editing.username ?? "")} />
             </Field>
             {editing === "new" ? (
               <Field label={tc("phone")} htmlFor="s-phone">
@@ -122,6 +127,7 @@ export function StaffManager({ staff, roles, currentUserId }: { staff: Staff[]; 
         <thead>
           <tr>
             <Th>{tc("name")}</Th>
+            <Th>{ta("username")}</Th>
             <Th>{tc("phone")}</Th>
             <Th>{t("roles")}</Th>
             <Th>{tc("status")}</Th>
@@ -133,6 +139,7 @@ export function StaffManager({ staff, roles, currentUserId }: { staff: Staff[]; 
           {staff.map((s) => (
             <tr key={s.id} data-testid="staff-row">
               <Td>{s.name}</Td>
+              <Td><span dir="ltr" className="font-mono text-sm">{s.username ?? "–"}</span></Td>
               <Td><Num>{formatPhone(s.phone)}</Num></Td>
               <Td><div className="flex flex-wrap gap-1">{s.roleIds.map((r) => <Badge key={r} tone="brand">{roleName(r)}</Badge>)}</div></Td>
               <Td><Badge tone={s.isActive ? "green" : "neutral"}>{s.isActive ? tc("active") : tc("inactive")}</Badge></Td>

@@ -20,6 +20,7 @@ export default async function UsersPage({ params }: { params: Promise<{ locale: 
         staff={staff.map((s) => ({
           id: s.id,
           name: s.name,
+          username: s.username,
           phone: s.phone,
           email: s.email,
           isActive: s.isActive,

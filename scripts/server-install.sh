@@ -30,7 +30,9 @@ say "3/6 Einstellungen (.env)"
 if [ ! -f .env ]; then
   rnd() { openssl rand -base64 48 | tr -dc 'A-Za-z0-9' | head -c "$1"; }
   read -rp "Domain ohne https:// (z. B. sholataljanoub.ps): " DOMAIN
-  read -rp "Deine Handynummer für den Admin-Login (z. B. 0599123456): " PHONE
+  read -rp "Benutzername für den Admin-Login [admin]: " ADMIN_USER
+  ADMIN_USER="$(echo "${ADMIN_USER:-admin}" | tr 'A-Z' 'a-z' | tr -dc 'a-z0-9._-')"
+  read -rp "Deine Handynummer (nur als Kontakt, z. B. 0599123456 oder +49176…): " PHONE
   PHONE="$(echo "$PHONE" | tr -dc '0-9+')"
   case "$PHONE" in +*) ;; 0*) PHONE="+970${PHONE#0}" ;; *) PHONE="+$PHONE" ;; esac
   while true; do
@@ -56,6 +58,7 @@ if [ ! -f .env ]; then
   set_kv S3_SECRET_KEY "$(rnd 40)"
   set_kv OTP_DEV_FIXED_CODE ""
   set_kv SEED_OWNER_PHONE "$PHONE"
+  set_kv SEED_OWNER_USERNAME "$ADMIN_USER"
   set_kv SEED_OWNER_NAME "\"$OWNER\""
   set_kv SEED_OWNER_PASSWORD "$PW"
   set_kv SEED_DEMO_DATA false
@@ -87,6 +90,6 @@ echo "Backup täglich 02:30 → /opt/sholat-backups"
 DOMAIN_NOW="$(grep '^DOMAIN=' .env | cut -d= -f2)"
 say "Fertig!"
 echo "Shop:   https://$DOMAIN_NOW/ar"
-echo "Admin:  https://$DOMAIN_NOW/ar/admin"
+echo "Admin:  https://$DOMAIN_NOW/ar/admin   (Benutzername: $(grep '^SEED_OWNER_USERNAME=' .env | cut -d= -f2 || echo admin))"
 echo "Das HTTPS-Zertifikat kommt automatisch, sobald die Domain auf diesen Server zeigt (bis zu einigen Minuten)."
 echo "Status ansehen:  docker compose ps     Protokoll:  docker compose logs -f web"

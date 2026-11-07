@@ -480,6 +480,8 @@ model User {
   kind            UserKind
   phone           String    @unique // E.164, z. B. +970599123456
   phoneVerifiedAt DateTime?
+  /// Mitarbeiter-Login (klein geschrieben); Kunden melden sich per Telefon + SMS-Code an
+  username        String?   @unique
   email           String?   @unique
   name            String
   locale          Locale    @default(ar)

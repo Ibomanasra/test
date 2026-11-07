@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.13.1] – 2026-11-07 – Fahrer beim Laden auswählen
+
+### Hinzugefügt
+- **Fahrer gleich beim Laden wählen**: Im Laden-Dialog einer fertigen Bestellung gibt es die Auswahl „السائق“. Der Lieferschein kommt automatisch in die **heutige Tour** dieses Fahrers (gibt es noch keine, wird sie angelegt); der Fahrer bekommt eine Push-Nachricht. „Ohne Fahrer – später“ verhält sich wie bisher.
+- Auf der Bestellseite steht beim Lieferschein jetzt **welcher Fahrer** ihn hat (mit Link zur Tour).
+
 ## [0.13.0] – 2026-11-07 – Produkte einfach verwalten & moderner Einkauf
 
 ### Hinzugefügt

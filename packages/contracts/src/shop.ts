@@ -65,6 +65,8 @@ export const orderCancelSchema = z.object({ reason: z.string().trim().min(3).max
 export const orderDispatchSchema = z.object({
   quantities: z.record(z.string(), z.number().int().min(0)).optional(),
   remainder: z.enum(["BACKORDER", "CANCEL"]).default("BACKORDER"),
+  /** Fahrer gleich beim Laden zuteilen (heutige Tour) */
+  driverId: idSchema.optional().or(z.literal("").transform(() => undefined)),
 });
 export const orderDeliverSchema = z.object({ receivedByName: optionalText(120) });
 export const orderFailSchema = z.object({ reason: z.string().trim().min(3).max(500) });

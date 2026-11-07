@@ -338,7 +338,7 @@ const orderInclude = {
   items: { orderBy: { sortOrder: "asc" } },
   offer: { select: { nameAr: true, nameEn: true, kind: true } },
   events: { orderBy: { createdAt: "asc" }, include: { byUser: { select: { name: true } } } },
-  shipments: { include: { items: true }, orderBy: { createdAt: "asc" } },
+  shipments: { include: { items: true, tourStop: { select: { tour: { select: { id: true, number: true, driver: { select: { name: true } } } } } } }, orderBy: { createdAt: "asc" } },
   parentOrder: { select: { id: true, number: true } },
   backorders: { select: { id: true, number: true, status: true } },
   placedBy: { select: { name: true } },

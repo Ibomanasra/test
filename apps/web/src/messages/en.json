@@ -1123,7 +1123,10 @@
         "toDispatch": "Dispatch",
         "toDelivery": "Delivery",
         "open": "Open"
-      }
+      },
+      "driver": "Driver",
+      "noDriver": "No driver – assign later",
+      "driverHint": "The order is added to the driver's tour for today and they get a notification."
     },
     "products": {
       "title": "Products",

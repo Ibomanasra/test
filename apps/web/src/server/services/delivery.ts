@@ -249,3 +249,23 @@ export async function cashByDriver() {
   const users = new Map((await prisma.user.findMany({ where: { id: { in: rows.map((r) => r.driverId) } }, select: { id: true, name: true } })).map((u) => [u.id, u.name]));
   return rows.map((r) => ({ driverId: r.driverId, name: users.get(r.driverId) ?? "", amount: r._sum.amount ?? 0 }));
 }
+
+/**
+ * Beim Laden: Lieferschein direkt einem Fahrer geben.
+ * Hängt ihn an die heutige offene Tour des Fahrers an oder legt eine neue an.
+ */
+export async function assignShipmentToDriver(ctx: AuthContext, shipmentId: string, driverId: string) {
+  const driver = (await listDrivers()).find((d) => d.id === driverId);
+  if (!driver) throw badRequest("invalid_driver");
+  const tour = await prisma.tour.findFirst({
+    where: { driverId, date: todayDb(), status: { in: ["PLANNED", "LOADED", "ON_ROUTE"] } },
+    orderBy: { createdAt: "desc" },
+  });
+  if (tour) {
+    await addTourStops(ctx, tour.id, [shipmentId]);
+    await pushToUsers([driverId], { title: tour.number, body: "طلبية جديدة أضيفت إلى جولتك / A new delivery was added to your tour", data: { tourId: tour.id } });
+    return { tourId: tour.id, tourNumber: tour.number, driverName: driver.name };
+  }
+  const created = await createTour(ctx, { date: new Date(), driverId, zoneId: null, note: undefined, shipmentIds: [shipmentId] });
+  return { tourId: created.id, tourNumber: created.number, driverName: driver.name };
+}

@@ -11,6 +11,7 @@ import { Alert, Badge, Card, Num, PageHeader, Table, Td, Th } from "@/components
 import { Link } from "@/i18n/navigation";
 import { staffPagePermission } from "@/server/auth/page-guards";
 import { dateTimeText, day, money, pct } from "@/server/format";
+import { listDrivers } from "@/server/services/delivery";
 import { getOrder } from "@/server/services/orders";
 import { quoteEditorOptions } from "@/server/services/quote-options";
 
@@ -26,6 +27,7 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ loc
   const addr = o.addressSnapshot as { recipient: string; city: string; street?: string; details?: string; zoneAr: string; zoneEn: string; phone: string };
   const editable = isOrderEditable(o.status as OrderStatusKey) && can("order.edit");
   const editorOpts = editable ? await quoteEditorOptions(locale) : null;
+  const drivers = o.status === "READY" && can("order.status") ? (await listDrivers()).map((d) => ({ id: d.id, name: d.name })) : [];
   const margin = o.subtotalNet > 0 ? Math.round(((o.subtotalNet - o.costTotal) * 10_000) / o.subtotalNet) : 0;
   return (
     <div className="space-y-6">
@@ -52,6 +54,7 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ loc
         status={o.status}
         items={o.items.map((i) => ({ id: i.id, sku: i.skuSnapshot, name: locale === "ar" ? i.nameArSnapshot : i.nameEnSnapshot, open: i.qtyBase - i.qtyCancelledBase - i.qtyDeliveredBase }))}
         can={{ confirm: can("order.confirm"), status: can("order.status"), cancel: can("order.cancel") }}
+        drivers={drivers}
       />
       {o.parentOrder ? <Alert tone="blue">{t("backorderOf")} <Link href={`/admin/orders/${o.parentOrder.id}`} className="num underline">{o.parentOrder.number}</Link></Alert> : null}
       {o.backorders.length ? (
@@ -132,6 +135,7 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ loc
             {o.shipments.map((s) => (
               <li key={s.id}>
                 <span className="num font-medium">{s.number}</span> · {t(`shipmentStatus.${s.status}`)} · <Num>{dateTimeText(s.deliveredAt ?? s.createdAt)}</Num>
+                {s.tourStop ? <> · {t("driver")}: <Link href={`/admin/delivery/tours/${s.tourStop.tour.id}`} className="text-brand-700 underline" data-testid="shipment-driver">{s.tourStop.tour.driver?.name ?? "–"}</Link> <span className="num text-xs text-ink-500">{s.tourStop.tour.number}</span></> : null}
                 {s.receivedByName ? ` · ${s.receivedByName}` : ""}
                 {s.signatureFileId ? <> · <a href={`/api/v1/files/${s.signatureFileId}`} target="_blank" rel="noopener" className="text-brand-700 underline" data-testid="proof-signature">{t("signature")}</a></> : null}
                 {s.photoFileId ? <> · <a href={`/api/v1/files/${s.photoFileId}`} target="_blank" rel="noopener" className="text-brand-700 underline" data-testid="proof-photo">{t("photo")}</a></> : null}

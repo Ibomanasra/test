@@ -113,3 +113,20 @@ test("finance: payment allocates to the oldest invoice, stocktake posts differen
   const xlsx = await page.request.get("/api/v1/admin/exports?kind=invoices&from=2026-01-01&to=2026-12-31&format=xlsx");
   expect(xlsx.status()).toBe(200);
 });
+
+test("dispatch: driver is chosen while loading and the shipment lands in the driver's tour for today", async ({ page, browser }) => {
+  await customerLogin(page, B2C);
+  const orderId = await placeCodOrder(page.request, B2C.e164, "BA-001", 3);
+  const staff = await browser.newPage();
+  await staffLogin(staff, OWNER.phone, OWNER.password);
+  for (const to of ["CONFIRMED", "PICKING", "READY"]) expect((await staff.request.post(`/api/v1/admin/orders/${orderId}/status`, { data: { to }, headers: ORIGIN })).ok()).toBe(true);
+  const driver = await db.user.findUniqueOrThrow({ where: { phone: DRIVER.e164 } });
+  await staff.goto(`/ar/admin/orders/${orderId}`);
+  await staff.getByTestId("open-dispatch").click();
+  await staff.getByTestId("dispatch-driver").selectOption(driver.id);
+  await staff.getByTestId("confirm-dispatch").click();
+  await expect(staff.getByTestId("shipment-driver")).toContainText(driver.name, { timeout: 15_000 });
+  const shipment = await db.shipment.findFirstOrThrow({ where: { orderId }, include: { tourStop: { include: { tour: true } } } });
+  expect(shipment.tourStop?.tour.driverId).toBe(driver.id);
+  expect(shipment.tourStop?.tour.status).not.toBe("CLOSED");
+});

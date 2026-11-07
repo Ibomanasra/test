@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useState } from "react";
-import { Alert, Button, Card, Field, Input, Table, Td, Th } from "@/components/ui";
+import { Alert, Button, Card, Field, Input, Select, Table, Td, Th } from "@/components/ui";
 import { useRouter } from "@/i18n/navigation";
 import { useApi } from "@/lib/api-client";
 
@@ -18,11 +18,14 @@ export function OrderActions({
   status,
   items,
   can,
+  drivers = [],
 }: {
   orderId: string;
   status: string;
   items: Item[];
   can: { confirm: boolean; status: boolean; cancel: boolean };
+  /** Fahrer, die beim Laden zugeteilt werden können */
+  drivers?: { id: string; name: string }[];
 }) {
   const t = useTranslations("admin.orders");
   const ts = useTranslations("orderStatus");
@@ -33,6 +36,7 @@ export function OrderActions({
   const [qty, setQty] = useState<Record<string, string>>(Object.fromEntries(items.map((i) => [i.id, String(i.open)])));
   const [remainder, setRemainder] = useState<"BACKORDER" | "CANCEL">("BACKORDER");
   const [text, setText] = useState("");
+  const [driverId, setDriverId] = useState(drivers.length === 1 ? drivers[0]!.id : "");
 
   const post = async (path: string, body: unknown) => {
     if (await call(`/api/v1/admin/orders/${orderId}/${path}`, { body })) {
@@ -91,8 +95,18 @@ export function OrderActions({
             <label className="flex items-center gap-2"><input type="radio" checked={remainder === "BACKORDER"} onChange={() => setRemainder("BACKORDER")} className="accent-brand-700" />{t("remainderBackorder")}</label>
             <label className="flex items-center gap-2"><input type="radio" checked={remainder === "CANCEL"} onChange={() => setRemainder("CANCEL")} className="accent-brand-700" />{t("remainderCancel")}</label>
           </fieldset>
+          {drivers.length ? (
+            <div className="mt-4 max-w-sm">
+              <Field label={t("driver")} htmlFor="dispatch-driver" hint={t("driverHint")}>
+                <Select id="dispatch-driver" value={driverId} onChange={(e) => setDriverId(e.target.value)} data-testid="dispatch-driver">
+                  <option value="">{t("noDriver")}</option>
+                  {drivers.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                </Select>
+              </Field>
+            </div>
+          ) : null}
           <div className="mt-4 flex gap-2">
-            <Button disabled={pending} onClick={() => void post("dispatch", { quantities: Object.fromEntries(Object.entries(qty).map(([k, v]) => [k, Number(v) || 0])), remainder })} data-testid="confirm-dispatch">{t("dispatchNow")}</Button>
+            <Button disabled={pending} onClick={() => void post("dispatch", { quantities: Object.fromEntries(Object.entries(qty).map(([k, v]) => [k, Number(v) || 0])), remainder, driverId: driverId || undefined })} data-testid="confirm-dispatch">{t("dispatchNow")}</Button>
             <Button variant="secondary" onClick={() => setMode(null)}>{tc("cancel")}</Button>
           </div>
         </Card>

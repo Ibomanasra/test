@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.10.0] – 2026-11-07 – Produktion & Twilio
+
+### Hinzugefügt
+- **Produktionsbetrieb**: `docker-compose.prod.yml` mit **Caddy** (automatisches HTTPS über Let's Encrypt, HSTS, gzip/zstd), Datenbank/MinIO/Web nicht mehr direkt erreichbar, kein Mailpit, echter SMTP-Server.
+- **`scripts/server-install.sh`**: frischer Ubuntu-Server in einem Schritt – Docker, Firewall (nur 22/80/443), `.env` mit sicheren Zufallswerten (fragt nur Domain, Handynummer, Passwort, Name), Prüfung, Start, tägliches Backup per Cron.
+- **`scripts/server-update.sh`**: Backup → `git pull` → Prüfung → neu bauen und starten.
+- **`scripts/check-prod-env.mjs`**: verhindert den Start mit Demo-Passwörtern, festem OTP-Code, ohne HTTPS-Cookies usw.; warnt bei fehlender SMS/E-Mail.
+- **Twilio** als SMS-Anbieter (`SMS_PROVIDER=twilio`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM` – Nummer, Absendername oder Messaging-Service); Fehlercodes von Twilio landen im Benachrichtigungsprotokoll.
+- **VEROEFFENTLICHEN.md**: Schritt-für-Schritt-Anleitung (Server mieten, Domain, Twilio, Installation, Alltag).
+
 ## [0.9.2] – 2026-11-07 – Rechnungen & Belege verständlich
 
 ### Geändert

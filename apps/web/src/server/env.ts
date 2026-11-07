@@ -14,7 +14,11 @@ const schema = z.object({
   SESSION_TTL_DAYS_CUSTOMER: z.coerce.number().int().min(1).default(60),
   SESSION_TTL_DAYS_STAFF: z.coerce.number().int().min(1).default(1),
   COOKIE_SECURE: bool,
-  SMS_PROVIDER: z.enum(["log", "http"]).default("log"),
+  SMS_PROVIDER: z.enum(["log", "http", "twilio"]).default("log"),
+  TWILIO_ACCOUNT_SID: z.string().default(""),
+  TWILIO_AUTH_TOKEN: z.string().default(""),
+  /** Twilio-Absender: Nummer (+1…), alphanumerisch (max. 11 Zeichen) oder Messaging-Service-SID (MG…) */
+  TWILIO_FROM: z.string().default(""),
   SMS_SENDER_NAME: z.string().default("SholatAljanoub"),
   SMS_API_URL: z.string().url().optional().or(z.literal("").transform(() => undefined)),
   SMS_API_KEY: z.string().default(""),

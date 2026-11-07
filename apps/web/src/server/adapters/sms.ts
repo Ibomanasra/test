@@ -85,6 +85,39 @@ export class HttpSmsAdapter extends RemoteAdapter {
 }
 
 /**
+ * Twilio Programmable Messaging: POST /2010-04-01/Accounts/{SID}/Messages.json,
+ * Basic-Auth (Account SID : Auth Token), Formular { To, Body, From | MessagingServiceSid }.
+ * `from`: Twilio-Nummer (+1…), alphanumerischer Absender (z. B. "SholaJanoub") oder Messaging-Service-SID (MG…).
+ */
+export class TwilioSmsAdapter extends RemoteAdapter {
+  readonly name = "twilio";
+  protected readonly channel = "SMS" as const;
+  constructor(
+    private readonly cfg: { accountSid: string; authToken: string; from: string; apiUrl?: string },
+    private readonly http: Fetch = fetch,
+  ) {
+    super();
+  }
+
+  protected async deliver(m: OutgoingMessage) {
+    const base = this.cfg.apiUrl ?? "https://api.twilio.com";
+    const form = new URLSearchParams({ To: m.to, Body: m.text });
+    if (this.cfg.from.startsWith("MG")) form.set("MessagingServiceSid", this.cfg.from);
+    else form.set("From", this.cfg.from);
+    const res = await this.http(`${base}/2010-04-01/Accounts/${encodeURIComponent(this.cfg.accountSid)}/Messages.json`, {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded", authorization: `Basic ${Buffer.from(`${this.cfg.accountSid}:${this.cfg.authToken}`).toString("base64")}` },
+      body: form.toString(),
+    });
+    if (!res.ok) {
+      // Twilio liefert {code, message} – hilft bei „Nummer nicht erlaubt“, „Land gesperrt“ usw.
+      const detail = await res.json().catch(() => null) as { code?: number; message?: string } | null;
+      throw new Error(`HTTP ${res.status}${detail?.code ? ` (${detail.code}: ${detail.message})` : ""}`);
+    }
+  }
+}
+
+/**
  * WhatsApp Business Cloud API (Meta): Textnachricht an die Nummer.
  * Hinweis: Freitext nur innerhalb von 24 h nach Kundenkontakt; sonst freigegebene Vorlagen nötig.
  */
@@ -114,7 +147,12 @@ let whatsapp: MessageAdapter | undefined;
 export function smsAdapter(): MessageAdapter {
   if (sms) return sms;
   const e = env();
-  sms = e.SMS_PROVIDER === "http" && e.SMS_API_URL ? new HttpSmsAdapter({ url: e.SMS_API_URL, apiKey: e.SMS_API_KEY, sender: e.SMS_SENDER_NAME }) : new LogAdapter(e.SMS_PROVIDER, "SMS");
+  sms =
+    e.SMS_PROVIDER === "twilio" && e.TWILIO_ACCOUNT_SID && e.TWILIO_AUTH_TOKEN
+      ? new TwilioSmsAdapter({ accountSid: e.TWILIO_ACCOUNT_SID, authToken: e.TWILIO_AUTH_TOKEN, from: e.TWILIO_FROM || e.SMS_SENDER_NAME })
+      : e.SMS_PROVIDER === "http" && e.SMS_API_URL
+        ? new HttpSmsAdapter({ url: e.SMS_API_URL, apiKey: e.SMS_API_KEY, sender: e.SMS_SENDER_NAME })
+        : new LogAdapter(e.SMS_PROVIDER, "SMS");
   return sms;
 }
 

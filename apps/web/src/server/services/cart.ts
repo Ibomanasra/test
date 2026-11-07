@@ -121,6 +121,8 @@ export interface CartLineDto {
   variantId: string;
   sku: string;
   productSlug: string;
+  /** erstes Produktfoto (FileObject-ID) */
+  imageId: string | null;
   nameAr: string;
   nameEn: string;
   variantNameAr: string | null;
@@ -172,7 +174,7 @@ export async function pricedCart(owner: CartOwner): Promise<PricedCart> {
           nameEn: true,
           minStock: true,
           active: true,
-          product: { select: { slug: true, nameAr: true, nameEn: true, active: true, visibleB2B: true, visibleB2C: true } },
+          product: { select: { slug: true, nameAr: true, nameEn: true, active: true, visibleB2B: true, visibleB2C: true, images: { select: { fileId: true }, orderBy: { sortOrder: "asc" }, take: 1 } } },
           units: { select: { factor: true, unit: { select: { code: true, nameAr: true, nameEn: true } } } },
           channelRules: { select: { channel: true, minQtyBase: true, qtyStepBase: true } },
           stockLevels: { select: { onHand: true, reserved: true } },
@@ -204,6 +206,7 @@ export async function pricedCart(owner: CartOwner): Promise<PricedCart> {
       variantId: i.variantId,
       sku: i.variant.sku,
       productSlug: i.variant.product.slug,
+      imageId: i.variant.product.images[0]?.fileId ?? null,
       nameAr: i.variant.product.nameAr,
       nameEn: i.variant.product.nameEn,
       variantNameAr: i.variant.nameAr,

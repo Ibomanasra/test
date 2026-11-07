@@ -4,7 +4,7 @@ import { formatMoney } from "@sa/core";
 import { useLocale, useTranslations } from "next-intl";
 import { CityZoneFields } from "@/components/shared/CityZoneFields";
 import { useEffect, useState } from "react";
-import { Alert, Button, Card, Field, Input, Textarea } from "@/components/ui";
+import { Alert, Button, Field, Input, Textarea } from "@/components/ui";
 import { useRouter } from "@/i18n/navigation";
 import { apiFetch, useApi } from "@/lib/api-client";
 
@@ -35,7 +35,7 @@ interface Preview {
   vat: number;
   gross: number;
   hasProblems: boolean;
-  lines: { id: string }[];
+  lines: { id: string; imageId: string | null; nameAr: string; nameEn: string; qty: number; unitNameAr: string; unitNameEn: string; factor: number; lineTotal: number }[];
   offer: { nameAr: string; nameEn: string; kind: string; discount: number } | null;
   freeDeliveryOffer: { nameAr: string; nameEn: string; saved: number } | null;
   coupon: { status: "applied" | "not_better" | "invalid"; reason: string | null } | null;
@@ -115,95 +115,146 @@ export function CheckoutForm({ options, zones }: { options: Options; zones: { id
 
   const onAccount = method === "ON_ACCOUNT";
   const creditShort = onAccount && options.credit && preview ? preview.gross > options.credit.available : false;
+  const fmtDay = (d: string, o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat(locale === "ar" ? "ar-u-nu-latn" : "en-GB", { ...o, timeZone: "UTC" }).format(new Date(`${d}T12:00:00Z`));
+  const PM_ICON: Record<string, string> = { CASH_ON_DELIVERY: "💵", BANK_TRANSFER: "🏦", CARD_GATEWAY: "💳", ON_ACCOUNT: "🧾" };
+  const canPlace = !pending && !!preview && !preview.belowMinimum && !preview.hasProblems && preview.lines.length > 0 && !!date && !!method && !creditShort;
+  const section = (n: number, title: string, children: React.ReactNode, testId?: string) => (
+    <section className="min-w-0 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-ink-200" data-testid={testId}>
+      <h2 className="mb-4 flex items-center gap-3 text-base font-bold text-ink-900">
+        <span className="num grid size-7 place-items-center rounded-full bg-ink-900 text-sm text-white">{n}</span>
+        {title}
+      </h2>
+      {children}
+    </section>
+  );
+
   return (
-    <div className="grid gap-6 lg:grid-cols-3">
-      <div className="space-y-6 lg:col-span-2">
-        <Card title={t("address")}>
-          <div className="space-y-2">
-            {options.addresses.map((a) => (
-              <label key={a.id} className="flex cursor-pointer items-start gap-3 rounded-lg p-3 ring-1 ring-ink-200 has-[:checked]:bg-brand-50 has-[:checked]:ring-brand-600">
-                <input type="radio" name="address" checked={addressId === a.id} onChange={() => chooseAddress(a.id)} className="mt-1 accent-brand-700" />
-                <span className="text-sm">
-                  <span className="font-medium">{a.recipient}</span> – {locale === "ar" ? a.zone.nameAr : a.zone.nameEn}, {a.city}
-                  <br />
-                  <span className="text-ink-600">{[a.street, a.details].filter(Boolean).join("، ")}</span>
-                </span>
-              </label>
-            ))}
-          </div>
-          {newAddress ? (
-            <form method="post" onSubmit={addAddress} className="mt-4 grid gap-3 sm:grid-cols-2">
-              <Field label={t("recipient")} htmlFor="na-rec"><Input id="na-rec" name="recipient" required minLength={2} /></Field>
-              <Field label={tc("phone")} htmlFor="na-phone"><Input id="na-phone" name="phone" type="tel" dir="ltr" className="num" required /></Field>
-              <CityZoneFields zones={zones} idPrefix="na-" />
-              <Field label={tr("street")} htmlFor="na-street"><Input id="na-street" name="street" /></Field>
-              <Field label={tr("details")} htmlFor="na-details"><Input id="na-details" name="details" /></Field>
-              <div className="sm:col-span-2"><Button type="submit" variant="secondary" disabled={pending}>{t("saveAddress")}</Button></div>
-            </form>
-          ) : (
-            <Button variant="ghost" size="sm" className="mt-3" onClick={() => setNewAddress(true)}>{t("newAddress")}</Button>
-          )}
-        </Card>
+    <div className="grid grid-cols-1 gap-6 pb-24 lg:grid-cols-3 lg:pb-0">
+      <div className="min-w-0 space-y-4 lg:col-span-2">
+        {section(
+          1,
+          t("address"),
+          <>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {options.addresses.map((a) => (
+                <label key={a.id} className="flex cursor-pointer items-start gap-3 rounded-xl p-3 ring-1 ring-ink-200 transition has-[:checked]:bg-brand-50 has-[:checked]:ring-2 has-[:checked]:ring-brand-600">
+                  <input type="radio" name="address" checked={addressId === a.id} onChange={() => chooseAddress(a.id)} className="mt-1 accent-brand-700" />
+                  <span className="text-sm">
+                    <span className="font-semibold text-ink-900">{a.city}</span> <span className="text-ink-500">· {locale === "ar" ? a.zone.nameAr : a.zone.nameEn}</span>
+                    <br />
+                    <span className="text-ink-600">{[a.street, a.details].filter(Boolean).join("، ") || a.recipient}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+            {newAddress ? (
+              <form method="post" onSubmit={addAddress} className="mt-4 grid gap-3 rounded-xl bg-ink-50 p-4 sm:grid-cols-2">
+                <Field label={t("recipient")} htmlFor="na-rec"><Input id="na-rec" name="recipient" required minLength={2} /></Field>
+                <Field label={tc("phone")} htmlFor="na-phone"><Input id="na-phone" name="phone" type="tel" dir="ltr" className="num" required /></Field>
+                <CityZoneFields zones={zones} idPrefix="na-" />
+                <Field label={tr("street")} htmlFor="na-street"><Input id="na-street" name="street" /></Field>
+                <Field label={tr("details")} htmlFor="na-details"><Input id="na-details" name="details" /></Field>
+                <div className="sm:col-span-2"><Button type="submit" variant="secondary" disabled={pending}>{t("saveAddress")}</Button></div>
+              </form>
+            ) : (
+              <Button variant="ghost" size="sm" className="mt-3" onClick={() => setNewAddress(true)}>＋ {t("newAddress")}</Button>
+            )}
+          </>,
+          "co-address",
+        )}
 
-        <Card title={t("deliveryDay")}>
-          <div className="flex flex-wrap gap-2">
-            {(address?.deliveryDates ?? []).map((d) => (
-              <label key={d} className="cursor-pointer rounded-lg px-3 py-2 text-sm ring-1 ring-ink-200 has-[:checked]:bg-brand-50 has-[:checked]:ring-brand-600">
+        {section(
+          2,
+          t("deliveryDay"),
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {(address?.deliveryDates ?? []).map((d, i) => (
+              <label key={d} className="relative shrink-0 cursor-pointer rounded-xl px-4 py-3 text-center text-sm ring-1 ring-ink-200 transition has-[:checked]:bg-ink-900 has-[:checked]:text-white has-[:checked]:ring-ink-900">
                 <input type="radio" name="date" value={d} checked={date === d} onChange={() => setDate(d)} className="sr-only" />
-                <span>{new Intl.DateTimeFormat(locale === "ar" ? "ar-u-nu-latn" : "en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${d}T12:00:00Z`))}</span>
+                <span className="block font-semibold">{i === 0 ? t("soonest") : fmtDay(d, { weekday: "long" })}</span>
+                <span className="block text-xs opacity-80">{i === 0 ? fmtDay(d, { weekday: "short", day: "numeric", month: "short" }) : fmtDay(d, { day: "numeric", month: "short" })}</span>
               </label>
             ))}
-          </div>
-        </Card>
+          </div>,
+          "co-date",
+        )}
 
-        <Card title={t("payment")}>
-          <div className="space-y-2">
-            {options.paymentMethods.map((m) => (
-              <label key={m.method} className="flex cursor-pointer items-center gap-3 rounded-lg p-3 ring-1 ring-ink-200 has-[:checked]:bg-brand-50 has-[:checked]:ring-brand-600">
-                <input type="radio" name="pm" checked={method === m.method} onChange={() => setMethod(m.method)} className="accent-brand-700" data-testid={`pm-${m.method}`} />
-                <span>{locale === "ar" ? m.labelAr : m.labelEn}</span>
-              </label>
-            ))}
-          </div>
-          {onAccount && options.credit ? (
-            <p className="mt-3 text-sm text-ink-600">{t("creditAvailable")}: <span className="num font-medium">{formatMoney(options.credit.available)}</span></p>
-          ) : null}
-          {method === "BANK_TRANSFER" ? <p className="mt-3 text-sm text-ink-600">{t("bankTransferNote")}</p> : null}
-        </Card>
-
-        <Card title={t("note")}>
-          <Textarea value={note} onChange={(e) => setNote(e.target.value)} maxLength={1000} />
-        </Card>
+        {section(
+          3,
+          t("payment"),
+          <>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {options.paymentMethods.map((m) => (
+                <label key={m.method} className="relative flex cursor-pointer items-center gap-3 rounded-xl p-4 ring-1 ring-ink-200 transition has-[:checked]:bg-brand-50 has-[:checked]:ring-2 has-[:checked]:ring-brand-600">
+                  <input type="radio" name="pm" checked={method === m.method} onChange={() => setMethod(m.method)} className="size-4 shrink-0 accent-brand-700" data-testid={`pm-${m.method}`} />
+                  <span className="text-2xl" aria-hidden="true">{PM_ICON[m.method] ?? "•"}</span>
+                  <span className="font-medium text-ink-900">{locale === "ar" ? m.labelAr : m.labelEn}</span>
+                </label>
+              ))}
+            </div>
+            {onAccount && options.credit ? <p className="mt-3 text-sm text-ink-600">{t("creditAvailable")}: <span className="num font-medium">{formatMoney(options.credit.available)}</span></p> : null}
+            {method === "BANK_TRANSFER" ? <p className="mt-3 text-sm text-ink-600">{t("bankTransferNote")}</p> : null}
+            <details className="mt-4 text-sm">
+              <summary className="cursor-pointer text-ink-600">{t("note")}</summary>
+              <Textarea value={note} onChange={(e) => setNote(e.target.value)} maxLength={1000} className="mt-2" />
+            </details>
+          </>,
+          "co-payment",
+        )}
       </div>
 
-      <div>
-        <Card title={t("summary")}>
+      {/* Zusammenfassung */}
+      <div className="min-w-0 lg:sticky lg:top-4 lg:self-start">
+        <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-ink-200">
+          <h2 className="mb-3 text-base font-bold text-ink-900">{t("summary")}</h2>
           {preview ? (
-            <div className="space-y-1 text-sm">
+            <div className="space-y-2 text-sm">
+              <ul className="mb-3 max-h-56 space-y-2 overflow-y-auto">
+                {preview.lines.map((l) => (
+                  <li key={l.id} className="flex items-center gap-3">
+                    {l.imageId ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- Produktfoto
+                      <img src={`/api/v1/images/${l.imageId}`} alt="" className="size-11 rounded-lg bg-ink-50 object-contain ring-1 ring-ink-200" />
+                    ) : (
+                      <span className="grid size-11 place-items-center rounded-lg bg-ink-100 text-xs text-ink-400">{(locale === "ar" ? l.nameAr : l.nameEn).slice(0, 2)}</span>
+                    )}
+                    <span className="min-w-0 flex-1">
+                      <span className="line-clamp-1 text-ink-900">{locale === "ar" ? l.nameAr : l.nameEn}</span>
+                      <span className="num text-xs text-ink-500">{l.qty} × {locale === "ar" ? l.unitNameAr : l.unitNameEn}</span>
+                    </span>
+                    <span className="num font-medium">{formatMoney(l.lineTotal)}</span>
+                  </li>
+                ))}
+              </ul>
               {preview.nextOffer ? (
-                <p className="mb-2 rounded-lg bg-sky-50 px-3 py-2 text-sky-900" data-testid="next-offer">
+                <p className="rounded-lg bg-sky-50 px-3 py-2 text-sky-900" data-testid="next-offer">
                   {t("offers.next", { missing: formatMoney(preview.nextOffer.missing), benefit: preview.nextOffer.percentBps ? `${preview.nextOffer.percentBps / 100}%` : formatMoney(preview.nextOffer.amountAgorot ?? 0) })}
                 </p>
               ) : null}
-              <p className="flex justify-between"><span>{options.channel === "B2B" ? t("goodsNet") : t("goodsGross")}</span><span className="num">{formatMoney(preview.goodsValue + (preview.offer?.discount ?? 0))}</span></p>
-              {preview.offer ? (
-                <p className="flex justify-between font-medium text-green-700" data-testid="offer-discount"><span>🎁 {nm(preview.offer)}</span><span className="num">−{formatMoney(preview.offer.discount)}</span></p>
-              ) : null}
-              <p className="flex justify-between"><span>{t("deliveryFee")}</span><span className={preview.freeDeliveryOffer ? "num font-medium text-green-700" : "num"}>{preview.freeDelivery ? (preview.freeDeliveryOffer ? `${t("free")} · ${nm(preview.freeDeliveryOffer)}` : t("free")) : formatMoney(preview.deliveryFeeGross)}</span></p>
-              <p className="flex justify-between text-ink-500"><span>{t("net")}</span><span className="num">{formatMoney(preview.net)}</span></p>
-              <p className="flex justify-between text-ink-500"><span>{t("vat")}</span><span className="num">{formatMoney(preview.vat)}</span></p>
-              <p className="flex justify-between border-t border-ink-200 pt-2 text-base font-bold"><span>{t("total")}</span><span className="num" data-testid="checkout-total">{formatMoney(preview.gross)}</span></p>
+              <div className="space-y-1.5 border-t border-ink-100 pt-3">
+                <p className="flex justify-between"><span className="text-ink-600">{options.channel === "B2B" ? t("goodsNet") : t("goodsGross")}</span><span className="num">{formatMoney(preview.goodsValue + (preview.offer?.discount ?? 0))}</span></p>
+                {preview.offer ? (
+                  <p className="flex justify-between font-medium text-green-700" data-testid="offer-discount"><span>🎁 {nm(preview.offer)}</span><span className="num">−{formatMoney(preview.offer.discount)}</span></p>
+                ) : null}
+                <p className="flex justify-between"><span className="text-ink-600">{t("deliveryFee")}</span><span className={preview.freeDelivery ? "num font-medium text-green-700" : "num"}>{preview.freeDelivery ? (preview.freeDeliveryOffer ? `${t("free")} · ${nm(preview.freeDeliveryOffer)}` : t("free")) : formatMoney(preview.deliveryFeeGross)}</span></p>
+                {preview.vat ? (
+                  <>
+                    <p className="flex justify-between text-ink-500"><span>{t("net")}</span><span className="num">{formatMoney(preview.net)}</span></p>
+                    <p className="flex justify-between text-ink-500"><span>{t("vat")}</span><span className="num">{formatMoney(preview.vat)}</span></p>
+                  </>
+                ) : null}
+                <p className="flex justify-between border-t border-ink-200 pt-3 text-xl font-extrabold"><span>{t("total")}</span><span className="num" data-testid="checkout-total">{formatMoney(preview.gross)}</span></p>
+              </div>
               {preview.belowMinimum ? <Alert tone="amber">{t("belowMinimum", { amount: formatMoney(preview.minimumOrder) })}</Alert> : null}
               {creditShort ? <Alert tone="red">{t("creditShort")}</Alert> : null}
               {/* Gutschein */}
               <form
-                className="flex gap-2 pt-3"
+                className="flex gap-2 pt-2"
                 onSubmit={(e) => {
                   e.preventDefault();
                   setCoupon(couponInput.trim() || undefined);
                 }}
               >
-                <Input value={couponInput} onChange={(e) => setCouponInput(e.target.value)} placeholder={t("offers.couponPlaceholder")} dir="ltr" className="font-mono uppercase" aria-label={t("offers.coupon")} data-testid="coupon-input" />
+                <Input value={couponInput} onChange={(e) => setCouponInput(e.target.value)} placeholder={t("offers.couponPlaceholder")} dir="ltr" className={couponInput ? "font-mono uppercase" : ""} aria-label={t("offers.coupon")} data-testid="coupon-input" />
                 <Button type="submit" variant="secondary" size="sm" data-testid="coupon-apply">{t("offers.apply")}</Button>
               </form>
               {preview.coupon ? (
@@ -216,15 +267,20 @@ export function CheckoutForm({ options, zones }: { options: Options; zones: { id
             <p className="text-sm text-ink-500">{tc("loading")}</p>
           )}
           {error ?? previewError ? <div className="mt-3"><Alert tone="red">{error ?? previewError}</Alert></div> : null}
-          <Button
-            className="mt-4 w-full"
-            disabled={pending || !preview || preview.belowMinimum || preview.hasProblems || preview.lines.length === 0 || !date || !method || creditShort}
-            onClick={() => void place()}
-            data-testid="place-order"
-          >
+          <Button className="mt-4 hidden w-full py-3 text-base lg:block" disabled={!canPlace} onClick={() => void place()} data-testid="place-order">
             {t("placeOrder")}
           </Button>
-        </Card>
+          <p className="mt-3 text-center text-xs text-ink-500">🔒 {t("secure")}</p>
+        </section>
+      </div>
+
+      {/* Handy: feste Leiste mit Summe und Bestellknopf */}
+      <div className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-ink-200 bg-white/95 px-4 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] backdrop-blur lg:hidden">
+        <div className="flex-1">
+          <p className="text-xs text-ink-500">{t("total")}</p>
+          <p className="num text-lg font-extrabold">{preview ? formatMoney(preview.gross) : "…"}</p>
+        </div>
+        <Button className="px-6 py-3 text-base" disabled={!canPlace} onClick={() => void place()} data-testid="place-order-mobile">{t("placeOrder")}</Button>
       </div>
     </div>
   );

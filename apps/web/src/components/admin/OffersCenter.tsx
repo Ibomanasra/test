@@ -79,7 +79,10 @@ export function OffersCenter({
   skuOptions,
   categories,
   canEdit,
+  initialNew,
 }: {
+  /** direkt mit neuem Angebot starten (z. B. von der Produktseite): Typ + SKU */
+  initialNew?: { type: OfferType; sku?: string };
   items: OfferItem[];
   skuOptions: { sku: string; label: string }[];
   categories: { value: string; label: string }[];
@@ -91,7 +94,9 @@ export function OffersCenter({
   const locale = useLocale();
   const router = useRouter();
   const { call, pending, error, setError } = useApi();
-  const [editing, setEditing] = useState<{ type: OfferType | null; id?: string; v: OfferValues } | null>(null);
+  const [editing, setEditing] = useState<{ type: OfferType | null; id?: string; v: OfferValues } | null>(() =>
+    initialNew ? { type: initialNew.type, v: { ...newValues(initialNew.type), targetSku: initialNew.sku ?? "" } } : null,
+  );
   const [filter, setFilter] = useState<"all" | "product" | "order">("all");
 
   const set = <K extends keyof OfferValues>(k: K, val: OfferValues[K]) => setEditing((e) => (e ? { ...e, v: { ...e.v, [k]: val } } : e));
@@ -115,13 +120,10 @@ export function OffersCenter({
     return parts.join(" · ");
   };
 
-  function startNew(type: OfferType) {
+  function newValues(type: OfferType): OfferValues {
     const today = inDays(0);
     const in30 = inDays(30);
-    setError(null);
-    setEditing({
-      type,
-      v: {
+    return {
         ...EMPTY,
         nameAr: t(`defaults.${type}.ar`),
         nameEn: t(`defaults.${type}.en`),
@@ -130,8 +132,12 @@ export function OffersCenter({
         percent: type === "WELCOME" ? "10" : type === "CART_THRESHOLD" ? "5" : "",
         minOrder: type === "CART_THRESHOLD" ? "300" : "",
         perCustomer: type === "COUPON" ? "1" : "",
-      },
-    });
+    };
+  }
+
+  function startNew(type: OfferType) {
+    setError(null);
+    setEditing({ type, v: newValues(type) });
   }
 
   function body(type: OfferType, v: OfferValues): Record<string, unknown> | string {

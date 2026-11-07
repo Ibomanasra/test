@@ -111,7 +111,7 @@ export async function listVariantPrices(f: { q?: string; categoryId?: string; be
           ],
         }
       : {}),
-    ...(f.categoryId ? { product: { categoryId: { in: await categoryWithChildren(f.categoryId) } } } : {}),
+    ...(f.categoryId ? { product: { categoryId: { in: await categoryWithChildren(f.categoryId) }, archivedAt: null } } : { product: { archivedAt: null } }),
   };
   const [taxRateBps, minMarginBps] = await Promise.all([currentTaxRateBps(new Date()), getMinMarginBps()]);
   const select = {

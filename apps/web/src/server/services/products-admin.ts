@@ -51,9 +51,12 @@ export interface ProductInput {
 
 export const PRODUCT_PAGE_SIZE = 25;
 
-export async function listProducts(f: { q?: string; categoryId?: string; page: number }) {
+export async function listProducts(f: { q?: string; categoryId?: string; page: number; status?: "active" | "inactive" | "archived" }) {
   const where: Prisma.ProductWhereInput = {
     categoryId: f.categoryId,
+    // Standard: archivierte ausblenden
+    ...(f.status === "archived" ? { archivedAt: { not: null } } : { archivedAt: null }),
+    ...(f.status === "active" ? { active: true } : f.status === "inactive" ? { active: false } : {}),
     ...(f.q
       ? {
           OR: [
@@ -72,7 +75,8 @@ export async function listProducts(f: { q?: string; categoryId?: string; page: n
       take: PRODUCT_PAGE_SIZE,
       include: {
         category: { select: { nameAr: true, nameEn: true } },
-        variants: { select: { id: true, sku: true, barcode: true, active: true, minStock: true, stockLevels: { select: { onHand: true, reserved: true } } }, orderBy: { sortOrder: "asc" } },
+        variants: { select: { id: true, sku: true, barcode: true, active: true, minStock: true, b2cPrice: true, b2bBasePrice: true, stockLevels: { select: { onHand: true, reserved: true } } }, orderBy: { sortOrder: "asc" } },
+        images: { select: { fileId: true }, orderBy: { sortOrder: "asc" }, take: 1 },
         _count: { select: { images: true } },
       },
     }),
@@ -477,4 +481,61 @@ export async function createQuickProduct(ctx: AuthContext, input: QuickProductIn
     await adjustStock(ctx, { sku, qtyBase: input.stockQty, reason: "Anfangsbestand / رصيد افتتاحي" });
   }
   return { id: product.id, sku };
+}
+
+/** Im Shop anzeigen/ausblenden (ein Klick) */
+export async function setProductActive(ctx: AuthContext, id: string, active: boolean) {
+  const before = await prisma.product.findUnique({ where: { id }, select: { active: true, archivedAt: true } });
+  if (!before) throw notFound();
+  const after = await prisma.product.update({ where: { id }, data: { active, ...(active ? { archivedAt: null } : {}) }, select: { id: true, active: true } });
+  await audit(ctx, { action: active ? "product.activate" : "product.deactivate", entityType: "Product", entityId: id, before, after });
+  return after;
+}
+
+/**
+ * Löschen: nie verkauft/bestellt/eingelagert → endgültig löschen.
+ * Sonst archivieren (ausgeblendet, Belege bleiben unverändert gültig).
+ */
+export async function deleteProduct(ctx: AuthContext, id: string) {
+  const p = await prisma.product.findUnique({ where: { id }, include: { variants: { select: { id: true } } } });
+  if (!p) throw notFound();
+  const ids = p.variants.map((v) => v.id);
+  const used = ids.length
+    ? (
+        await Promise.all([
+          prisma.orderItem.count({ where: { variantId: { in: ids } } }),
+          prisma.quoteItem.count({ where: { variantId: { in: ids } } }),
+          prisma.purchaseOrderItem.count({ where: { variantId: { in: ids } } }),
+          prisma.goodsReceiptItem.count({ where: { variantId: { in: ids } } }),
+          prisma.stocktakeLine.count({ where: { variantId: { in: ids } } }),
+          prisma.stockReservation.count({ where: { variantId: { in: ids } } }),
+          prisma.stockMovement.count({ where: { variantId: { in: ids }, type: { notIn: ["ADJUSTMENT"] } } }),
+        ])
+      ).some((n) => n > 0)
+    : false;
+  if (used) {
+    await prisma.product.update({ where: { id }, data: { active: false, archivedAt: new Date() } });
+    await audit(ctx, { action: "product.archive", entityType: "Product", entityId: id, before: { name: p.nameAr } });
+    return { mode: "archived" as const };
+  }
+  await prisma.$transaction(async (tx) => {
+    const v = { variantId: { in: ids } };
+    await tx.cartItem.deleteMany({ where: v });
+    await tx.savedOrderListItem.deleteMany({ where: v });
+    await tx.priceListItem.deleteMany({ where: v });
+    await tx.tierPrice.deleteMany({ where: v });
+    await tx.customerPrice.deleteMany({ where: v });
+    await tx.promotionTarget.deleteMany({ where: { OR: [v, { productId: id }] } });
+    await tx.scheduledPriceChange.deleteMany({ where: v });
+    await tx.priceHistory.deleteMany({ where: v });
+    await tx.stockMovement.deleteMany({ where: v });
+    await tx.stockLevel.deleteMany({ where: v });
+    await tx.variantUnit.deleteMany({ where: v });
+    await tx.variantChannelRule.deleteMany({ where: v });
+    await tx.productImage.deleteMany({ where: { productId: id } });
+    await tx.productVariant.deleteMany({ where: { productId: id } });
+    await tx.product.delete({ where: { id } });
+    await audit(ctx, { action: "product.delete", entityType: "Product", entityId: id, before: { name: p.nameAr, skus: ids.length } }, tx);
+  });
+  return { mode: "deleted" as const };
 }

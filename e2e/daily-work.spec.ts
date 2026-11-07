@@ -115,3 +115,31 @@ test("phone: admin menu closes after choosing an entry", async ({ browser }) => 
   await expect(drawer.getByRole("link", { name: "Orders" })).toHaveCount(0);
   await ctx.close();
 });
+
+test("products: hide/show with one click, delete unused, archive used", async ({ page }) => {
+  await staffLogin(page, OWNER.phone, OWNER.password, "en");
+  // neues, unbenutztes Produkt über die Schnell-API
+  const fd = { nameAr: `Delete me ${Date.now()}`, newCategoryAr: "E2E Kategorie", b2cPrice: "500" };
+  const res = await page.request.post("/api/v1/admin/products/quick", { multipart: fd, headers: ORIGIN });
+  expect(res.ok(), await res.text()).toBe(true);
+  const { id } = await res.json();
+  await page.goto(`/en/admin/products/${id}`);
+  const sw = page.getByTestId("active-switch");
+  await expect(sw).toHaveAttribute("aria-checked", "true");
+  await sw.click();
+  await expect.poll(async () => (await db.product.findUniqueOrThrow({ where: { id } })).active).toBe(false);
+  page.once("dialog", (d) => void d.accept());
+  await page.getByTestId("delete-product").click();
+  await page.waitForURL(/\/en\/admin\/products$/);
+  expect(await db.product.findUnique({ where: { id } })).toBeNull();
+
+  // bereits bestelltes Produkt → archiviert statt gelöscht
+  const used = await db.product.findFirstOrThrow({ where: { variants: { some: { orderItems: { some: {} } } } } });
+  const del = await (await page.request.delete(`/api/v1/admin/products/${used.id}`, { headers: ORIGIN })).json();
+  expect(del.mode).toBe("archived");
+  const after = await db.product.findUniqueOrThrow({ where: { id: used.id } });
+  expect(after.archivedAt).not.toBeNull();
+  // zurücksetzen
+  await page.request.patch(`/api/v1/admin/products/${used.id}`, { data: { active: true }, headers: ORIGIN });
+  expect((await db.product.findUniqueOrThrow({ where: { id: used.id } })).archivedAt).toBeNull();
+});

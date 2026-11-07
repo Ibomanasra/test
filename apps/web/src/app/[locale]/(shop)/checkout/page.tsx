@@ -1,6 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { CheckoutForm } from "@/components/shop/CheckoutForm";
-import { PageHeader } from "@/components/ui";
+import { CheckoutSteps } from "@/components/shop/CheckoutSteps";
 import { redirect } from "@/i18n/navigation";
 import { requireCustomerPage } from "@/server/auth/page-guards";
 import { cartOwner, pricedCart } from "@/server/services/cart";
@@ -18,7 +18,8 @@ export default async function CheckoutPage({ params }: { params: Promise<{ local
   const [t, options, zones] = await Promise.all([getTranslations("shop.checkout"), checkoutOptions(auth as Parameters<typeof checkoutOptions>[0]), listZones(true)]);
   return (
     <div>
-      <PageHeader title={t("title")} />
+      <h1 className="mb-4 text-2xl font-bold text-ink-900">{t("title")}</h1>
+      <CheckoutSteps current={2} />
       <CheckoutForm options={options} zones={zones.map((z) => ({ id: z.id, name: locale === "ar" ? z.nameAr : z.nameEn }))} />
     </div>
   );

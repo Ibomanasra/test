@@ -57,21 +57,27 @@ function ProductFields({ v, set, categories }: { v: ProductValues; set: (p: Part
     <div className="grid gap-4 sm:grid-cols-2">
       <Field label={t("nameAr")} htmlFor="p-nameAr"><Input id="p-nameAr" dir="rtl" value={v.nameAr} onChange={(e) => set({ nameAr: e.target.value })} required minLength={2} /></Field>
       <Field label={t("nameEn")} htmlFor="p-nameEn"><Input id="p-nameEn" dir="ltr" value={v.nameEn} onChange={(e) => set({ nameEn: e.target.value })} required minLength={2} /></Field>
-      <Field label={t("slug")} htmlFor="p-slug" hint={t("slugHint")}><Input id="p-slug" dir="ltr" className="num" value={v.slug} onChange={(e) => set({ slug: e.target.value.toLowerCase() })} required pattern="[a-z0-9][a-z0-9\-]{1,80}" /></Field>
       <Field label={t("category")} htmlFor="p-cat">
         <Select id="p-cat" value={v.categoryId} onChange={(e) => set({ categoryId: e.target.value })} required>
           <option value="" disabled>–</option>
           {categories.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
         </Select>
       </Field>
-      <Field label={t("brand")} htmlFor="p-brand"><Input id="p-brand" value={v.brand} onChange={(e) => set({ brand: e.target.value })} /></Field>
-      <div className="flex flex-wrap items-end gap-4 pb-2 text-sm">
-        <label className="flex items-center gap-2"><input type="checkbox" checked={v.visibleB2C} onChange={(e) => set({ visibleB2C: e.target.checked })} className="size-4 accent-brand-700" />{t("visibleB2C")}</label>
-        <label className="flex items-center gap-2"><input type="checkbox" checked={v.visibleB2B} onChange={(e) => set({ visibleB2B: e.target.checked })} className="size-4 accent-brand-700" />{t("visibleB2B")}</label>
-        <label className="flex items-center gap-2"><input type="checkbox" checked={v.active} onChange={(e) => set({ active: e.target.checked })} className="size-4 accent-brand-700" />{tc("active")}</label>
-      </div>
+      <div />
       <Field label={t("descriptionAr")} htmlFor="p-dAr"><Textarea id="p-dAr" dir="rtl" value={v.descriptionAr} onChange={(e) => set({ descriptionAr: e.target.value })} /></Field>
       <Field label={t("descriptionEn")} htmlFor="p-dEn"><Textarea id="p-dEn" dir="ltr" value={v.descriptionEn} onChange={(e) => set({ descriptionEn: e.target.value })} /></Field>
+      <details className="text-sm sm:col-span-2">
+        <summary className="cursor-pointer text-ink-600">{t("moreFields")}</summary>
+        <div className="mt-3 grid gap-4 sm:grid-cols-2">
+          <Field label={t("slug")} htmlFor="p-slug" hint={t("slugHint")}><Input id="p-slug" dir="ltr" className="num" value={v.slug} onChange={(e) => set({ slug: e.target.value.toLowerCase() })} required pattern="[a-z0-9][a-z0-9\-]{1,80}" /></Field>
+          <Field label={t("brand")} htmlFor="p-brand"><Input id="p-brand" value={v.brand} onChange={(e) => set({ brand: e.target.value })} /></Field>
+          <div className="flex flex-wrap items-end gap-4 pb-2 text-sm">
+            <label className="flex items-center gap-2"><input type="checkbox" checked={v.visibleB2C} onChange={(e) => set({ visibleB2C: e.target.checked })} className="size-4 accent-brand-700" />{t("visibleB2C")}</label>
+            <label className="flex items-center gap-2"><input type="checkbox" checked={v.visibleB2B} onChange={(e) => set({ visibleB2B: e.target.checked })} className="size-4 accent-brand-700" />{t("visibleB2B")}</label>
+            <label className="flex items-center gap-2"><input type="checkbox" checked={v.active} onChange={(e) => set({ active: e.target.checked })} className="size-4 accent-brand-700" />{tc("active")}</label>
+          </div>
+        </div>
+      </details>
     </div>
   );
 }
@@ -268,16 +274,26 @@ export function ImageManager({ productId, images }: { productId: string; images:
           </div>
         ))}
       </div>
-      <Field label={t("uploadImage")} htmlFor="img-up">
-        <Input id="img-up" type="file" accept="image/jpeg,image/png,image/webp" onChange={async (e) => {
-          const f = e.target.files?.[0];
-          if (!f) return;
-          const fd = new FormData();
-          fd.set("file", f);
-          if (await call(`/api/v1/admin/products/${productId}/images`, { form: fd })) router.refresh();
-          e.target.value = "";
-        }} />
-      </Field>
+      <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-medium ring-1 ring-ink-300 hover:bg-ink-50">
+        ＋ {t("uploadImage")}
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          multiple
+          className="sr-only"
+          data-testid="img-upload"
+          onChange={async (e) => {
+            const files = [...(e.target.files ?? [])];
+            e.target.value = "";
+            for (const f of files) {
+              const fd = new FormData();
+              fd.set("file", f);
+              if (!(await call(`/api/v1/admin/products/${productId}/images`, { form: fd }))) break;
+            }
+            router.refresh();
+          }}
+        />
+      </label>
       {error ? <Alert tone="red">{error}</Alert> : null}
     </div>
   );

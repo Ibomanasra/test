@@ -12,8 +12,11 @@ import { priceOptions } from "@/server/services/price-options";
 /** Letzter gültiger Tag aus einem exklusiven Ende (00:00 des Folgetags) */
 const lastDay = (d: Date | null) => (d ? day(new Date(d.getTime() - 1)) : "");
 
-export default async function OffersPage({ params }: { params: Promise<{ locale: string }> }) {
+export default async function OffersPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ new?: string; sku?: string }> }) {
   const { locale } = await params;
+  const sp = await searchParams;
+  const NEW_TYPES = ["PERCENT", "FIXED_PRICE", "BUY_X_GET_Y", "WELCOME", "CART_THRESHOLD", "COUPON", "FREE_DELIVERY"] as const;
+  const initialNew = NEW_TYPES.find((x) => x === sp.new);
   setRequestLocale(locale);
   const auth = await staffPagePermission(locale, "price.view");
   if (!auth) return <Forbidden />;
@@ -89,7 +92,7 @@ export default async function OffersPage({ params }: { params: Promise<{ locale:
   return (
     <div className="space-y-6">
       <PageHeader title={t("title")} subtitle={t("subtitle")} />
-      <OffersCenter items={items} skuOptions={opts.skuOptions} categories={opts.categories} canEdit={hasPermission(auth.permissions, "price.promotions")} />
+      <OffersCenter items={items} skuOptions={opts.skuOptions} categories={opts.categories} canEdit={hasPermission(auth.permissions, "price.promotions")} initialNew={initialNew && hasPermission(auth.permissions, "price.promotions") ? { type: initialNew, sku: sp.sku } : undefined} />
     </div>
   );
 }

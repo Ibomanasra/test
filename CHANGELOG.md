@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.13.0] – 2026-11-07 – Produkte einfach verwalten & moderner Einkauf
+
+### Hinzugefügt
+- **Produkte ein-/ausblenden mit einem Schalter** und **löschen**: nie verwendete Produkte werden gelöscht, bereits verkaufte **archiviert** (überall ausgeblendet, Belege bleiben gültig). Filter „sichtbar / ausgeblendet / archiviert“.
+- **Produktliste neu**: Foto, Name, Endkunden- und Händlerpreis, Bestand mit Warnfarbe, Schalter, Bearbeiten, Löschen; Selteneres unter „mehr“.
+- **Produktseite = ein Ort für alles**, in klarer Reihenfolge: Kopf (Foto, sichtbar-Schalter, Löschen) → **Preis & Bestand** direkt bearbeiten (Bestand ＋/−) → Fotos (mehrere auf einmal) → **Angebote für dieses Produkt** (mit „Neues Angebot“, Produkt vorausgewählt) → Name/Kategorie/Beschreibung → „Erweitert“ (Einheiten, Varianten, Barcodes).
+- **Warenkorb neu**: Produktfotos, Menge mit −/＋, feste Zusammenfassung, Fortschrittsbalken „noch X ₪ bis Y % Rabatt“, schöner leerer Warenkorb.
+- **Kasse neu**: Schritte (Warenkorb → Lieferung & Zahlung → Fertig), nummerierte Abschnitte, Liefertage als Kacheln („nächster Termin“), Zahlungsarten mit Symbolen, Bemerkung einklappbar, Zusammenfassung mit Produktfotos; am Handy feste Leiste mit Summe und „Bestellung bestätigen“. Erfolgsseite mit Haken.
+
 ## [0.12.0] – 2026-11-07 – Kunden-Login ohne SMS & Handy-Menü
 
 ### Geändert

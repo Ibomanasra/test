@@ -162,7 +162,17 @@
       "deliveryAtCheckout": "Delivery fee is calculated at checkout.",
       "fixProblems": "Please fix the highlighted items first.",
       "checkout": "Checkout",
-      "loginToCheckout": "Log in to check out"
+      "loginToCheckout": "Log in to check out",
+      "emptyText": "Browse our products and add what you need – delivery across the West Bank.",
+      "summary": "Order summary",
+      "items": "{count, plural, one {1 item} other {# items}}",
+      "delivery": "Delivery",
+      "estimated": "Total",
+      "plusVat": "Net prices, VAT is added at checkout",
+      "nextOffer": "Add {missing} more and get {benefit} off 🎉",
+      "trust1": "Pay on delivery available",
+      "trust2": "Delivery across the West Bank",
+      "deliveryLater": "Next step"
     },
     "availability": {
       "in_stock": "In stock",
@@ -221,7 +231,9 @@
         },
         "discount": "Offer discount",
         "includedNote": "The discount is included in the item prices."
-      }
+      },
+      "soonest": "Soonest",
+      "secure": "Your data is protected – secure payment"
     },
     "home": {
       "offers": "Current offers",
@@ -253,6 +265,12 @@
         "COUPON": "Coupon",
         "FREE_DELIVERY": "Delivery"
       }
+    },
+    "steps": {
+      "label": "Order steps",
+      "cart": "Cart",
+      "checkout": "Delivery & payment",
+      "done": "Done"
     }
   },
   "auth": {
@@ -393,7 +411,8 @@
       "vat": "VAT",
       "backorder": "The remaining quantity will be delivered with order: {numbers}",
       "confirmationPdf": "Order confirmation",
-      "invoicePdf": "Invoice"
+      "invoicePdf": "Invoice",
+      "placedText": "We'll contact you if needed – you can follow your order status here."
     },
     "quick": {
       "title": "Quick order",
@@ -1196,7 +1215,53 @@
         "advanced": "Advanced form",
         "saved": "Saved “{name}” (no. {sku}).",
         "open": "Open product"
-      }
+      },
+      "manage": {
+        "count": "{count} products",
+        "more": "More",
+        "allPrices": "All prices (table)",
+        "status": {
+          "all": "All",
+          "active": "Visible",
+          "inactive": "Hidden",
+          "archived": "Archived"
+        },
+        "archived": "Archived",
+        "dealer": "Dealer",
+        "inStock": "In stock",
+        "outOfStock": "Out of stock",
+        "visible": "Visible in shop",
+        "hidden": "Hidden",
+        "delete": "Delete",
+        "deleteConfirm": "Delete “{name}”?",
+        "archivedInfo": "This product appears in earlier orders or invoices, so it was archived (hidden everywhere) instead of deleted.",
+        "priceStock": "Price & stock",
+        "priceStockHint": "The consumer price is the final price; the dealer price is net before discounts. Quantities in pieces.",
+        "b2c": "Consumer price (₪)",
+        "b2b": "Dealer price (₪)",
+        "cost": "Purchase price (₪)",
+        "savePrices": "Save prices",
+        "saved": "Saved ✓",
+        "belowMargin": "Price is below the minimum margin. Save anyway?",
+        "available": "Available now (pieces)",
+        "reservedInfo": "{count} reserved for orders",
+        "cartonInfo": "≈ {count} cartons × {factor}",
+        "qty": "Quantity",
+        "add": "Add",
+        "remove": "Remove",
+        "stockSaved": "Stock updated ✓",
+        "offers": "Offers on this product",
+        "newOffer": "New offer",
+        "noOffers": "No offers right now.",
+        "specialPrice": "Special price",
+        "paused": "Paused",
+        "planned": "Scheduled",
+        "running": "Running",
+        "details": "Name, category & description",
+        "advanced": "Advanced settings",
+        "advancedHint": "Units, variants, barcodes, sales rules"
+      },
+      "moreFields": "Link, brand & visibility"
     },
     "documents": {
       "title": "Documents & invoices",

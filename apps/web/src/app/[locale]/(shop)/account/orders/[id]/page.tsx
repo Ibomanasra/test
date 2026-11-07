@@ -1,4 +1,5 @@
 import type { OrderStatusKey } from "@sa/core";
+import { CheckoutSteps } from "@/components/shop/CheckoutSteps";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { PrintButton } from "@/components/print/PrintButton";
@@ -21,7 +22,16 @@ export default async function MyOrderPage({ params, searchParams }: { params: Pr
   const addr = o.addressSnapshot as { recipient: string; city: string; street?: string; details?: string; zoneAr: string; zoneEn: string; phone: string };
   return (
     <div className="space-y-6">
-      {sp.placed ? <Alert tone="green">{t("placed", { number: o.number })}</Alert> : null}
+      {sp.placed ? (
+        <>
+          <CheckoutSteps current={3} />
+          <div className="rounded-2xl bg-green-50 p-6 text-center ring-1 ring-green-200" data-testid="order-placed">
+            <div className="mx-auto grid size-14 place-items-center rounded-full bg-green-600 text-2xl text-white">✓</div>
+            <p className="mt-3 text-lg font-bold text-green-900">{t("placed", { number: o.number })}</p>
+            <p className="mt-1 text-sm text-green-800">{t("placedText")}</p>
+          </div>
+        </>
+      ) : null}
       <PageHeader
         title={<Num>{o.number}</Num>}
         subtitle={dateTimeText(o.placedAt)}

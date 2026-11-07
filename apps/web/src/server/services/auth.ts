@@ -83,3 +83,33 @@ export async function finishStaffLogin(ticket: string, code: string, meta: Clien
   await verifyOtp(user.phone, "LOGIN", code, meta.ip);
   return createSession({ userId: user.id, kind: "STAFF", mfaPassed: true, ...meta });
 }
+
+// ---------------------------------------------------------------------------
+// Kunden ohne SMS: Telefon + Passwort
+// ---------------------------------------------------------------------------
+
+/** Kunden-Login mit Telefon + Passwort (kostenlos, ohne SMS) */
+export async function customerPasswordLogin(phone: string, password: string, meta: ClientMeta) {
+  await hitRateLimit(`cust-login:phone:${phone}`, 10, 900);
+  await hitRateLimit(`cust-login:ip:${meta.ip}`, 40, 900);
+  const user = await prisma.user.findUnique({ where: { phone } });
+  if (user?.kind === "CUSTOMER" && user.isActive && !user.passwordHash) throw new AppError(409, "password_not_set");
+  const ok = await verifyPassword(user?.kind === "CUSTOMER" ? user.passwordHash : null, password);
+  if (!user || !ok || user.kind !== "CUSTOMER") throw unauthorized("invalid_phone_or_password");
+  if (!user.isActive) throw forbidden("account_disabled");
+  await resetRateLimit(`cust-login:phone:${phone}`);
+  return createSession({ userId: user.id, kind: "CUSTOMER", mfaPassed: true, ...meta });
+}
+
+/**
+ * Registrierung: Telefonnummer entweder per SMS-Ticket bewiesen (CUSTOMER_LOGIN_OTP)
+ * oder direkt mit Passwort (Standard). Liefert Nummer + Anmeldedaten für den Kunden-Service.
+ */
+export async function registrationIdentity(input: { registrationToken?: string; phone?: string; password?: string }, ip: string) {
+  if (input.registrationToken) return { phone: readRegistrationTicket(input.registrationToken), auth: { phoneVerified: true } };
+  if (env().CUSTOMER_LOGIN_OTP) throw new AppError(400, "registration_expired");
+  if (!input.phone || !input.password) throw new AppError(400, "validation_error");
+  await hitRateLimit(`register:ip:${ip}`, 10, 3600);
+  const { hashPassword } = await import("../auth/password");
+  return { phone: input.phone, auth: { phoneVerified: false, passwordHash: await hashPassword(input.password) } };
+}

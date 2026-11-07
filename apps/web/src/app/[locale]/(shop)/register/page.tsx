@@ -25,17 +25,20 @@ export default async function RegisterPage({
   const { t: token, type } = await searchParams;
   const auth = await getAuth();
   if (auth?.customer) redirect({ href: "/account", locale });
-  // Ohne verifizierte Telefonnummer zuerst zum OTP-Login (Registrierung folgt danach)
-  if (!token) redirect({ href: `/login${type ? `?type=${type === "b2b" ? "b2b" : "b2c"}` : ""}`, locale });
+  const otp = env().CUSTOMER_LOGIN_OTP;
+  // SMS-Modus: ohne bestätigte Nummer zuerst zum Code-Login (Registrierung folgt danach)
+  if (otp && !token) redirect({ href: `/login${type ? `?type=${type === "b2b" ? "b2b" : "b2c"}` : ""}`, locale });
 
   const t = await getTranslations("register");
   let phone: string | null = null;
-  try {
-    phone = readRegistrationTicket(token!);
-  } catch {
-    phone = null;
+  if (otp) {
+    try {
+      phone = readRegistrationTicket(token!);
+    } catch {
+      phone = null;
+    }
   }
-  if (!phone) {
+  if (otp && !phone) {
     return (
       <div className="mx-auto max-w-md space-y-4">
         <Alert tone="red">{t("expired")}</Alert>
@@ -49,10 +52,16 @@ export default async function RegisterPage({
   return (
     <div className="mx-auto max-w-2xl">
       <Card title={t("title")}>
-        <p className="mb-4 text-sm text-ink-600">
-          {t.rich("verifiedPhone", { phone: formatPhone(phone), num: (chunks) => <span className="num font-medium">{chunks}</span> })}
-        </p>
-        <RegisterForm token={token!} zones={zones} initialType={type === "b2b" ? "b2b" : "b2c"} maxUploadMb={env().UPLOAD_MAX_MB} />
+        {phone ? (
+          <p className="mb-4 text-sm text-ink-600">
+            {t.rich("verifiedPhone", { phone: formatPhone(phone), num: (chunks) => <span className="num font-medium">{chunks}</span> })}
+          </p>
+        ) : (
+          <p className="mb-4 text-sm text-ink-600">
+            {t("haveAccount")} <Link href="/login" className="font-semibold text-brand-700 underline">{(await getTranslations("common"))("login")}</Link>
+          </p>
+        )}
+        <RegisterForm token={otp ? token! : null} zones={zones} initialType={type === "b2b" ? "b2b" : "b2c"} maxUploadMb={env().UPLOAD_MAX_MB} />
       </Card>
     </div>
   );

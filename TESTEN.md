@@ -91,7 +91,7 @@ Mitarbeiter: **Benutzername + Passwort** unter **/ar/admin** (kein SMS-Code).
 | Fahrer | yousef | Demo-2026-pass |
 | Buchhaltung | mona | Demo-2026-pass |
 
-Kunden: Telefon + SMS-Code (beim Test immer **123456**) über **„دخول“** im Shop.
+Kunden: **Telefon + Passwort** über **„دخول“** im Shop (Passwort der Demo-Kunden: `Demo-2026-pass`).
 
 | Kunde | Telefon |
 |---|---|

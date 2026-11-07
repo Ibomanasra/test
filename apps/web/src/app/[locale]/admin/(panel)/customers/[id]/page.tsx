@@ -2,7 +2,7 @@ import { formatPhone, hasPermission } from "@sa/core";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { CustomerActions } from "@/components/admin/CustomerActions";
-import { CustomerAddresses, CustomerMasterCard } from "@/components/admin/CustomerEditor";
+import { CustomerAddresses, CustomerMasterCard, CustomerPasswordCard } from "@/components/admin/CustomerEditor";
 import { prisma } from "@sa/db";
 import { Forbidden } from "@/components/admin/Forbidden";
 import { CUSTOMER_STATUS_TONE } from "@/components/admin/status";
@@ -110,6 +110,8 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
               ) : null}
             </dl>
           </CustomerMasterCard>
+
+          {canEdit && c.phone ? <CustomerPasswordCard customerId={c.id} phone={formatPhone(c.phone)} /> : null}
 
           <Card title={t("members")}>
             <ul className="divide-y divide-ink-100 text-sm">

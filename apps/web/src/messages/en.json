@@ -50,7 +50,8 @@
     "forbiddenText": "You do not have permission to view this page.",
     "notFoundTitle": "Page not found",
     "home": "Home",
-    "confirmDelete": "Really delete?"
+    "confirmDelete": "Really delete?",
+    "close": "Close"
   },
   "channel": {
     "B2C": "Consumers",
@@ -285,9 +286,19 @@
       "mismatch": "Passwords do not match",
       "save": "Save password",
       "done": "Your password was changed.",
-      "toLogin": "Sign in"
+      "toLogin": "Sign in",
+      "sentCustomer": "If your account has an email address we sent a link to it. Otherwise contact us on WhatsApp.",
+      "identifierCustomer": "Phone number or email",
+      "rulesCustomer": "At least 8 characters",
+      "requestIntroCustomer": "Enter your phone number or email. If your account has an email address we'll send a link to set a new password.",
+      "whatsapp": "Or message us on WhatsApp – we'll set a new password for you",
+      "waText": "Hello, I forgot my shop password. My number:"
     },
-    "username": "Username"
+    "username": "Username",
+    "loginIntroPassword": "Log in with your phone number and password.",
+    "loginButton": "Log in",
+    "forgot": "Forgot password?",
+    "createAccount": "Create an account"
   },
   "register": {
     "title": "Create account",
@@ -314,7 +325,13 @@
     "b2bPendingNote": "After registering we review your details. You will get a message once approved.",
     "cityHint": "Type your city, town or village freely.",
     "zoneOptional": "Delivery area (optional)",
-    "zoneAuto": "Automatic from city"
+    "zoneAuto": "Automatic from city",
+    "phone": "Phone number",
+    "phoneHint": "Used to log in and for delivery",
+    "password": "Password",
+    "passwordHint": "At least 8 characters",
+    "password2": "Repeat password",
+    "haveAccount": "Already have an account?"
   },
   "account": {
     "title": "My account",
@@ -551,7 +568,11 @@
       "addAddress": "Add address",
       "addressLabel": "Label (e.g. shop, warehouse)",
       "defaultAddress": "Default address",
-      "deleteAddressConfirm": "Delete this address?"
+      "deleteAddressConfirm": "Delete this address?",
+      "loginTitle": "Customer login",
+      "loginText": "The customer logs in with {phone} and a password. If they forget it, set a new one here and send it to them.",
+      "newPassword": "New password",
+      "passwordSet": "Password set. Send it to the customer (e.g. via WhatsApp)."
     },
     "users": {
       "title": "Users (staff)",
@@ -1927,7 +1948,10 @@
     "offer_used_up": "This offer just ran out. Please refresh.",
     "invalid_username": "Username: 3–32 lowercase Latin letters, digits or . _ -",
     "username_taken": "This username is already taken.",
-    "category_required": "Choose a category or type a new one."
+    "category_required": "Choose a category or type a new one.",
+    "password_mismatch": "The passwords do not match.",
+    "invalid_phone_or_password": "Wrong phone number or password.",
+    "password_not_set": "This account has no password yet – use “Forgot password?” or contact us."
   },
   "permissions": {
     "dashboard_view": "View dashboard",

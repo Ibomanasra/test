@@ -198,3 +198,31 @@ export function CustomerAddresses({ customerId, addresses, zones, canEdit, title
     </Card>
   );
 }
+
+/** Neues Passwort für den Kunden setzen (Login: Telefon + Passwort) */
+export function CustomerPasswordCard({ customerId, phone }: { customerId: string; phone: string }) {
+  const t = useTranslations("admin.customers");
+  const tc = useTranslations("common");
+  const { call, pending, error } = useApi();
+  const [done, setDone] = useState(false);
+  async function submit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const password = String(new FormData(form).get("password") ?? "");
+    if (await call(`/api/v1/admin/customers/${customerId}/password`, { body: { password } })) {
+      setDone(true);
+      form.reset();
+    }
+  }
+  return (
+    <Card title={t("loginTitle")}>
+      <p className="mb-3 text-sm text-ink-600">{t("loginText", { phone })}</p>
+      <form onSubmit={submit} className="flex flex-wrap items-end gap-2" data-testid="customer-password">
+        <Field label={t("newPassword")} htmlFor="c-pw"><Input id="c-pw" name="password" type="text" autoComplete="off" required minLength={8} dir="ltr" className="font-mono" /></Field>
+        <Button type="submit" disabled={pending}>{tc("save")}</Button>
+      </form>
+      {done ? <p className="mt-2 text-sm text-green-700">{t("passwordSet")}</p> : null}
+      {error ? <div className="mt-2"><Alert tone="red">{error}</Alert></div> : null}
+    </Card>
+  );
+}

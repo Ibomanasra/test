@@ -12,7 +12,7 @@ import { env } from "../env";
 import { badRequest } from "../errors";
 
 /**
- * Passwort vergessen (Mitarbeiter): Link per E-Mail, 30 Minuten gültig, einmalig –
+ * Passwort vergessen (Mitarbeiter und Kunden mit E-Mail): Link per E-Mail, 30 Minuten gültig, einmalig –
  * das Ticket enthält einen Fingerabdruck des alten Hashs und wird nach der Änderung ungültig.
  * Antwort ist immer gleich (keine Auskunft, ob Nummer/E-Mail existiert).
  */
@@ -29,11 +29,14 @@ export async function requestPasswordReset(identifier: string, ip: string | null
   } catch {
     phone = null;
   }
-  const user = await prisma.user.findFirst({ where: { kind: "STAFF", isActive: true, OR: [...(phone ? [{ phone }] : []), { email: id.toLowerCase() }] } });
+  const user = await prisma.user.findFirst({
+    where: { isActive: true, OR: [...(phone ? [{ phone }] : []), { email: id.toLowerCase() }, { username: id.toLowerCase(), kind: "STAFF" }] },
+  });
   if (!user?.email) return { ok: true };
   await hitRateLimit(`pwreset:user:${user.id}`, 3, 3600);
   const token = signTicket({ uid: user.id, fp: fingerprint(user.passwordHash), kind: "pwreset" }, TTL_SECONDS);
-  const link = `${env().APP_URL}/${locale}/admin/reset-password?token=${encodeURIComponent(token)}`;
+  const path = user.kind === "STAFF" ? "admin/reset-password" : "reset-password";
+  const link = `${env().APP_URL}/${locale}/${path}?token=${encodeURIComponent(token)}`;
   await sendMail({
     to: user.email,
     subject: locale === "ar" ? "إعادة تعيين كلمة المرور – شعلة الجنوب" : "Password reset – Sholat Aljanoub",
@@ -50,7 +53,7 @@ export async function confirmPasswordReset(token: string, password: string) {
   const t = verifyTicket<{ uid: string; fp: string; kind: string }>(token);
   if (!t || t.kind !== "pwreset" || t.exp < Date.now()) throw badRequest("invalid_reset_token");
   const user = await prisma.user.findUnique({ where: { id: t.uid } });
-  if (!user || user.kind !== "STAFF" || !user.isActive || fingerprint(user.passwordHash) !== t.fp) throw badRequest("invalid_reset_token");
+  if (!user || !user.isActive || fingerprint(user.passwordHash) !== t.fp) throw badRequest("invalid_reset_token");
   await prisma.user.update({ where: { id: user.id }, data: { passwordHash: await hashPassword(password) } });
   await revokeAllSessions(user.id);
   await audit({ user: { id: user.id } }, { action: "auth.password_reset", entityType: "User", entityId: user.id });

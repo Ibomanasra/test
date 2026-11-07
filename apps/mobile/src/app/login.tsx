@@ -51,7 +51,11 @@ export default function Login() {
         }
         setTicket(r.ticket ?? null);
       } else {
-        await call("/api/v1/auth/otp/request", { body: { phone: e164(), purpose: "LOGIN" } });
+        // Kunden: Telefon + Passwort (ohne SMS)
+        const r = await call<{ token: string }>("/api/v1/auth/login", { body: { phone: e164(), password, client: "MOBILE" } });
+        await signIn(r.token);
+        router.replace("/");
+        return;
       }
       setSent(true);
     });
@@ -84,11 +88,16 @@ export default function Login() {
         ) : (
           <Field label={tr.t("phone")} value={phone} onChangeText={setPhone} keyboardType="phone-pad" autoComplete="tel" placeholder="059…" editable={!sent} style={{ writingDirection: "ltr" }} />
         )}
-        {staff ? <Field label={tr.t("password")} value={password} onChangeText={setPassword} secureTextEntry editable={!sent} /> : null}
+        <Field label={tr.t("password")} value={password} onChangeText={setPassword} secureTextEntry editable={!sent} />
         {sent ? <Field label={tr.t("code")} value={code} onChangeText={setCode} keyboardType="number-pad" maxLength={6} autoComplete="sms-otp" textContentType="oneTimeCode" /> : null}
         <ErrorText>{error}</ErrorText>
-        {sent ? <Button title={tr.t("verify")} onPress={() => void verify()} disabled={busy || code.length !== 6} /> : <Button title={staff ? tr.t("continue") : tr.t("sendCode")} onPress={() => void start()} disabled={busy || phone.length < (staff ? 2 : 9)} />}
+        {sent ? <Button title={tr.t("verify")} onPress={() => void verify()} disabled={busy || code.length !== 6} /> : <Button title={tr.t("continue")} onPress={() => void start()} disabled={busy || phone.length < (staff ? 2 : 9) || password.length < 1} />}
       </Card>
+      {!staff ? (
+        <Pressable onPress={() => router.push("/register")}>
+          <Text style={{ color: colors.brand, textAlign: "center", fontWeight: "600" }}>{tr.t("createAccount")}</Text>
+        </Pressable>
+      ) : null}
       <Pressable onPress={() => { setStaff(!staff); setSent(false); setCode(""); setError(""); }}>
         <Text style={{ color: colors.brand, textAlign: "center" }}>{staff ? tr.t("customerLogin") : tr.t("staffLogin")}</Text>
       </Pressable>

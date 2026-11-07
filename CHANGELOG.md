@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.12.0] – 2026-11-07 – Kunden-Login ohne SMS & Handy-Menü
+
+### Geändert
+- **Kunden melden sich mit Telefonnummer + Passwort an** – ohne SMS-Code, ohne Kosten (Web und App). Registrierung direkt mit Telefon, Passwort und Adresse.
+- **Passwort vergessen**: Link per E-Mail (wenn hinterlegt) oder Knopf „per WhatsApp melden“ an die Firmennummer; im Admin auf der Kundenseite **„Neues Passwort setzen“**.
+- Mit `CUSTOMER_LOGIN_OTP=true` lässt sich der frühere SMS-Code-Login wieder einschalten.
+- Demo-Kunden haben das Demo-Passwort (`Demo-2026-pass`).
+- **Handy-Menü der Verwaltung**: seitliche Schublade, die sich nach dem Antippen eines Punkts, beim Tippen daneben und mit Esc schließt.
+
 ## [0.11.0] – 2026-11-07 – Produkt schnell anlegen & neue Startseite
 
 ### Hinzugefügt

@@ -267,12 +267,18 @@ async function seedDemo() {
   for (const [phone, name, role, username] of DEMO_STAFF) await upsertStaff(phone, name, password, role, username);
   log(`demo staff: ${DEMO_STAFF.length} (password from SEED_DEMO_PASSWORD)`);
 
+  const customerHash = await hash(password, ARGON);
   for (const c of DEMO_CUSTOMERS) {
-    if (await prisma.user.findUnique({ where: { phone: c.phone } })) continue;
+    const existingUser = await prisma.user.findUnique({ where: { phone: c.phone } });
+    if (existingUser) {
+      // Login mit Telefon + Passwort: Demo-Kunden bekommen das Demo-Passwort, falls noch keins gesetzt
+      if (!existingUser.passwordHash) await prisma.user.update({ where: { id: existingUser.id }, data: { passwordHash: customerHash } });
+      continue;
+    }
     const zone = await prisma.deliveryZone.findUniqueOrThrow({ where: { code: c.zone } });
     const group = c.company?.group ? await prisma.customerGroup.findUniqueOrThrow({ where: { code: c.company.group } }) : null;
     const user = await prisma.user.create({
-      data: { kind: "CUSTOMER", phone: c.phone, phoneVerifiedAt: new Date(), name: c.company?.owner ?? c.name },
+      data: { kind: "CUSTOMER", phone: c.phone, phoneVerifiedAt: new Date(), passwordHash: customerHash, name: c.company?.owner ?? c.name },
     });
     await prisma.customer.create({
       data: {

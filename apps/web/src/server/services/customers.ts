@@ -18,12 +18,18 @@ async function assertPhoneFree(phone: string) {
 
 
 /** Privatkunde: sofort aktiv. */
-export async function registerB2C(phone: string, input: RegisterB2C) {
+/** Anmeldedaten bei der Registrierung: Passwort-Hash (ohne SMS) bzw. Nummer per Code bestätigt */
+export interface RegisterAuth {
+  passwordHash?: string;
+  phoneVerified: boolean;
+}
+
+export async function registerB2C(phone: string, input: RegisterB2C, auth: RegisterAuth = { phoneVerified: true }) {
   await assertPhoneFree(phone);
   const zoneId = await resolveZoneId(input.address.city, input.address.zoneId);
   return prisma.$transaction(async (tx) => {
     const user = await tx.user.create({
-      data: { kind: "CUSTOMER", phone, phoneVerifiedAt: new Date(), name: input.name, locale: input.locale },
+      data: { kind: "CUSTOMER", phone, phoneVerifiedAt: auth.phoneVerified ? new Date() : null, passwordHash: auth.passwordHash, name: input.name, locale: input.locale },
     });
     const customer = await tx.customer.create({
       data: {
@@ -48,7 +54,7 @@ export interface LicenseUpload {
 }
 
 /** Händler: Status "wartet auf Freigabe" – sieht bis dahin B2C-Preise. */
-export async function registerB2B(phone: string, input: RegisterB2B, license: LicenseUpload) {
+export async function registerB2B(phone: string, input: RegisterB2B, license: LicenseUpload, auth: RegisterAuth = { phoneVerified: true }) {
   await assertPhoneFree(phone);
   const zoneId = await resolveZoneId(input.address.city, input.address.zoneId);
   const maxBytes = env().UPLOAD_MAX_MB * 1024 * 1024;
@@ -67,7 +73,7 @@ export async function registerB2B(phone: string, input: RegisterB2B, license: Li
 
   return prisma.$transaction(async (tx) => {
     const user = await tx.user.create({
-      data: { kind: "CUSTOMER", phone, phoneVerifiedAt: new Date(), name: input.name, locale: input.locale, email: input.email },
+      data: { kind: "CUSTOMER", phone, phoneVerifiedAt: auth.phoneVerified ? new Date() : null, passwordHash: auth.passwordHash, name: input.name, locale: input.locale, email: input.email },
     });
     await tx.fileObject.update({ where: { id: file.id }, data: { uploadedById: user.id } });
     const customer = await tx.customer.create({
@@ -347,4 +353,16 @@ export async function customerFinance(customerId: string) {
     openItems: items,
     orders,
   };
+}
+
+/** Verwaltung setzt ein neues Kunden-Passwort (z. B. nach Anfrage per WhatsApp) – für den Inhaber des Kontos */
+export async function setCustomerPassword(ctx: AuthContext, customerId: string, password: string) {
+  const owner = await prisma.customerMember.findFirst({ where: { customerId, role: "OWNER" }, select: { userId: true } });
+  if (!owner) throw notFound();
+  const { hashPassword } = await import("../auth/password");
+  const { revokeAllSessions } = await import("../auth/session");
+  await prisma.user.update({ where: { id: owner.userId }, data: { passwordHash: await hashPassword(password) } });
+  await revokeAllSessions(owner.userId);
+  await audit(ctx, { action: "customer.password_set", entityType: "Customer", entityId: customerId });
+  return { ok: true };
 }

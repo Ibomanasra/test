@@ -50,8 +50,22 @@ export const addressInputSchema = z.object({
 });
 export type AddressInput = z.infer<typeof addressInputSchema>;
 
+/** Kunden-Passwort (Login ohne SMS) */
+export const customerPasswordSchema = z.string().min(8, "password_too_short").max(200);
+
+/** Kunden-Login: Telefon + Passwort */
+export const customerLoginSchema = z.object({
+  phone: phoneSchema,
+  password: z.string().min(1).max(200),
+  client: z.enum(["WEB", "MOBILE"]).default("WEB"),
+});
+
 export const registerB2CSchema = z.object({
-  registrationToken: z.string().min(10),
+  /** nur im SMS-Modus (CUSTOMER_LOGIN_OTP=true): Nachweis der Nummer */
+  registrationToken: z.string().min(10).optional(),
+  /** ohne SMS-Modus: Telefon + Passwort direkt */
+  phone: phoneSchema.optional(),
+  password: customerPasswordSchema.optional(),
   name: nameSchema,
   locale: z.enum(["ar", "en"]).default("ar"),
   address: addressInputSchema.omit({ phone: true, recipient: true }),
@@ -65,7 +79,9 @@ export const dealerNumberSchema = z
   .regex(/^\d{6,12}$/, "invalid_dealer_number");
 
 export const registerB2BSchema = z.object({
-  registrationToken: z.string().min(10),
+  registrationToken: z.string().min(10).optional(),
+  phone: phoneSchema.optional(),
+  password: customerPasswordSchema.optional(),
   name: nameSchema,
   locale: z.enum(["ar", "en"]).default("ar"),
   companyName: nameSchema,

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { DEMO_PASSWORD, OWNER, db, latestOtp, randomPhone, staffLogin } from "./helpers";
+import { DEMO_PASSWORD, OWNER, customerLogin, db, randomPhone, staffLogin } from "./helpers";
 
 test.afterAll(async () => {
   await db.$disconnect();
@@ -40,15 +40,14 @@ test("anonymous requests to admin API get 401", async ({ request }) => {
   expect((await request.get("/api/v1/me")).status()).toBe(401);
 });
 
-test("B2C customer registers via OTP and is active immediately", async ({ page }) => {
+test("B2C customer registers with phone + password (no SMS) and logs in again", async ({ page }) => {
   const phone = randomPhone();
   await page.goto("/ar/login");
+  await page.getByTestId("to-register").click();
+  await expect(page).toHaveURL(/\/ar\/register/);
   await page.locator("#phone").fill(phone.local);
-  const started = new Date(Date.now() - 1000);
-  await page.locator("button[type=submit]").click();
-  await page.locator("#code").fill(await latestOtp(phone.e164, started));
-  await page.locator("button[type=submit]").click();
-  await expect(page).toHaveURL(/\/ar\/register\?/);
+  await page.locator("#password").fill("Geheim-123");
+  await page.locator("#password2").fill("Geheim-123");
   await page.locator("#name").fill("زبون اختبار");
   await page.locator("#zoneId").selectOption({ index: 1 });
   await page.locator("#city").fill("الخليل");
@@ -56,17 +55,25 @@ test("B2C customer registers via OTP and is active immediately", async ({ page }
   await expect(page).toHaveURL(/\/ar\/account$/);
   await expect(page.getByTestId("customer-status")).toContainText("نشط");
   await expect(page.getByTestId("price-channel")).toContainText("أفراد");
+  // erneut anmelden mit Telefon + Passwort
+  await page.context().clearCookies();
+  await customerLogin(page, phone, "Geheim-123");
+  await expect(page).toHaveURL(/\/ar\/account$/);
+  // falsches Passwort
+  await page.context().clearCookies();
+  await page.goto("/en/login");
+  await page.locator("#phone").fill(phone.local);
+  await page.locator("#password").fill("falsch-falsch");
+  await page.locator("button[type=submit]").click();
+  await expect(page.getByText("Wrong phone number or password.")).toBeVisible();
 });
 
 test("B2B dealer registers with licence, waits for approval, then gets B2B channel", async ({ page, browser }) => {
   const phone = randomPhone();
-  await page.goto("/ar/login?type=b2b");
+  await page.goto("/ar/register?type=b2b");
   await page.locator("#phone").fill(phone.local);
-  const started = new Date(Date.now() - 1000);
-  await page.locator("button[type=submit]").click();
-  await page.locator("#code").fill(await latestOtp(phone.e164, started));
-  await page.locator("button[type=submit]").click();
-  await expect(page).toHaveURL(/\/ar\/register\?.*type=b2b/);
+  await page.locator("#password").fill("Haendler-123");
+  await page.locator("#password2").fill("Haendler-123");
 
   const dealer = String(Math.floor(Math.random() * 900_000_000) + 100_000_000);
   await page.locator("#companyName").fill("متجر الاختبار");

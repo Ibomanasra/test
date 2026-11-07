@@ -5,7 +5,7 @@ import { badRequest } from "@/server/errors";
 import { mergeGuestCart } from "@/server/services/cart";
 import { apiRoute } from "@/server/http";
 import { getRequestMeta } from "@/server/request-meta";
-import { readRegistrationTicket } from "@/server/services/auth";
+import { registrationIdentity } from "@/server/services/auth";
 import { registerB2B } from "@/server/services/customers";
 
 /** multipart/form-data: "data" (JSON nach registerB2BSchema) + "license" (PDF/JPG/PNG/WEBP) */
@@ -24,13 +24,18 @@ export const POST = apiRoute(async (req) => {
     throw badRequest("invalid_json");
   }
   const input = registerB2BSchema.parse(json);
-  const phone = readRegistrationTicket(input.registrationToken);
-  const { user, customer } = await registerB2B(phone, input, {
-    data: Buffer.from(await file.arrayBuffer()),
-    originalName: file.name,
-  });
-  await mergeGuestCart(customer.id);
   const meta = await getRequestMeta();
+  const { phone, auth } = await registrationIdentity(input, meta.ip);
+  const { user, customer } = await registerB2B(
+    phone,
+    input,
+    {
+      data: Buffer.from(await file.arrayBuffer()),
+      originalName: file.name,
+    },
+    auth,
+  );
+  await mergeGuestCart(customer.id);
   const client = req.headers.get("x-client") === "mobile" ? "MOBILE" : "WEB";
   const s = await createSession({ userId: user.id, kind: "CUSTOMER", mfaPassed: true, client, ip: meta.ip, userAgent: meta.userAgent });
   return { customer: { id: customer.id, number: customer.number, status: customer.status }, ...(await issueSession(s, client)) };

@@ -16,6 +16,8 @@ const schema = z.object({
   COOKIE_SECURE: bool,
   /** Mitarbeiter-Login zusätzlich mit SMS-Code (Standard: aus – nur Benutzername + Passwort) */
   STAFF_LOGIN_OTP: bool,
+  /** Kunden: SMS-Code bei Anmeldung/Registrierung (Standard: aus – Telefon + Passwort, kostenlos) */
+  CUSTOMER_LOGIN_OTP: bool,
   SMS_PROVIDER: z.enum(["log", "http", "twilio"]).default("log"),
   TWILIO_ACCOUNT_SID: z.string().default(""),
   TWILIO_AUTH_TOKEN: z.string().default(""),

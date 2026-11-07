@@ -44,13 +44,12 @@ export const DEMO_PASSWORD = process.env.SEED_DEMO_PASSWORD ?? "Demo-2026-pass";
 
 export const ORIGIN = { Origin: "http://localhost:3000" };
 
-export async function customerLogin(page: Page, who: { local: string; e164: string }) {
+/** Kunden-Login: Telefon + Passwort (Demo-Kunden haben das Demo-Passwort) */
+export async function customerLogin(page: Page, who: { local: string; e164: string }, password = process.env.SEED_DEMO_PASSWORD ?? "Demo-2026-pass") {
   await resetRateLimits();
   await page.goto("/ar/login");
   await page.locator("#phone").fill(who.local);
-  const started = new Date(Date.now() - 1000);
-  await page.locator("button[type=submit]").click();
-  await page.locator("#code").fill(await latestOtp(who.e164, started));
+  await page.locator("#password").fill(password);
   await page.locator("button[type=submit]").click();
   await page.waitForURL((url) => !url.pathname.endsWith("/login"));
 }

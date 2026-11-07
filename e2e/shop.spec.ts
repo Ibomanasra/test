@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { db, latestOtp, resetRateLimits } from "./helpers";
+import { customerLogin, db } from "./helpers";
 
 test.afterAll(async () => {
   await db.$disconnect();
@@ -8,16 +8,6 @@ test.afterAll(async () => {
 const B2C = { local: "0599100001", e164: "+970599100001" };
 const B2B = { local: "0599100003", e164: "+970599100003" };
 
-async function customerLogin(page: Page, who: { local: string; e164: string }) {
-  await resetRateLimits();
-  await page.goto("/ar/login");
-  await page.locator("#phone").fill(who.local);
-  const started = new Date(Date.now() - 1000);
-  await page.locator("button[type=submit]").click();
-  await page.locator("#code").fill(await latestOtp(who.e164, started));
-  await page.locator("button[type=submit]").click();
-  await page.waitForURL((url) => !url.pathname.endsWith("/login"));
-}
 
 /** Wiederholbare Läufe: genug freien Bestand für die Test-SKUs sicherstellen */
 async function ensureStock(skus: string[], free = 500) {

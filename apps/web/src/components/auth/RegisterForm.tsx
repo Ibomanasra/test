@@ -19,7 +19,8 @@ export function RegisterForm({
   initialType,
   maxUploadMb,
 }: {
-  token: string;
+  /** SMS-Modus: bestätigte Nummer (Ticket); null = Telefon + Passwort im Formular */
+  token: string | null;
   zones: Zone[];
   initialType: "b2c" | "b2b";
   maxUploadMb: number;
@@ -28,7 +29,8 @@ export function RegisterForm({
   const locale = useLocale();
   const router = useRouter();
   const hydrated = useHydrated();
-  const { run, pending, error } = useApi();
+  const { run, pending, error, setError } = useApi();
+  const te = useTranslations("errors");
   const [type, setType] = useState<"b2c" | "b2b">(initialType);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -36,18 +38,21 @@ export function RegisterForm({
     const fd = new FormData(e.currentTarget);
     const s = (k: string) => String(fd.get(k) ?? "").trim();
     const address = { zoneId: s("zoneId"), city: s("city"), street: s("street") || undefined, details: s("details") || undefined };
+    // ohne SMS: Telefon + Passwort aus dem Formular
+    const identity = token ? { registrationToken: token } : { phone: s("phone"), password: String(fd.get("password") ?? "") };
+    if (!token && identity.password !== String(fd.get("password2") ?? "")) return setError(te("password_mismatch"));
     const ok = await run(async () => {
       if (type === "b2c") {
         return apiFetch("/api/v1/auth/register/b2c", {
           locale,
-          body: { registrationToken: token, name: s("name"), locale, address },
+          body: { ...identity, name: s("name"), locale, address },
         });
       }
       const form = new FormData();
       form.set(
         "data",
         JSON.stringify({
-          registrationToken: token,
+          ...identity,
           name: s("ownerName"),
           locale,
           companyName: s("companyName"),
@@ -89,6 +94,20 @@ export function RegisterForm({
           {typeCard("b2b", t("b2bTitle"), t("b2bText"))}
         </div>
       </fieldset>
+
+      {!token ? (
+        <div className="grid gap-4 rounded-xl bg-ink-50 p-4 sm:grid-cols-3">
+          <Field label={t("phone")} htmlFor="phone" hint={t("phoneHint")}>
+            <Input id="phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" dir="ltr" className="num text-start" required placeholder="059…" />
+          </Field>
+          <Field label={t("password")} htmlFor="password" hint={t("passwordHint")}>
+            <Input id="password" name="password" type="password" autoComplete="new-password" required minLength={8} />
+          </Field>
+          <Field label={t("password2")} htmlFor="password2">
+            <Input id="password2" name="password2" type="password" autoComplete="new-password" required minLength={8} />
+          </Field>
+        </div>
+      ) : null}
 
       {type === "b2c" ? (
         <Field label={t("yourName")} htmlFor="name">

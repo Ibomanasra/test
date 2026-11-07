@@ -102,3 +102,16 @@ test("home page hero shows headline and offers link", async ({ page }) => {
   await expect(page.getByTestId("hero")).toContainText("wholesale");
   await expect(page.getByTestId("hero").getByRole("link", { name: /Offers/ })).toBeVisible();
 });
+
+test("phone: admin menu closes after choosing an entry", async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 800 } });
+  const page = await ctx.newPage();
+  await staffLogin(page, OWNER.phone, OWNER.password, "en");
+  await page.getByTestId("admin-menu").click();
+  const drawer = page.getByRole("dialog", { name: "Menu" });
+  await expect(drawer.getByRole("link", { name: "Orders" })).toBeVisible();
+  await drawer.getByRole("link", { name: "Orders" }).click();
+  await expect(page).toHaveURL(/\/en\/admin\/orders/);
+  await expect(drawer.getByRole("link", { name: "Orders" })).toHaveCount(0);
+  await ctx.close();
+});

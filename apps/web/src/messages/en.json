@@ -278,6 +278,22 @@
       "cart": "Cart",
       "checkout": "Delivery & payment",
       "done": "Done"
+    },
+    "signup": {
+      "cta": "Sign up",
+      "close": "Close",
+      "bannerWelcome": "{value} off your first order – sign up for free",
+      "bannerPlain": "Sign up for free and track your orders easily",
+      "inviteTitle": "Welcome to Sholat Aljanoub!",
+      "inviteText": "Create your free account in one minute and enjoy:",
+      "perkWelcome": "{value} off your first order",
+      "perkTrack": "Track your orders step by step",
+      "perkReorder": "Reorder with one tap",
+      "perkOffers": "Be first to hear about offers",
+      "inviteCta": "Create a free account",
+      "haveAccount": "I have an account",
+      "later": "Later",
+      "bannerShort": "Sign up for free"
     }
   },
   "auth": {

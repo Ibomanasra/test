@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.1] – 2026-11-08 – Mehr Besucher zum Konto bewegen
+
+### Hinzugefügt
+- **Streifen ganz oben für Gäste**: „🎁 خصم 10% على أول طلب – أنشئ حسابك مجاناً“ mit Knopf „إنشاء حساب“ (✕ blendet ihn 3 Tage aus). Der Rabatt kommt automatisch aus dem aktiven Willkommens-Angebot; ohne Angebot ein allgemeiner Text.
+- **Einladungsfenster** nach dem 3. angesehenen Produkt oder nach 30 Sekunden: Rabatt, Bestellungen verfolgen, nachbestellen, Angebote zuerst; „إنشاء حساب مجاناً“ / „لدي حساب“ / „لاحقاً“ (3 Tage Ruhe). Höchstens einmal je Besuch, nie für eingeloggte Kunden, nie auf Anmelde-/Kassen-Seiten.
+- Kopfzeile für Gäste: „إنشاء حساب“ als Hauptknopf (am PC), „تسجيل الدخول“ daneben.
+
 ## [0.19.0] – 2026-11-08 – Telegram-Benachrichtigungen (kostenlos)
 
 ### Hinzugefügt

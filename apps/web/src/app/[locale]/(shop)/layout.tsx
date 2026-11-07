@@ -4,6 +4,9 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Alert } from "@/components/ui";
 import { Logo } from "@/components/brand/Logo";
 import { CartLink, CartProvider } from "@/components/shop/CartContext";
+import { GuestBanner, SignupInvite } from "@/components/shop/SignupNudges";
+import { formatMoney } from "@sa/core";
+import { shopOffers } from "@/server/services/offers";
 import { Link } from "@/i18n/navigation";
 import { getAuth } from "@/server/auth/context";
 import { cartCount, cartOwner } from "@/server/services/cart";
@@ -15,10 +18,15 @@ export default async function ShopLayout({ children, params }: { children: React
   const ts = await getTranslations("shop");
   const customer = auth?.customer;
   const cartItems = auth?.isStaff ? 0 : await cartCount(cartOwner(auth));
+  // Gäste: Willkommens-Rabatt aus dem aktiven Angebot (z. B. „10%“ oder „20.00 ₪“)
+  const guest = !auth;
+  const welcomeOffer = guest ? (await shopOffers("B2C")).find((o) => o.kind === "WELCOME") : undefined;
+  const welcome = welcomeOffer ? (welcomeOffer.percentBps ? `${welcomeOffer.percentBps / 100}%` : welcomeOffer.amountAgorot ? formatMoney(welcomeOffer.amountAgorot) : null) : null;
 
   return (
     <CartProvider initialCount={cartItems}>
     <div className="flex min-h-dvh flex-col">
+      {guest ? <GuestBanner welcome={welcome} /> : null}
       <header className="sticky top-0 z-20 border-b border-ink-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-3">
           <Link href="/" aria-label={t("appName")} data-testid="site-logo">
@@ -48,9 +56,14 @@ export default async function ShopLayout({ children, params }: { children: React
                 {t("account")}
               </Link>
             ) : (
-              <Link href="/login" className="rounded-lg bg-brand-700 px-3 py-1.5 text-sm font-medium text-white" data-testid="login-link">
-                {t("login")}
-              </Link>
+              <>
+                <Link href="/login" className="rounded-lg px-2.5 py-1.5 text-sm font-medium text-ink-700 ring-1 ring-ink-300 hover:bg-ink-100" data-testid="login-link">
+                  {t("login")}
+                </Link>
+                <Link href="/register" className="hidden rounded-lg bg-brand-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-brand-800 sm:inline-block" data-testid="register-link">
+                  {ts("signup.cta")}
+                </Link>
+              </>
             )}
           </div>
         </div>
@@ -78,6 +91,7 @@ export default async function ShopLayout({ children, params }: { children: React
           <Link href="/admin/login" className="hover:text-ink-700">{(await getTranslations("auth"))("staffLink")}</Link>
         </div>
       </footer>
+      {guest ? <SignupInvite welcome={welcome} /> : null}
     </div>
     </CartProvider>
   );

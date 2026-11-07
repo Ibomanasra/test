@@ -148,3 +148,17 @@ test("stock: cannot add more than available, and a sale down to 10 % flags the l
   expect(res.ok(), await res.text()).toBe(true);
   await expect.poll(async () => (await db.productVariant.findUniqueOrThrow({ where: { id: v.id } })).lowStockAlertedAt).not.toBeNull();
 });
+
+test("guests see the welcome banner and, after 3 products, the sign-up invite; 'later' hides it", async ({ page }) => {
+  await page.goto("/ar");
+  await expect(page.getByTestId("guest-banner")).toBeVisible();
+  const links = await page.locator('a[href*="/products/"]').evaluateAll((as) => [...new Set(as.map((a) => a.getAttribute("href")!))].slice(0, 3));
+  for (const l of links) await page.goto(l);
+  await expect(page.getByTestId("signup-invite")).toBeVisible();
+  await page.getByTestId("invite-later").click();
+  await expect(page.getByTestId("signup-invite")).toHaveCount(0);
+  // eingeloggte Kunden sehen weder Streifen noch Fenster
+  await customerLogin(page, B2C);
+  await page.goto("/ar");
+  await expect(page.getByTestId("guest-banner")).toHaveCount(0);
+});

@@ -1168,7 +1168,11 @@
       "trackingHint": "The number the courier gives the parcel.",
       "partialTitle": "Partial delivery or own driver (optional)",
       "goodsValue": "Goods (selling price)",
-      "deliveryFree": "Free"
+      "deliveryFree": "Free",
+      "pick": {
+        "got": "Got it",
+        "bigPhoto": "Show photo large"
+      }
     },
     "products": {
       "title": "Products",

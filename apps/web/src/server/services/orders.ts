@@ -361,7 +361,20 @@ export async function listOrders(f: OrderFilter) {
 const orderInclude = {
   customer: { select: { id: true, number: true, displayName: true, type: true, phone: true, dealerNumber: true } },
   zone: { select: { nameAr: true, nameEn: true } },
-  items: { orderBy: { sortOrder: "asc" } },
+  items: {
+    orderBy: { sortOrder: "asc" },
+    // Foto, Beschreibung, Barcode und Lagerplatz – zum schnellen Finden beim Vorbereiten
+    include: {
+      variant: {
+        select: {
+          barcode: true,
+          productId: true,
+          defaultBin: { select: { code: true } },
+          product: { select: { descriptionAr: true, descriptionEn: true, images: { orderBy: { sortOrder: "asc" }, take: 1, select: { fileId: true } } } },
+        },
+      },
+    },
+  },
   offer: { select: { nameAr: true, nameEn: true, kind: true } },
   events: { orderBy: { createdAt: "asc" }, include: { byUser: { select: { name: true } } } },
   shipments: { include: { items: true, deliveryCompany: { select: { name: true } }, tourStop: { select: { tour: { select: { id: true, number: true, driver: { select: { name: true } } } } } } }, orderBy: { createdAt: "asc" } },

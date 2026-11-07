@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.16.2] – 2026-11-08 – Bestellung vorbereiten mit Foto & Beschreibung
+
+### Hinzugefügt
+- **Bestellpositionen mit Foto, Beschreibung, Barcode und Lagerplatz** (📍 z. B. A-01-1) auf der Bestellseite – Foto antippen öffnet es groß, Name führt zum Produkt. So findet man das Produkt im Lager schneller.
+- **Abhaken beim Vorbereiten**: In Schritt 2 hat jede Position ein großes Kästchen „تم إحضاره“; der Haken bleibt auf diesem Gerät gespeichert (auch nach Neuladen).
+- Menge am Handy groß direkt beim Produkt (die Mengenspalte war sonst außer Sicht).
+- **Positionen bearbeiten**: beim Ändern einer Bestellung zeigt jede Zeile Foto und Namen des gewählten Produkts.
+- Kunden-API liefert zur Position das Foto (Lagerplatz bleibt intern).
+
 ## [0.16.1] – 2026-11-08 – Angebote exakt, Produktliste, Ware & Lieferung getrennt
 
 ### Behoben

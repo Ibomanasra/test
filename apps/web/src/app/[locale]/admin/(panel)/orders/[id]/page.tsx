@@ -5,6 +5,7 @@ import { Forbidden } from "@/components/admin/Forbidden";
 import { ApiButton } from "@/components/admin/ApiForm";
 import { OrderActions } from "@/components/admin/OrderActions";
 import { OrderItemsEditor } from "@/components/admin/OrderItemsEditor";
+import { PickCheck } from "@/components/admin/PickCheck";
 import { PrintButton } from "@/components/print/PrintButton";
 import { OrderStatusTimeline } from "@/components/shop/OrderStatusTimeline";
 import { Alert, Badge, Card, Num, PageHeader, Table, Td, Th } from "@/components/ui";
@@ -28,6 +29,8 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ loc
   const addr = o.addressSnapshot as { recipient: string; city: string; street?: string; details?: string; zoneAr: string; zoneEn: string; phone: string };
   const editable = isOrderEditable(o.status as OrderStatusKey) && can("order.edit");
   const editorOpts = editable ? await quoteEditorOptions(locale) : null;
+  // beim Vorbereiten: Positionen abhaken
+  const preparing = o.status === "CONFIRMED" || o.status === "PICKING";
   const handOver = o.status === "READY" && can("order.status");
   const [drivers, companies] = handOver ? await Promise.all([listDrivers(), listDeliveryCompanies(true)]) : [[], []];
   const margin = o.subtotalNet > 0 ? Math.round(((o.subtotalNet - o.costTotal) * 10_000) / o.subtotalNet) : 0;
@@ -96,7 +99,7 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ loc
       <Table>
         <thead>
           <tr>
-            <Th>SKU</Th>
+            {preparing ? <Th>{t("pick.got")}</Th> : null}
             <Th>{t("product")}</Th>
             <Th>{t("qty")}</Th>
             <Th>{t("unitNet")}</Th>
@@ -109,9 +112,35 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ loc
         <tbody className="divide-y divide-ink-100">
           {o.items.map((i) => (
             <tr key={i.id} className={i.belowMargin && seeCost ? "bg-amber-50" : undefined} data-testid="order-item">
-              <Td className="num">{i.skuSnapshot}</Td>
-              <Td>{locale === "ar" ? i.nameArSnapshot : i.nameEnSnapshot}{i.freeQtyBase > 0 ? <span className="block text-xs text-green-700">{tAll("shop.cart.freeUnits", { count: i.freeQtyBase })}</span> : null}</Td>
-              <Td className="num">{i.qty} × {tAll(`units.${i.unitCode}`)} ({i.unitFactor})</Td>
+              {preparing ? <Td><PickCheck orderId={o.id} itemId={i.id} label={t("pick.got")} /></Td> : null}
+              <Td>
+                <div className="flex min-w-60 items-start gap-3">
+                  {i.variant.product.images[0] ? (
+                    <a href={`/api/v1/images/${i.variant.product.images[0].fileId}`} target="_blank" rel="noopener" className="shrink-0" title={t("pick.bigPhoto")}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={`/api/v1/images/${i.variant.product.images[0].fileId}`} alt="" loading="lazy" className="size-16 rounded-lg bg-white object-contain ring-1 ring-ink-200" data-testid="item-photo" />
+                    </a>
+                  ) : (
+                    <div className="grid size-16 shrink-0 place-items-center rounded-lg bg-ink-100 text-xl">📦</div>
+                  )}
+                  <div className="min-w-0">
+                    <Link href={`/admin/products/${i.variant.productId}`} className="font-medium text-ink-900 hover:text-brand-700 hover:underline">{locale === "ar" ? i.nameArSnapshot : i.nameEnSnapshot}</Link>
+                    {(() => {
+                      const d = locale === "ar" ? i.variant.product.descriptionAr : i.variant.product.descriptionEn || i.variant.product.descriptionAr;
+                      return d ? <p className="line-clamp-2 text-xs text-ink-600" data-testid="item-description">{d}</p> : null;
+                    })()}
+                    <p className="mt-1 flex flex-wrap gap-1 text-[11px]">
+                      <span className="num rounded bg-ink-100 px-1.5 py-0.5 text-ink-700">{i.skuSnapshot}</span>
+                      {i.variant.barcode ? <span className="num rounded bg-ink-100 px-1.5 py-0.5 text-ink-700">{i.variant.barcode}</span> : null}
+                      {i.variant.defaultBin ? <span className="num rounded bg-amber-100 px-1.5 py-0.5 font-semibold text-amber-900" data-testid="item-bin">📍 {i.variant.defaultBin.code}</span> : null}
+                    </p>
+                    {/* Menge groß – am Handy ist die Mengenspalte sonst außer Sicht */}
+                    <p className="mt-1 text-sm sm:hidden"><span className="num rounded-md bg-brand-700 px-2 py-0.5 text-base font-bold text-white" data-testid="item-qty-mobile">{i.qty}</span> × {tAll(`units.${i.unitCode}`)} ({i.unitFactor})</p>
+                    {i.freeQtyBase > 0 ? <span className="block text-xs text-green-700">{tAll("shop.cart.freeUnits", { count: i.freeQtyBase })}</span> : null}
+                  </div>
+                </div>
+              </Td>
+              <Td className="num whitespace-nowrap"><span className="text-base font-bold">{i.qty}</span> × {tAll(`units.${i.unitCode}`)} ({i.unitFactor})</Td>
               <Td className="num">{money(i.unitPriceNet)}</Td>
               <Td className="num">{money(i.lineNet)}</Td>
               <Td className="text-xs">{tp(`rules.${i.priceRule}`)}{i.belowMargin && seeCost ? <span className="ms-1"><Badge tone="amber">{tp("belowMarginBadge")}</Badge></span> : null}</Td>

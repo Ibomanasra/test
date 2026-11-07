@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { OWNER, customerLogin, db, placeCodOrder, staffLogin } from "./helpers";
+import { ORIGIN, OWNER, customerLogin, db, placeCodOrder, staffLogin } from "./helpers";
 
 const ORIGIN = { Origin: "http://localhost:3000" };
 
@@ -178,4 +178,20 @@ test("3-step flow: confirm → prepared → hand over to a courier company → d
   await expect.poll(async () => (await db.order.findUniqueOrThrow({ where: { id: orderId } })).status).toBe("DELIVERED");
   await db.shipment.update({ where: { id: shipment.id }, data: { deliveryCompanyId: null } });
   await db.deliveryCompany.delete({ where: { name: company } });
+});
+
+test("preparing an order: lines show description, bin and a tick box that is remembered", async ({ page, browser }) => {
+  const B2C = { local: "0599100001", e164: "+970599100001" };
+  const shop = await browser.newPage();
+  await customerLogin(shop, B2C);
+  const orderId = await placeCodOrder(shop.request, B2C.e164, "BA-001", 3);
+  await staffLogin(page, OWNER.phone, OWNER.password);
+  expect((await page.request.post(`/api/v1/admin/orders/${orderId}/status`, { data: { to: "CONFIRMED" }, headers: ORIGIN })).ok()).toBe(true);
+  await page.goto(`/ar/admin/orders/${orderId}`);
+  const item = page.getByTestId("order-item").first();
+  await expect(item.getByTestId("item-description")).toBeVisible();
+  await expect(item.getByTestId("item-bin")).toBeVisible();
+  await item.getByTestId("pick-check").check();
+  await page.reload();
+  await expect(page.getByTestId("order-item").first().getByTestId("pick-check")).toBeChecked();
 });

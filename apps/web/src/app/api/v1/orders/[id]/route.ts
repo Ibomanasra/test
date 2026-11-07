@@ -10,6 +10,10 @@ export const GET = apiRoute<{ id: string }>(async (_req, { params }) => {
   return {
     ...rest,
     events: events.map((e) => ({ toStatus: e.toStatus, createdAt: e.createdAt })),
-    items: items.map(({ unitCost: _u, priceTrace: _t, priceRuleRef: _r, belowMargin: _b, overriddenById: _o, ...i }) => i),
+    // Lagerplatz ist intern – Foto und Beschreibung bleiben
+    items: items.map(({ unitCost: _u, priceTrace: _t, priceRuleRef: _r, belowMargin: _b, overriddenById: _o, variant, ...i }) => ({
+      ...i,
+      imageId: variant.product.images[0]?.fileId ?? null,
+    })),
   };
 });

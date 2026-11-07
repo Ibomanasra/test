@@ -24,7 +24,7 @@ export function OrderItemsEditor({
 }: {
   orderId: string;
   initial: Row[];
-  skuOptions: { sku: string; label: string; units: { code: string; factor: number }[] }[];
+  skuOptions: { sku: string; label: string; imageId?: string | null; units: { code: string; factor: number }[] }[];
   unitNames: Record<string, string>;
   canEditPrice: boolean;
   channel: "B2C" | "B2B";
@@ -67,6 +67,7 @@ export function OrderItemsEditor({
         <thead>
           <tr>
             <Th>SKU</Th>
+            <Th>{t("product")}</Th>
             <Th>{t("unit")}</Th>
             <Th>{t("qty")}</Th>
             {canEditPrice ? <Th>{t("manualPrice", { kind: channel === "B2B" ? "net" : "gross" })}</Th> : null}
@@ -77,6 +78,22 @@ export function OrderItemsEditor({
           {rows.map((r, idx) => (
             <tr key={idx}>
               <Td><Input list="oe-skus" dir="ltr" className="num min-w-28" value={r.sku} onChange={(e) => setRows(rows.map((x, i) => (i === idx ? { ...x, sku: e.target.value } : x)))} /></Td>
+              <Td>
+                {(() => {
+                  const o = skuOptions.find((s) => s.sku === r.sku);
+                  return o ? (
+                    <div className="flex min-w-44 items-center gap-2">
+                      {o.imageId ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={`/api/v1/images/${o.imageId}`} alt="" className="size-10 shrink-0 rounded bg-white object-contain ring-1 ring-ink-200" />
+                      ) : (
+                        <div className="grid size-10 shrink-0 place-items-center rounded bg-ink-100">📦</div>
+                      )}
+                      <span className="text-sm">{o.label}</span>
+                    </div>
+                  ) : <span className="text-xs text-ink-400">–</span>;
+                })()}
+              </Td>
               <Td>
                 <Select value={r.unitCode} onChange={(e) => setRows(rows.map((x, i) => (i === idx ? { ...x, unitCode: e.target.value } : x)))}>
                   {unitsOf(r.sku).map((u) => <option key={u.code} value={u.code}>{unitNames[u.code] ?? u.code} ({u.factor})</option>)}

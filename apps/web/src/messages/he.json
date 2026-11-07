@@ -1168,7 +1168,11 @@
       "trackingHint": "המספר שחברת השליחויות נותנת לחבילה.",
       "partialTitle": "משלוח חלקי או נהג משלנו (אופציונלי)",
       "goodsValue": "מחיר הסחורה",
-      "deliveryFree": "חינם"
+      "deliveryFree": "חינם",
+      "pick": {
+        "got": "נאסף",
+        "bigPhoto": "הצגת התמונה בגדול"
+      }
     },
     "products": {
       "title": "מוצרים",

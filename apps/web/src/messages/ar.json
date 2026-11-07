@@ -1168,7 +1168,11 @@
       "trackingHint": "الرقم الذي تعطيه شركة التوصيل للطرد.",
       "partialTitle": "تسليم جزئي أو سائق خاص (اختياري)",
       "goodsValue": "سعر البضاعة",
-      "deliveryFree": "مجاني"
+      "deliveryFree": "مجاني",
+      "pick": {
+        "got": "تم إحضاره",
+        "bigPhoto": "عرض الصورة كبيرة"
+      }
     },
     "products": {
       "title": "المنتجات",

@@ -7,7 +7,7 @@ export async function quoteEditorOptions(locale: string) {
     prisma.customer.findMany({ where: { type: "B2B", status: { in: ["ACTIVE", "PENDING_APPROVAL"] } }, select: { id: true, displayName: true, number: true }, orderBy: { displayName: "asc" } }),
     prisma.productVariant.findMany({
       where: { active: true },
-      select: { sku: true, nameAr: true, nameEn: true, product: { select: { nameAr: true, nameEn: true } }, units: { select: { factor: true, unit: { select: { code: true } } } } },
+      select: { sku: true, nameAr: true, nameEn: true, product: { select: { nameAr: true, nameEn: true, images: { orderBy: { sortOrder: "asc" }, take: 1, select: { fileId: true } } } }, units: { select: { factor: true, unit: { select: { code: true } } } } },
       orderBy: { sku: "asc" },
     }),
     prisma.unitOfMeasure.findMany(),
@@ -19,6 +19,7 @@ export async function quoteEditorOptions(locale: string) {
     skuOptions: variants.map((v) => ({
       sku: v.sku,
       label: [nm(v.product), nm(v)].filter(Boolean).join(" – "),
+      imageId: v.product.images[0]?.fileId ?? null,
       units: v.units.map((u) => ({ code: u.unit.code, factor: u.factor })).sort((a, b) => a.factor - b.factor),
     })),
     unitNames: Object.fromEntries(units.map((u) => [u.code, locale === "ar" ? u.nameAr : u.nameEn])),

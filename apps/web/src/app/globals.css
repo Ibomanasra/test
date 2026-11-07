@@ -60,3 +60,22 @@
 @media (prefers-reduced-motion: reduce) {
   [data-testid="cart-count"] { animation: none !important; }
 }
+
+/*
+ * Zahlen-Zellen in Tabellen: Inhalt ist LTR (.num), die Ausrichtung soll aber wie die Überschrift
+ * der RTL-Tabelle sein. Ohne Ebene (unlayered), damit es die Tailwind-Utilities überstimmt.
+ */
+[dir="rtl"] :is(td, th).num {
+  text-align: right; /* logical-css-ignore: gilt nur unter [dir=rtl] */
+}
+[dir="rtl"] :is(td, th).num.text-end {
+  text-align: left; /* logical-css-ignore: gilt nur unter [dir=rtl] */
+}
+[dir="rtl"] :is(td, th).num.text-center {
+  text-align: center;
+}
+/* Nummern/Beträge in Tabellen nie umbrechen (z. B. „INV-2026-000156“, „84.70 ₪“) */
+:is(td, th).num,
+:is(td, th) .num {
+  white-space: nowrap;
+}

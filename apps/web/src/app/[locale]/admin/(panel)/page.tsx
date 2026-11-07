@@ -112,9 +112,10 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
                       <p className="font-medium text-ink-900">{t(`period.${k}`)}</p>
                       <p className="text-xs text-ink-500">{t("ordersCount", { count: sales[k].orders })}</p>
                     </td>
-                    <td className="num py-2.5 text-end font-semibold text-ink-900">{money(sales[k].goods)}</td>
-                    <td className="num py-2.5 text-end text-sky-800">{money(sales[k].delivery)}</td>
-                    <td className="num py-2.5 text-end font-bold text-ink-900">{money(sales[k].total)}</td>
+                    {/* Zelle bündig mit der Überschrift; nur die Zahl selbst ist LTR */}
+                    <td className="py-2.5 text-end"><span className="num font-semibold text-ink-900">{money(sales[k].goods)}</span></td>
+                    <td className="py-2.5 text-end"><span className="num text-sky-800">{money(sales[k].delivery)}</span></td>
+                    <td className="py-2.5 text-end"><span className="num font-bold text-ink-900">{money(sales[k].total)}</span></td>
                   </tr>
                 ))}
               </tbody>

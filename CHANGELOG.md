@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.19.2] – 2026-11-08
+
+### Behoben
+- **Tabellen auf Arabisch/Hebräisch: Zahlen standen nicht unter ihrer Überschrift** (Zahlen-Zellen wurden links- statt rechtsbündig ausgerichtet) – betrifft rund 110 Tabellenspalten, zentral behoben; Dashboard „المبيعات والتوصيل“ ebenso.
+- Nummern und Beträge in Tabellen (z. B. „INV-2026-000156“, „84.70 ₪“, Datum) brechen nicht mehr über mehrere Zeilen um.
+
 ## [0.19.1] – 2026-11-08 – Mehr Besucher zum Konto bewegen
 
 ### Hinzugefügt

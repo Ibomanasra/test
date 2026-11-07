@@ -17,6 +17,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { key: "documents", href: "/admin/documents", anyOf: ["finance.view", "order.print"] },
   { key: "products", href: "/admin/products", anyOf: ["product.view"] },
   { key: "prices", href: "/admin/prices", anyOf: ["price.view", "price.edit"] },
+  { key: "offers", href: "/admin/offers", anyOf: ["price.view", "price.promotions"] },
   { key: "stock", href: "/admin/stock", anyOf: ["stock.view"] },
   { key: "purchasing", href: "/admin/purchasing", anyOf: ["purchase.view"] },
   { key: "delivery", href: "/admin/delivery", anyOf: ["delivery.plan", "delivery.view_all", "delivery.cash_closing"] },

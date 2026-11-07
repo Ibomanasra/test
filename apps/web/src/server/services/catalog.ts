@@ -71,6 +71,8 @@ export interface VariantDto {
   /** Listenpreis vor Aktion (für Streichpreis) – nur wenn höher */
   listUnitPrice: number | null;
   promotion: boolean;
+  /** ID der wirksamen Aktion (auch „X kaufen, Y gratis“) für Schild und Restlaufzeit */
+  promoRef: string | null;
   /** nur B2B: Staffeln ab Menge (netto pro Stück) */
   tiers?: { minQtyBase: number; unitPrice: number }[];
 }
@@ -114,6 +116,8 @@ function toVariantDto(v: VariantRow, channel: PricingChannel, price: PriceResult
   if (!price) return null;
   const u = unitsFor(v, channel);
   const promoted = price.rule === "PROMOTION" && price.unitPrice < price.listUnitPrice;
+  // „X kaufen, Y gratis“ senkt den Stückpreis erst ab der Menge – trotzdem als Aktion zeigen
+  const buyGet = price.trace.find((t) => t.rule === "PROMOTION" && t.note.includes("buy"));
   return {
     id: v.id,
     sku: v.sku,
@@ -125,7 +129,8 @@ function toVariantDto(v: VariantRow, channel: PricingChannel, price: PriceResult
     unitPrice: price.unitPrice,
     unitGross: price.unitGross,
     listUnitPrice: price.unitPrice < price.listUnitPrice ? price.listUnitPrice : null,
-    promotion: promoted,
+    promotion: promoted || Boolean(buyGet),
+    promoRef: promoted ? price.ruleRef : (buyGet?.ref ?? null),
     ...(channel === "B2B" && tiers ? { tiers } : {}),
   };
 }

@@ -300,6 +300,18 @@ async function seedRounding() {
   });
 }
 
+/** Beispiel-Angebote (Einstellungen → Angebote), nur wenn noch keine existieren */
+async function seedDemoOffers() {
+  if (await prisma.orderOffer.count()) return;
+  await prisma.orderOffer.createMany({
+    data: [
+      { kind: "WELCOME", nameAr: "أهلاً بك! خصم 10% على أول طلب", nameEn: "Welcome! 10% off your first order", channel: "B2C", percentBps: 1000, perCustomerLimit: 1 },
+      { kind: "CART_THRESHOLD", nameAr: "اشترِ بـ 400 ₪ ووفّر 5%", nameEn: "Spend 400 ₪, save 5%", channel: "B2C", percentBps: 500, minOrderAgorot: 40_000 },
+      { kind: "COUPON", nameAr: "كوبون شعلة", nameEn: "Shola coupon", textAr: "خصم 15 ₪ عند الشراء بـ 150 ₪", textEn: "15 ₪ off when you spend 150 ₪", channel: "BOTH", amountAgorot: 1_500, minOrderAgorot: 15_000, code: "SHOLA15", perCustomerLimit: 1 },
+    ],
+  });
+}
+
 async function seedDemoCatalog() {
   if (await prisma.product.findFirst({ where: { isDemo: true } })) {
     log("demo catalog already present");
@@ -457,6 +469,7 @@ async function main() {
   if (env("SEED_DEMO_DATA", "false") === "true") {
     await seedDemo();
     await seedDemoCatalog();
+    await seedDemoOffers();
   }
   log("done");
 }

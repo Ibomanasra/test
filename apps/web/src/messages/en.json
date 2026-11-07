@@ -172,7 +172,10 @@
       "tiers": "Quantity prices (for you)",
       "fromQty": "From quantity",
       "perPiece": "Per piece (net)",
-      "perUnit": "Per {unit}"
+      "perUnit": "Per {unit}",
+      "endsToday": "Offer ends today",
+      "endsIn": "Offer ends in {days} days",
+      "buyGet": "Buy {buy}, get {get} free"
     },
     "checkout": {
       "title": "Checkout",
@@ -195,13 +198,55 @@
       "total": "Total",
       "belowMinimum": "The minimum order in your area is {amount}.",
       "creditShort": "Your credit limit is not sufficient for this order. Choose another payment method.",
-      "placeOrder": "Place order"
+      "placeOrder": "Place order",
+      "offers": {
+        "next": "Add {missing} more and get {benefit} off 🎉",
+        "coupon": "Coupon code",
+        "couponPlaceholder": "Have a coupon?",
+        "apply": "Apply",
+        "couponApplied": "Coupon applied ✓",
+        "couponNotBetter": "You already have a better offer – we applied the best one.",
+        "couponInvalid": {
+          "default": "This coupon is not valid.",
+          "min_order": "This coupon needs a higher order value.",
+          "ended": "This coupon has expired.",
+          "used_up": "This coupon has been used up.",
+          "customer_limit": "You have already used this coupon."
+        },
+        "discount": "Offer discount",
+        "includedNote": "The discount is included in the item prices."
+      }
     },
     "home": {
       "offers": "Current offers",
       "allOffers": "All offers →",
       "showAll": "Show all ({count}) →",
       "allProducts": "Browse all products"
+    },
+    "offers": {
+      "title": "Offers for you",
+      "all": "All offers",
+      "pageTitle": "Offers",
+      "pageText": "Save more with our current offers – discounts are applied automatically at checkout.",
+      "onOrder": "Discounts on your order",
+      "onProducts": "Products on offer",
+      "autoNote": "The best discount for you is applied automatically. Coupons are entered at checkout.",
+      "noProducts": "No products on offer right now.",
+      "browse": "Browse products",
+      "freeDelivery": "Free delivery",
+      "percentOff": "{pct}% off",
+      "amountOff": "{amount} off",
+      "firstOrder": "on your first order",
+      "minOrder": "when you spend {amount} or more",
+      "endsToday": "Ends today!",
+      "endsIn": "Ends in {days} days",
+      "useCode": "Use code",
+      "kind": {
+        "WELCOME": "Welcome",
+        "CART_THRESHOLD": "Spend & save",
+        "COUPON": "Coupon",
+        "FREE_DELIVERY": "Delivery"
+      }
     }
   },
   "auth": {
@@ -406,7 +451,8 @@
       "audit": "Audit log",
       "toShop": "To shop",
       "menu": "Menu",
-      "documents": "Documents"
+      "documents": "Documents",
+      "offers": "Offers"
     },
     "loggedInAs": "Logged in as {name}",
     "dashboard": {
@@ -638,7 +684,8 @@
       "vatDisable": "Turn VAT off (0%)",
       "vatEnableConfirm": "Enable VAT at {rate} from now on? Earlier orders and invoices stay unchanged.",
       "vatDisableConfirm": "Turn VAT off (0%) from now on? Earlier orders and invoices stay unchanged.",
-      "vatHint": "The change applies immediately to new prices and orders. The consumer price you enter is the final price; dealer prices are net and VAT is added on top when enabled."
+      "vatHint": "The change applies immediately to new prices and orders. The consumer price you enter is the final price; dealer prices are net and VAT is added on top when enabled.",
+      "offers": "Offers & coupons"
     },
     "audit": {
       "title": "Audit log",
@@ -1491,6 +1538,158 @@
         "RECEIPT": "Receipt",
         "QUOTE": "Quote"
       }
+    },
+    "offers": {
+      "title": "Offers",
+      "subtitle": "All offers in one place – for products and whole orders",
+      "new": "New offer",
+      "newTitle": "Create a new offer",
+      "newText": "Pick a type – you'll only be asked what's needed.",
+      "group": {
+        "order": "On the whole order",
+        "product": "On specific products"
+      },
+      "types": {
+        "WELCOME": {
+          "title": "Welcome discount",
+          "short": "For new customers on their first order",
+          "explain": "Applied automatically to every new customer's first order (once)."
+        },
+        "CART_THRESHOLD": {
+          "title": "Spend & save",
+          "short": "e.g. 5% off from 300 ₪",
+          "explain": "Applied automatically when the cart reaches the amount. You can create several levels."
+        },
+        "COUPON": {
+          "title": "Coupon code",
+          "short": "A code the customer types at checkout",
+          "explain": "The customer enters the code at checkout. You can limit how often it can be used."
+        },
+        "FREE_DELIVERY": {
+          "title": "Free delivery",
+          "short": "For a period or from an amount",
+          "explain": "Delivery fee = 0 during the period (can be combined with another discount)."
+        },
+        "PERCENT": {
+          "title": "Product / category discount",
+          "short": "e.g. 15% off cleaning products",
+          "explain": "Shown on the product with a discount badge and the old price struck through."
+        },
+        "FIXED_PRICE": {
+          "title": "Special price",
+          "short": "A fixed offer price for one product",
+          "explain": "Consumer price incl. VAT, dealer price net."
+        },
+        "BUY_X_GET_Y": {
+          "title": "Buy X get Y free",
+          "short": "e.g. buy 2 get 1 free",
+          "explain": "Quantities in pieces. Free pieces are added automatically in the cart."
+        }
+      },
+      "defaults": {
+        "WELCOME": {
+          "ar": "Welcome! Discount on your first order",
+          "en": "Welcome! Discount on your first order"
+        },
+        "CART_THRESHOLD": {
+          "ar": "Spend more, save more",
+          "en": "Spend more, save more"
+        },
+        "COUPON": {
+          "ar": "Coupon",
+          "en": "Coupon"
+        },
+        "FREE_DELIVERY": {
+          "ar": "Free delivery",
+          "en": "Free delivery"
+        },
+        "PERCENT": {
+          "ar": "Special offer",
+          "en": "Special offer"
+        },
+        "FIXED_PRICE": {
+          "ar": "Offer price",
+          "en": "Offer price"
+        },
+        "BUY_X_GET_Y": {
+          "ar": "Buy & get free",
+          "en": "Buy & get free"
+        }
+      },
+      "effect": {
+        "freeDelivery": "Free delivery",
+        "fixed": "Only {price}",
+        "buyGet": "{buy} + {get} free"
+      },
+      "cond": {
+        "firstOrder": "first order only",
+        "code": "code {code}",
+        "minOrder": "from {amount}",
+        "until": "until {date}"
+      },
+      "channel": {
+        "BOTH": "Everyone",
+        "B2C": "Consumers",
+        "B2B": "Dealers"
+      },
+      "f": {
+        "nameAr": "Name (Arabic)",
+        "nameEn": "Name (English)",
+        "nameEnHint": "Optional – the Arabic name is used if empty",
+        "percent": "Discount (%)",
+        "amount": "Discount (₪)",
+        "mode": {
+          "percent": "Percent %",
+          "amount": "Amount ₪"
+        },
+        "fixedPrice": "Offer price (₪)",
+        "fixedHint": "Consumers: incl. VAT",
+        "buy": "Buy (pieces)",
+        "get": "Get free",
+        "target": {
+          "product": "Product",
+          "category": "Whole category"
+        },
+        "chooseCategory": "Choose category",
+        "productPlaceholder": "Search by SKU or name…",
+        "unknownSku": "Unknown product",
+        "code": "Coupon code",
+        "codeHint": "Latin letters and digits, e.g. RAMADAN10",
+        "minOrder": "Minimum order (₪)",
+        "minOrderHint": "Leave empty for no minimum",
+        "channel": "For whom?",
+        "from": "From",
+        "to": "Until",
+        "toHint": "Empty = no end",
+        "more": "More options",
+        "textAr": "Promo text (Arabic)",
+        "textEn": "Promo text (English)",
+        "textPlaceholder": "e.g. Limited time only!",
+        "maxUses": "Total uses",
+        "perCustomer": "Per customer",
+        "emptyUnlimited": "Empty = unlimited",
+        "showInShop": "Show in the shop (offers page and banner)",
+        "active": "Offer is active"
+      },
+      "preview": "How the customer sees it",
+      "listTitle": "Current offers",
+      "filter": {
+        "all": "All",
+        "order": "Order",
+        "product": "Products"
+      },
+      "none": "No offers yet – create your first one above.",
+      "status": {
+        "active": "Active",
+        "planned": "Scheduled",
+        "ended": "Ended",
+        "inactive": "Paused",
+        "used_up": "Used up"
+      },
+      "used": "Used {count} times",
+      "pause": "Pause",
+      "resume": "Activate",
+      "deleteConfirm": "Delete this offer? (If it was used, it is only paused)"
     }
   },
   "driver": {
@@ -1589,7 +1788,7 @@
     "b2b_only": "Available to approved businesses only.",
     "price_list_required": "Choose a price list.",
     "group_or_customer": "Choose a group or a customer (one only).",
-    "invalid_period": "The end must be after the start.",
+    "invalid_period": "The end date must be after the start.",
     "target_required": "Choose a product or a category (one only).",
     "percent_required": "Enter the discount percentage.",
     "fixed_price_needs_sku": "A fixed price needs a product (SKU) and a price.",
@@ -1662,7 +1861,12 @@
     "gateway_changed": "The payment gateway changed since this payment",
     "dealer_number_taken": "This dealer number belongs to another customer.",
     "last_address": "The customer's only address cannot be deleted.",
-    "tax_rate_planned": "A future rate is planned – delete it first."
+    "tax_rate_planned": "A future rate is planned – delete it first.",
+    "offer_needs_value": "Enter a percentage or an amount.",
+    "coupon_needs_code": "Enter the coupon code.",
+    "coupon_code_taken": "This coupon code is already used by another offer.",
+    "invalid_coupon_code": "Coupon code: 3–30 Latin letters or digits.",
+    "offer_used_up": "This offer just ran out. Please refresh."
   },
   "permissions": {
     "dashboard_view": "View dashboard",

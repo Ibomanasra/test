@@ -24,7 +24,7 @@ export default async function ShopLayout({ children, params }: { children: React
           </Link>
           <nav className="order-3 flex w-full gap-4 overflow-x-auto text-sm font-medium text-ink-700 sm:order-none sm:ms-6 sm:w-auto">
             <Link href="/products" className="whitespace-nowrap hover:text-brand-700">{ts("nav.catalog")}</Link>
-            <Link href="/products?promo=1" className="whitespace-nowrap hover:text-brand-700">{ts("nav.offers")}</Link>
+            <Link href="/offers" className="whitespace-nowrap font-semibold text-red-600 hover:text-red-700" data-testid="nav-offers">🔥 {ts("nav.offers")}</Link>
             {auth?.channel === "B2B" ? (
               <Link href="/account/quick-order" className="whitespace-nowrap hover:text-brand-700">{ts("nav.quickOrder")}</Link>
             ) : (

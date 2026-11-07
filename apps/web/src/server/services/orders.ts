@@ -5,6 +5,7 @@ import {
   canPlaceOrders,
   checkQuantity,
   computeCheckout,
+  distributeDiscount,
   deliveryDates,
   fitsCreditLimit,
   grossToNet,
@@ -25,6 +26,7 @@ import { AppError, badRequest, forbidden, notFound } from "../errors";
 import { clearCart, findCart, pricedCart, type CartOwner } from "./cart";
 import { archiveFiscalDocument, createCreditNote, issueInvoiceForShipment } from "./invoicing";
 import { guardMargin } from "./prices-admin";
+import { evaluateOrderOffers, redeemOffer, releaseOfferRedemptions } from "./offers";
 import { queueAutoPrint } from "./print-jobs";
 import { currentTaxRateBps, getMinMarginBps, priceItems, priceKey } from "./pricing";
 import { consumeForShipment, defaultWarehouseId, lockStock, releaseReservations, reserveStock } from "./stock";
@@ -89,22 +91,38 @@ export interface CheckoutInput {
   paymentMethod: PaymentMethod;
   requestedDeliveryDate: string;
   customerNote?: string;
+  couponCode?: string;
 }
 
-async function evaluateCheckout(ctx: AuthContext & { customer: NonNullable<AuthContext["customer"]> }, input: Pick<CheckoutInput, "addressId">) {
+async function evaluateCheckout(ctx: AuthContext & { customer: NonNullable<AuthContext["customer"]> }, input: Pick<CheckoutInput, "addressId" | "couponCode">) {
   const owner: CartOwner = { customerId: ctx.customer.id, channel: ctx.channel };
   const cart = await pricedCart(owner);
   const address = await prisma.address.findFirst({ where: { id: input.addressId, customerId: ctx.customer.id }, include: { zone: { include: { rates: { where: { channel: ctx.channel } } } } } });
   if (!address || !address.zone.active) throw badRequest("invalid_address");
   const rate = address.zone.rates[0] ?? null;
   const taxRateBps = await currentTaxRateBps(new Date());
-  const totals = computeCheckout(ctx.channel, cart.lines.map((l) => ({ unitPrice: l.unitPrice, payableQtyBase: l.qtyBase - l.freeQtyBase, taxRateBps })), rate, taxRateBps);
-  return { cart, address, rate, taxRateBps, totals };
+  const baseLines = cart.lines.map((l) => ({ unitPrice: l.unitPrice, payableQtyBase: l.qtyBase - l.freeQtyBase, taxRateBps }));
+  const base = computeCheckout(ctx.channel, baseLines, rate, taxRateBps);
+  // Angebote auf Bestellebene: Rabatt anteilig auf die Stückpreise, Gratis-Lieferung erlässt die Gebühr
+  const offers = await evaluateOrderOffers({ customerId: ctx.customer.id, channel: ctx.channel, goodsValue: base.goodsValue, couponCode: input.couponCode });
+  const units = distributeDiscount(baseLines.map((l) => ({ unitPrice: l.unitPrice, qty: l.payableQtyBase })), offers.discount?.amount ?? 0);
+  const effectiveRate = offers.freeDelivery && rate ? { ...rate, feeGrossAgorot: 0 } : rate;
+  const discounted = computeCheckout(ctx.channel, baseLines.map((l, i) => ({ ...l, unitPrice: units[i]! })), effectiveRate, taxRateBps);
+  // Mindestbestellwert gilt vor Rabatt
+  const totals = { ...discounted, belowMinimum: base.belowMinimum, freeDelivery: discounted.freeDelivery || Boolean(offers.freeDelivery) };
+  const offerDiscount = base.goodsValue - discounted.goodsValue;
+  const deliverySaved = offers.freeDelivery ? base.deliveryFeeGross : 0;
+  return { cart, address, rate, taxRateBps, totals, offers, units, offerDiscount, deliverySaved };
 }
 
-export async function previewCheckout(ctx: AuthContext & { customer: NonNullable<AuthContext["customer"]> }, input: Pick<CheckoutInput, "addressId">) {
-  const { cart, totals } = await evaluateCheckout(ctx, input);
+export async function previewCheckout(ctx: AuthContext & { customer: NonNullable<AuthContext["customer"]> }, input: Pick<CheckoutInput, "addressId" | "couponCode">) {
+  const { cart, totals, offers, offerDiscount, deliverySaved } = await evaluateCheckout(ctx, input);
+  const pick = (o: { nameAr: string; nameEn: string; kind: string }) => ({ nameAr: o.nameAr, nameEn: o.nameEn, kind: o.kind });
   return {
+    offer: offers.discount && offerDiscount > 0 ? { ...pick(offers.discount.rule), discount: offerDiscount } : null,
+    freeDeliveryOffer: offers.freeDelivery ? { ...pick(offers.freeDelivery), saved: deliverySaved } : null,
+    coupon: offers.coupon ? { status: offers.coupon.status, reason: offers.coupon.reason ?? null } : null,
+    nextOffer: offers.next ? { ...pick(offers.next.rule), missing: offers.next.missing, percentBps: offers.next.rule.percentBps, amountAgorot: offers.next.rule.amountAgorot } : null,
     lines: cart.lines,
     goodsValue: totals.goodsValue,
     deliveryFeeGross: totals.deliveryFeeGross,
@@ -141,7 +159,7 @@ async function notifyCustomer(orderId: string, template: "order.placed" | "order
 
 export async function placeOrder(ctx: AuthContext & { customer: NonNullable<AuthContext["customer"]> }, input: CheckoutInput) {
   if (!canPlaceOrders({ customerType: ctx.customer.type, customerStatus: ctx.customer.status })) throw forbidden("account_blocked");
-  const { cart, address, totals, taxRateBps } = await evaluateCheckout(ctx, input);
+  const { cart, address, totals, taxRateBps, offers, units, offerDiscount, deliverySaved } = await evaluateCheckout(ctx, input);
   if (cart.lines.length === 0) throw badRequest("cart_empty");
   if (cart.hasProblems) throw badRequest("cart_has_problems");
   if (totals.belowMinimum) throw badRequest("below_minimum_order", { minimum: totals.minimumOrder });
@@ -198,13 +216,21 @@ export async function placeOrder(ctx: AuthContext & { customer: NonNullable<Auth
           vatTotal: totals.vat,
           deliveryFeeGross: totals.deliveryFeeGross,
           totalGross: totals.gross,
+          offerId: offerDiscount > 0 ? (offers.discount?.rule.id ?? null) : null,
+          offerDiscount,
+          freeDeliveryOfferId: offers.freeDelivery?.id ?? null,
+          couponCode: offers.coupon?.status === "applied" ? (offers.coupon.rule?.code ?? null) : null,
           costTotal,
           taxRateBps,
           customerNote: input.customerNote,
           items: {
             create: cart.lines.map((l, idx) => {
               const p = prices.get(priceKey(l.variantId, l.qtyBase))!;
-              const tl = lineFor(ctx.channel, { unitPrice: p.unitPrice, payableQtyBase: p.payableQtyBase, taxRateBps });
+              // Stückpreis nach Bestellrabatt (ohne Rabatt unverändert)
+              const unit = offerDiscount > 0 ? units[idx]! : p.unitPrice;
+              const unitNet = offerDiscount > 0 ? (ctx.channel === "B2B" ? unit : grossToNet(unit, taxRateBps)) : p.unitNet;
+              const unitGross = offerDiscount > 0 ? (ctx.channel === "B2B" ? netToGross(unit, taxRateBps) : unit) : p.unitGross;
+              const tl = lineFor(ctx.channel, { unitPrice: unit, payableQtyBase: p.payableQtyBase, taxRateBps });
               const cost = variants.find((v) => v.id === l.variantId)?.costPrice ?? 0;
               return {
                 variantId: l.variantId,
@@ -215,8 +241,8 @@ export async function placeOrder(ctx: AuthContext & { customer: NonNullable<Auth
                 unitFactor: l.factor,
                 qty: l.qty,
                 qtyBase: l.qtyBase,
-                unitPriceNet: p.unitNet,
-                unitPriceGross: p.unitGross,
+                unitPriceNet: unitNet,
+                unitPriceGross: unitGross,
                 vatRateBps: taxRateBps,
                 lineNet: tl.net,
                 lineVat: tl.vat,
@@ -226,7 +252,7 @@ export async function placeOrder(ctx: AuthContext & { customer: NonNullable<Auth
                 priceRule: p.rule,
                 priceRuleRef: p.ruleRef,
                 priceTrace: JSON.parse(JSON.stringify(p.trace)),
-                belowMargin: p.unitNet < minimumPriceNet(cost, minMarginBps),
+                belowMargin: unitNet < minimumPriceNet(cost, minMarginBps),
                 sortOrder: idx,
               };
             }),
@@ -235,6 +261,8 @@ export async function placeOrder(ctx: AuthContext & { customer: NonNullable<Auth
         },
         include: { items: true },
       });
+      if (offerDiscount > 0 && offers.discount) await redeemOffer(tx, offers.discount.rule.id, customer.id, created.id, offerDiscount);
+      if (offers.freeDelivery) await redeemOffer(tx, offers.freeDelivery.id, customer.id, created.id, deliverySaved);
       await reserveStock(tx, created.items.map((i) => ({ orderItemId: i.id, variantId: i.variantId, qtyBase: i.qtyBase, sku: i.skuSnapshot })));
       if (quoteId) await tx.quote.update({ where: { id: quoteId }, data: { status: "CONVERTED" } });
       if (fullCart) {
@@ -308,6 +336,7 @@ const orderInclude = {
   customer: { select: { id: true, number: true, displayName: true, type: true, phone: true, dealerNumber: true } },
   zone: { select: { nameAr: true, nameEn: true } },
   items: { orderBy: { sortOrder: "asc" } },
+  offer: { select: { nameAr: true, nameEn: true, kind: true } },
   events: { orderBy: { createdAt: "asc" }, include: { byUser: { select: { name: true } } } },
   shipments: { include: { items: true }, orderBy: { createdAt: "asc" } },
   parentOrder: { select: { id: true, number: true } },
@@ -395,6 +424,7 @@ export async function cancelOrder(ctx: AuthContext, orderId: string, reason: str
   await prisma.$transaction(async (tx) => {
     await setStatus(tx, ctx, orderId, o.status, "CANCELLED", reason, { cancelledAt: new Date(), cancelReason: reason });
     await releaseReservations(tx, o.items.map((i) => i.id));
+    await releaseOfferRedemptions(tx, orderId);
     for (const i of o.items) {
       await tx.orderItem.update({ where: { id: i.id }, data: { qtyCancelledBase: i.qtyBase - i.qtyDeliveredBase } });
     }

@@ -69,6 +69,7 @@ export default async function MyOrderPage({ params, searchParams }: { params: Pr
       </Table>
       <Card>
         <div className="ms-auto max-w-xs space-y-1 text-sm">
+          {o.offerDiscount > 0 ? <p className="flex justify-between font-medium text-green-700" data-testid="order-offer"><span>🎁 {o.offer ? (locale === "ar" ? o.offer.nameAr : o.offer.nameEn) : tAll("shop.checkout.offers.discount")}{o.couponCode ? ` (${o.couponCode})` : ""}</span><span className="num">−{money(o.offerDiscount)}</span></p> : null}
           {o.deliveryFeeGross > 0 ? <p className="flex justify-between"><span>{t("deliveryFee")}</span><span className="num">{money(o.deliveryFeeGross)}</span></p> : null}
           <p className="flex justify-between"><span>{t("net")}</span><span className="num">{money(o.subtotalNet)}</span></p>
           <p className="flex justify-between"><span>{t("vat")}</span><span className="num">{money(o.vatTotal)}</span></p>

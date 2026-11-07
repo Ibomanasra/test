@@ -36,6 +36,10 @@ interface Preview {
   gross: number;
   hasProblems: boolean;
   lines: { id: string }[];
+  offer: { nameAr: string; nameEn: string; kind: string; discount: number } | null;
+  freeDeliveryOffer: { nameAr: string; nameEn: string; saved: number } | null;
+  coupon: { status: "applied" | "not_better" | "invalid"; reason: string | null } | null;
+  nextOffer: { nameAr: string; nameEn: string; missing: number; percentBps: number | null; amountAgorot: number | null } | null;
 }
 
 export function CheckoutForm({ options, zones }: { options: Options; zones: { id: string; name: string }[] }) {
@@ -54,12 +58,15 @@ export function CheckoutForm({ options, zones }: { options: Options; zones: { id
   const [newAddress, setNewAddress] = useState(options.addresses.length === 0);
 
   const [previewError, setPreviewError] = useState<string | null>(null);
+  const [couponInput, setCouponInput] = useState("");
+  const [coupon, setCoupon] = useState<string | undefined>(undefined);
+  const nm = (o: { nameAr: string; nameEn: string }) => (locale === "ar" ? o.nameAr : o.nameEn);
 
   // Vorschau neu laden, wenn sich die Adresse ändert (Zustand nur im Callback setzen)
   useEffect(() => {
     if (!addressId) return;
     let cancelled = false;
-    apiFetch<Preview>("/api/v1/checkout/preview", { body: { addressId }, locale })
+    apiFetch<Preview>("/api/v1/checkout/preview", { body: { addressId, couponCode: coupon }, locale })
       .then((p) => {
         if (!cancelled) {
           setPreview(p);
@@ -72,7 +79,7 @@ export function CheckoutForm({ options, zones }: { options: Options; zones: { id
     return () => {
       cancelled = true;
     };
-  }, [addressId, locale, translate]);
+  }, [addressId, coupon, locale, translate]);
 
   function chooseAddress(id: string) {
     setAddressId(id);
@@ -93,7 +100,7 @@ export function CheckoutForm({ options, zones }: { options: Options; zones: { id
   }
 
   async function place() {
-    const res = await call<{ id: string }>("/api/v1/orders", { body: { addressId, paymentMethod: method, requestedDeliveryDate: date, customerNote: note || undefined } });
+    const res = await call<{ id: string }>("/api/v1/orders", { body: { addressId, paymentMethod: method, requestedDeliveryDate: date, customerNote: note || undefined, couponCode: coupon } });
     if (!res) return;
     if (method === "CARD_GATEWAY") {
       // Kartenzahlung: weiter zur gehosteten Bezahlseite des Gateways
@@ -173,13 +180,37 @@ export function CheckoutForm({ options, zones }: { options: Options; zones: { id
         <Card title={t("summary")}>
           {preview ? (
             <div className="space-y-1 text-sm">
-              <p className="flex justify-between"><span>{options.channel === "B2B" ? t("goodsNet") : t("goodsGross")}</span><span className="num">{formatMoney(preview.goodsValue)}</span></p>
-              <p className="flex justify-between"><span>{t("deliveryFee")}</span><span className="num">{preview.freeDelivery ? t("free") : formatMoney(preview.deliveryFeeGross)}</span></p>
+              {preview.nextOffer ? (
+                <p className="mb-2 rounded-lg bg-sky-50 px-3 py-2 text-sky-900" data-testid="next-offer">
+                  {t("offers.next", { missing: formatMoney(preview.nextOffer.missing), benefit: preview.nextOffer.percentBps ? `${preview.nextOffer.percentBps / 100}%` : formatMoney(preview.nextOffer.amountAgorot ?? 0) })}
+                </p>
+              ) : null}
+              <p className="flex justify-between"><span>{options.channel === "B2B" ? t("goodsNet") : t("goodsGross")}</span><span className="num">{formatMoney(preview.goodsValue + (preview.offer?.discount ?? 0))}</span></p>
+              {preview.offer ? (
+                <p className="flex justify-between font-medium text-green-700" data-testid="offer-discount"><span>🎁 {nm(preview.offer)}</span><span className="num">−{formatMoney(preview.offer.discount)}</span></p>
+              ) : null}
+              <p className="flex justify-between"><span>{t("deliveryFee")}</span><span className={preview.freeDeliveryOffer ? "num font-medium text-green-700" : "num"}>{preview.freeDelivery ? (preview.freeDeliveryOffer ? `${t("free")} · ${nm(preview.freeDeliveryOffer)}` : t("free")) : formatMoney(preview.deliveryFeeGross)}</span></p>
               <p className="flex justify-between text-ink-500"><span>{t("net")}</span><span className="num">{formatMoney(preview.net)}</span></p>
               <p className="flex justify-between text-ink-500"><span>{t("vat")}</span><span className="num">{formatMoney(preview.vat)}</span></p>
               <p className="flex justify-between border-t border-ink-200 pt-2 text-base font-bold"><span>{t("total")}</span><span className="num" data-testid="checkout-total">{formatMoney(preview.gross)}</span></p>
               {preview.belowMinimum ? <Alert tone="amber">{t("belowMinimum", { amount: formatMoney(preview.minimumOrder) })}</Alert> : null}
               {creditShort ? <Alert tone="red">{t("creditShort")}</Alert> : null}
+              {/* Gutschein */}
+              <form
+                className="flex gap-2 pt-3"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  setCoupon(couponInput.trim() || undefined);
+                }}
+              >
+                <Input value={couponInput} onChange={(e) => setCouponInput(e.target.value)} placeholder={t("offers.couponPlaceholder")} dir="ltr" className="font-mono uppercase" aria-label={t("offers.coupon")} data-testid="coupon-input" />
+                <Button type="submit" variant="secondary" size="sm" data-testid="coupon-apply">{t("offers.apply")}</Button>
+              </form>
+              {preview.coupon ? (
+                <p className={preview.coupon.status === "applied" ? "text-green-700" : "text-amber-800"} data-testid="coupon-status">
+                  {preview.coupon.status === "applied" ? t("offers.couponApplied") : preview.coupon.status === "not_better" ? t("offers.couponNotBetter") : t(`offers.couponInvalid.${preview.coupon.reason === "min_order" || preview.coupon.reason === "ended" || preview.coupon.reason === "used_up" || preview.coupon.reason === "customer_limit" ? preview.coupon.reason : "default"}`)}
+                </p>
+              ) : null}
             </div>
           ) : (
             <p className="text-sm text-ink-500">{tc("loading")}</p>

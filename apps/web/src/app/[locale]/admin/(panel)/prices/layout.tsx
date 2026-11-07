@@ -5,7 +5,8 @@ import { PageHeader } from "@/components/ui";
 /** Tägliche Arbeit vorn, Regelwerk unter „إعدادات متقدمة“ */
 const MAIN = [
   ["", "overview"],
-  ["promotions", "promotions"],
+  // Aktionen werden im Angebotszentrum gepflegt
+  ["/admin/offers", "promotions"],
   ["customer-prices", "customerPrices"],
   ["bulk", "bulk"],
   ["preview", "preview"],
@@ -22,7 +23,7 @@ const MORE = [
 
 export default async function PricesLayout({ children }: { children: React.ReactNode }) {
   const t = await getTranslations("admin.prices");
-  const tab = ([k, key]: readonly [string, string]) => ({ href: k ? `/admin/prices/${k}` : "/admin/prices", label: t(`tabs.${key}`) });
+  const tab = ([k, key]: readonly [string, string]) => ({ href: k.startsWith("/") ? k : k ? `/admin/prices/${k}` : "/admin/prices", label: t(`tabs.${key}`) });
   return (
     <div>
       <PageHeader title={t("title")} />

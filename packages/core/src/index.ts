@@ -9,3 +9,4 @@ export * from "./pricing";
 export * from "./checkout";
 export * from "./invoicing";
 export * from "./operations";
+export * from "./offers";

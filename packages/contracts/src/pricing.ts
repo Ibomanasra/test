@@ -186,3 +186,31 @@ export const quoteRequestSchema = z.object({
   note: z.string().trim().min(3).max(2000),
   items: z.array(z.object({ sku: skuSchema, qty: z.number().int().min(1) })).max(200).default([]),
 });
+
+/** Letzter Tag inklusive: "YYYY-MM-DD" → Folgetag 00:00 Ortszeit; leer → null */
+export const optionalEndDaySchema = z
+  .union([z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "invalid_date"), z.literal(""), z.null()])
+  .optional()
+  .transform((v) => (v ? new Date(startOfBusinessDay(v).getTime() + 86_400_000) : null));
+
+const optionalPositiveInt = z.number().int().min(1).nullable().optional();
+
+/** Angebot auf Bestellebene (Einstellungen → Angebote) */
+export const orderOfferInputSchema = z.object({
+  kind: z.enum(["WELCOME", "CART_THRESHOLD", "COUPON", "FREE_DELIVERY"]),
+  nameAr: nameSchema,
+  nameEn: nameSchema,
+  textAr: z.string().trim().max(300).optional().transform((v) => v || undefined),
+  textEn: z.string().trim().max(300).optional().transform((v) => v || undefined),
+  channel: z.enum(["B2C", "B2B", "BOTH"]).default("BOTH"),
+  active: z.boolean().default(true),
+  startsAt: optionalDaySchema,
+  endsAt: optionalEndDaySchema,
+  percentBps: bpsSchema.min(1).nullable().optional(),
+  amountAgorot: z.number().int().min(1).nullable().optional(),
+  minOrderAgorot: nonNegativeAgorotSchema.nullable().optional(),
+  code: z.string().trim().regex(/^[A-Za-z0-9_-]{3,30}$/, "invalid_coupon_code").optional().or(z.literal("").transform(() => undefined)),
+  maxUses: optionalPositiveInt,
+  perCustomerLimit: optionalPositiveInt,
+  showInShop: z.boolean().default(true),
+});

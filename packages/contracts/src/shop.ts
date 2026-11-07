@@ -37,13 +37,15 @@ export const addressCreateSchema = z.object({
 
 export const paymentMethodSchema = z.enum(["CASH_ON_DELIVERY", "BANK_TRANSFER", "CARD_GATEWAY", "ON_ACCOUNT"]);
 
-export const checkoutPreviewSchema = z.object({ addressId: idSchema });
+const couponField = z.string().trim().max(40).optional().transform((v) => v || undefined);
+export const checkoutPreviewSchema = z.object({ addressId: idSchema, couponCode: couponField });
 
 export const placeOrderSchema = z.object({
   addressId: idSchema,
   paymentMethod: paymentMethodSchema,
   requestedDeliveryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "invalid_date"),
   customerNote: optionalText(1000),
+  couponCode: couponField,
 });
 
 export const orderStatusSchema = z.enum(["NEW", "CONFIRMED", "PICKING", "READY", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"]);

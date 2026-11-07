@@ -108,6 +108,14 @@ enum PromotionType {
   BUY_X_GET_Y
 }
 
+/// Angebote auf Bestellebene (Einstellungen → Angebote)
+enum OfferKind {
+  WELCOME // erste Bestellung eines neuen Kunden
+  CART_THRESHOLD // ab Bestellwert
+  COUPON // Gutschein-Code an der Kasse
+  FREE_DELIVERY // Gratis-Lieferung als Aktion
+}
+
 enum RoundingMode {
   NONE
   END_90 // 12,34 → 12,90
@@ -669,6 +677,7 @@ model Customer {
   carts             Cart[]
   savedLists        SavedOrderList[]
   orders            Order[]
+  offerRedemptions  OrderOfferRedemption[]
   invoices          Invoice[]
   creditNotes       CreditNote[]
   payments          Payment[]
@@ -1339,6 +1348,13 @@ model Order {
   vatTotal              Int
   deliveryFeeGross      Int           @default(0)
   totalGross            Int
+  /// Bestellangebot (Willkommen, ab Bestellwert, Gutschein) – Rabatt ist bereits in den Positionen enthalten
+  offerId               String?
+  offer                 OrderOffer?   @relation(fields: [offerId], references: [id])
+  /// Rabatt auf den Warenwert (B2C brutto / B2B netto), nur zur Anzeige
+  offerDiscount         Int           @default(0)
+  freeDeliveryOfferId   String?
+  couponCode            String?
   costTotal             Int // für Marge
   taxRateBps            Int // Snapshot
   currency              String        @default("ILS")
@@ -1353,12 +1369,13 @@ model Order {
   cancelledAt           DateTime?
   updatedAt             DateTime      @updatedAt
 
-  items          OrderItem[]
-  events         OrderStatusEvent[]
-  shipments      Shipment[]
-  invoices       Invoice[]
-  returns        Return[]
-  gatewayIntents PaymentIntent[]
+  items            OrderItem[]
+  events           OrderStatusEvent[]
+  shipments        Shipment[]
+  invoices         Invoice[]
+  returns          Return[]
+  gatewayIntents   PaymentIntent[]
+  offerRedemptions OrderOfferRedemption[]
 
   @@index([status, placedAt])
   @@index([customerId, placedAt])
@@ -1806,4 +1823,54 @@ model PushToken {
   lastSeenAt DateTime @default(now())
 
   @@index([userId])
+}
+
+/// Angebot auf Bestellebene. Rabatt in % ODER fester Betrag (₪); FREE_DELIVERY erlässt die Liefergebühr.
+model OrderOffer {
+  id               String       @id @default(cuid())
+  kind             OfferKind
+  nameAr           String
+  nameEn           String
+  /// kurzer Werbetext für den Shop
+  textAr           String?
+  textEn           String?
+  channel          ChannelScope @default(BOTH)
+  active           Boolean      @default(true)
+  startsAt         DateTime?
+  endsAt           DateTime?
+  percentBps       Int?
+  amountAgorot     Int?
+  /// Mindest-Warenwert (B2C brutto / B2B netto)
+  minOrderAgorot   Int          @default(0)
+  /// Gutschein-Code (Großbuchstaben)
+  code             String?      @unique
+  /// insgesamt einlösbar (leer = unbegrenzt)
+  maxUses          Int?
+  /// je Kunde einlösbar (leer = unbegrenzt)
+  perCustomerLimit Int?
+  usedCount        Int          @default(0)
+  showInShop       Boolean      @default(true)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  orders      Order[]
+  redemptions OrderOfferRedemption[]
+
+  @@index([kind, active])
+}
+
+model OrderOfferRedemption {
+  id         String     @id @default(cuid())
+  offerId    String
+  offer      OrderOffer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  customerId String
+  customer   Customer   @relation(fields: [customerId], references: [id])
+  orderId    String
+  order      Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  /// gewährter Vorteil in Agorot (Rabatt bzw. erlassene Liefergebühr)
+  amount     Int
+  createdAt  DateTime   @default(now())
+
+  @@unique([offerId, orderId])
+  @@index([offerId, customerId])
 }

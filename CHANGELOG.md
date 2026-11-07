@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.9.0] – 2026-11-07 – Angebotszentrum
+
+### Hinzugefügt
+- **Angebotszentrum** (Verwaltung → العروض, auch unter Einstellungen verlinkt): alle Angebote an einem Ort. „Neues Angebot“ fragt zuerst den Typ ab und zeigt dann nur die nötigen Felder plus eine Live-Vorschau „So sieht es der Kunde“.
+  - Auf die ganze Bestellung: **Willkommensrabatt** (erste Bestellung, automatisch), **Rabatt ab Bestellwert** (mehrere Stufen möglich), **Gutschein-Codes** (%, ₪, Mindestwert, Gesamt- und Pro-Kunde-Limit), **Gratis-Lieferung** als Aktion.
+  - Auf Produkte (bisherige Aktionen, jetzt einfacher): Rabatt auf Produkt oder Kategorie, Sonderpreis, „X kaufen – Y gratis“.
+  - Karten mit Status (aktiv, geplant, abgelaufen, pausiert, aufgebraucht), Nutzungszähler, Pausieren mit einem Klick.
+- **Im Shop**: Menüpunkt „🔥 العروض“ mit eigener Angebotsseite, Angebots-Banner auf der Startseite, rote Schilder an Produkten (−15 %, 10 + 1), „endet in X Tagen“.
+- **Kasse**: Gutschein-Feld mit verständlichen Meldungen (angewendet, abgelaufen, Mindestwert …), Rabattzeile, Gratis-Lieferung, Hinweis „noch X ₪ bis Y % Rabatt“. Rabatt auch in der Bestellansicht für Kunde und Verwaltung.
+- Demo-Daten: Willkommensrabatt 10 %, 5 % ab 400 ₪, Gutschein `SHOLA15`.
+
+### Technik
+- Neue Tabellen `OrderOffer`, `OrderOfferRedemption`; Bestellung speichert Angebot, Rabatt und Gutschein.
+- Je Bestellung höchstens ein Warenrabatt (der beste für den Kunden), Gratis-Lieferung zusätzlich. Der Rabatt wird anteilig auf die Stückpreise verteilt – Rechnung, MwSt. und Marge bleiben ohne Sonderzeile korrekt. Mindestbestellwert gilt vor Rabatt.
+- Einlösungen werden in der Bestell-Transaktion gebucht (Limit atomar geprüft) und bei Storno freigegeben.
+- Kernlogik in `@sa/core/offers` mit Unit-Tests; E2E für Gutschein-Einlösung und Storno.
+
 ## [0.8.1] – 2026-11-07 – Finanzen einfach
 
 ### Geändert

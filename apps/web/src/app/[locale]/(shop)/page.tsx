@@ -4,6 +4,8 @@ import { Link } from "@/i18n/navigation";
 import { listCatalog, listCategories, type ProductDto } from "@/server/services/catalog";
 import { currentTaxRateBps } from "@/server/services/pricing";
 import { currentViewer } from "@/server/viewer";
+import { OfferBanners } from "@/components/shop/OfferBanners";
+import { shopOffers } from "@/server/services/offers";
 
 const ROW = 4;
 
@@ -28,11 +30,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   setRequestLocale(locale);
   const viewer = await currentViewer();
-  const [t, categories, vat, promos] = await Promise.all([
+  const [t, categories, vat, promos, offers] = await Promise.all([
     getTranslations("shop"),
     listCategories(),
     currentTaxRateBps(new Date()),
     listCatalog(viewer, { promo: true, page: 1 }),
+    shopOffers(viewer.channel),
   ]);
   // je Kategorie eine kurze Reihe (Preise für den Kanal des Betrachters)
   const rows = await Promise.all(categories.filter((c) => c._count.products > 0).map(async (c) => ({ c, items: (await listCatalog(viewer, { category: c.slug, page: 1, take: ROW })).items })));
@@ -51,6 +54,15 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           </Link>
         </div>
       </section>
+      {offers.length ? (
+        <section>
+          <div className="mb-3 flex items-end justify-between gap-3">
+            <h2 className="text-xl font-bold">{t("offers.title")}</h2>
+            <Link href="/offers" className="text-sm font-medium text-brand-700 hover:underline">{t("offers.all")}</Link>
+          </div>
+          <OfferBanners offers={offers.slice(0, 3)} compact />
+        </section>
+      ) : null}
       <ul className="grid gap-4 sm:grid-cols-3">
         {benefits.map((b) => (
           <li key={b} className="rounded-xl bg-white p-5 font-medium shadow-sm ring-1 ring-ink-200">

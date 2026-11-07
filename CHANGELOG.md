@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.14.1] – 2026-11-08
+
+### Behoben
+- **Produktfotos am Handy**: Beim neuen Produkt öffnete sich nur die Kamera. Jetzt gibt es **„🖼️ من المعرض“** (Galerie, mehrere Fotos auf einmal) und **„📷 التقاط صورة“** (Kamera); das große Feld bietet wieder die normale Auswahl.
+
 ## [0.14.0] – 2026-11-08 – Benachrichtigungen aufs Handy (kostenlos)
 
 ### Hinzugefügt

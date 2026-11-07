@@ -1217,7 +1217,9 @@
         "saveAndNew": "Save and add another",
         "advanced": "Advanced form",
         "saved": "Saved “{name}” (no. {sku}).",
-        "open": "Open product"
+        "open": "Open product",
+        "fromGallery": "From gallery",
+        "takePhoto": "Take a photo"
       },
       "manage": {
         "count": "{count} products",

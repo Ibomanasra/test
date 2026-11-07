@@ -1217,7 +1217,9 @@
         "saveAndNew": "حفظ وإضافة منتج آخر",
         "advanced": "النموذج المتقدم",
         "saved": "تم حفظ «{name}» (رقم {sku}).",
-        "open": "فتح المنتج"
+        "open": "فتح المنتج",
+        "fromGallery": "من المعرض",
+        "takePhoto": "التقاط صورة"
       },
       "manage": {
         "count": "{count} منتج",

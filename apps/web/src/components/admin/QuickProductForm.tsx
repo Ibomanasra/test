@@ -85,7 +85,7 @@ export function QuickProductForm({ categories, canSeeCost, canStock }: { categor
       {/* Fotos */}
       <Card title={t("photos")} className="lg:order-2">
         <label
-          className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-ink-300 p-6 text-center text-sm text-ink-600 hover:border-brand-400 hover:bg-brand-50/40"
+          className="relative flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-ink-300 p-6 text-center text-sm text-ink-600 hover:border-brand-400 hover:bg-brand-50/40"
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => {
             e.preventDefault();
@@ -95,8 +95,19 @@ export function QuickProductForm({ categories, canSeeCost, canStock }: { categor
           <Icon name="plus" className="size-8 text-ink-400" />
           <span className="font-medium">{t("addPhotos")}</span>
           <span className="text-xs text-ink-500">{t("photosHint")}</span>
-          <input type="file" accept="image/jpeg,image/png,image/webp" multiple capture="environment" className="sr-only" onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }} data-testid="q-photos" />
+          {/* ohne capture: Handy zeigt Galerie (und je nach Gerät auch Kamera) zur Auswahl */}
+          <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="sr-only" onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }} data-testid="q-photos" />
         </label>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <label className="relative flex cursor-pointer items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium ring-1 ring-ink-300 hover:bg-ink-50">
+            🖼️ {t("fromGallery")}
+            <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="sr-only" onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }} data-testid="q-photos-gallery" />
+          </label>
+          <label className="relative flex cursor-pointer items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium ring-1 ring-ink-300 hover:bg-ink-50">
+            📷 {t("takePhoto")}
+            <input type="file" accept="image/jpeg,image/png,image/webp" capture="environment" className="sr-only" onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }} data-testid="q-photos-camera" />
+          </label>
+        </div>
         {previews.length ? (
           <ul className="mt-3 grid grid-cols-3 gap-2">
             {previews.map((src, i) => (

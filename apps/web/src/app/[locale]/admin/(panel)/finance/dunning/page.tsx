@@ -1,7 +1,8 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Forbidden } from "@/components/admin/Forbidden";
 import { PrintButton } from "@/components/print/PrintButton";
-import { Badge, EmptyState, Table, Td, Th } from "@/components/ui";
+import { ApiForm } from "@/components/admin/ApiForm";
+import { Badge, Card, EmptyState, Table, Td, Th } from "@/components/ui";
 import { staffPagePermission } from "@/server/auth/page-guards";
 import { day, money } from "@/server/format";
 import { listDunningNotices } from "@/server/services/finance";
@@ -11,10 +12,17 @@ export default async function DunningPage({ params }: { params: Promise<{ locale
   setRequestLocale(locale);
   if (!(await staffPagePermission(locale, "finance.view", "finance.dunning"))) return <Forbidden />;
   const [t, tc, items] = await Promise.all([getTranslations("admin.finance"), getTranslations("common"), listDunningNotices()]);
+  const run = (
+    <Card title={t("runDunning")}>
+      <p className="mb-3 text-sm text-ink-600">{t("dunningHint")}</p>
+      <ApiForm endpoint="/api/v1/admin/dunning" testId="dunning" submitLabel={t("runDunningSubmit")} successText={t("dunningDone")} redirect={undefined} fields={[{ name: "feeAgorot", label: t("dunningFee"), type: "money", hint: t("dunningFeeHint") }]} defaults={{ feeAgorot: "0" }} />
+    </Card>
+  );
   return items.length === 0 ? (
-    <EmptyState>{tc("noResults")}</EmptyState>
+    <div className="space-y-4">{run}<EmptyState>{tc("noResults")}</EmptyState></div>
   ) : (
     <div className="space-y-3">
+      {run}
       {items.length > 1 ? <a className="inline-block rounded-lg px-3 py-1.5 text-sm ring-1 ring-ink-300" href={`/api/v1/print/batch?items=${items.slice(0, 100).map((n) => `dunning:${n.id}`).join(",")}`} target="_blank" rel="noopener">🖨 {t("printAllDunning")}</a> : null}
       <Table>
         <thead><tr><Th>{tc("number")}</Th><Th>{t("date")}</Th><Th>{t("customer")}</Th><Th>{t("level")}</Th><Th>{t("invoices")}</Th><Th>{t("amount")}</Th><Th /></tr></thead>

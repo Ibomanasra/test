@@ -57,3 +57,19 @@ test("VAT switch turns VAT on and off from now on", async ({ page }) => {
   await page.goto("/en/admin/prices");
   await expect(page.getByTestId("vat-pill")).toContainText("0%");
 });
+
+test("finance: record a payment in three steps and print the receipt", async ({ page }) => {
+  await staffLogin(page, OWNER.phone, OWNER.password);
+  const inv = await db.invoice.findFirst({ where: { status: { in: ["ISSUED", "PARTIALLY_PAID"] } }, orderBy: { dueDate: "asc" } });
+  test.skip(!inv, "no open invoice in the demo data");
+  await page.goto("/en/admin/finance");
+  await expect(page.getByText("What do you want to do?")).toBeVisible();
+  await page.goto(`/en/admin/finance/payments?customer=${inv!.customerId}`);
+  await page.locator("[data-testid=pay-wizard] input[type=checkbox]").first().check();
+  await page.getByTestId("pay-amount").fill("1.00");
+  await page.getByTestId("pay-submit").click();
+  await expect(page.getByTestId("pay-done")).toBeVisible();
+  const p = await db.payment.findFirstOrThrow({ where: { customerId: inv!.customerId, amount: 100 }, orderBy: { receivedAt: "desc" }, include: { allocations: true } });
+  expect(p.allocations).toHaveLength(1);
+  expect((await page.request.post(`/api/v1/admin/payments/${p.id}/void`, { data: { reason: "E2E test" }, headers: ORIGIN })).ok()).toBe(true);
+});

@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.8.1] – 2026-11-07 – Finanzen einfach
+
+### Geändert
+- **Finanzen neu gegliedert** in einfacher Sprache: *Übersicht* → *Wer schuldet uns?* → *Zahlungen* → *Rechnungen*; Rückgaben, Zahlungserinnerungen und „Export für den Steuerberater“ unter „mehr“.
+- **Übersicht**: vier Zahlen (Kunden schulden uns, davon überfällig, heute eingegangen, diesen Monat eingegangen + Bargeld bei Fahrern), große Knöpfe „Was möchtest du tun?“, größte offene Beträge mit Zahlungsknopf, letzte Zahlungseingänge.
+- **Wer schuldet uns?**: eine Zeile je Kunde mit offenem Betrag, „X ₪ seit N Tagen überfällig“, farbigem Altersbalken, Knöpfen „Zahlung erfassen“ und „Kontoauszug“; Filter „nur überfällige“.
+- **Zahlung erfassen in drei Schritten**: Wer hat bezahlt? (Suche, Schuldner zuerst) → Für welche Rechnungen? (ankreuzen, Betrag wird übernommen; ohne Auswahl älteste zuerst; „alles bezahlen“) → Wie viel und wie? (Bar, Überweisung, Karte). Danach Quittung drucken.
+- Mahnlauf auf die Seite „Zahlungserinnerungen“ verschoben.
+
 ## [0.8.0] – 2026-11-07 – Verwaltung für die tägliche Arbeit
 
 ### Hinzugefügt

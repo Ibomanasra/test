@@ -1,5 +1,5 @@
 import "server-only";
-import { agingBucket, agingSummary, allocatePayment, businessDate, daysOverdue, documentTotals, invoiceOpenAmount, invoiceStatusFor, nextDunningLevel } from "@sa/core";
+import { agingBucket, agingSummary, allocatePayment, businessDate, daysOverdue, startOfBusinessDay, documentTotals, invoiceOpenAmount, invoiceStatusFor, nextDunningLevel } from "@sa/core";
 import type { dunningRunSchema, paymentCreateSchema, returnCreateSchema } from "@sa/contracts";
 import { allocateDocumentNumber, prisma, type Prisma, type Tx } from "@sa/db";
 import type { z } from "zod";
@@ -281,4 +281,55 @@ export async function exportRows(kind: "invoices" | "credit-notes" | "payments" 
     ],
     rows: rows.map((e) => ({ date: businessDate(e.date), customer_no: e.customer.number, customer: e.customer.displayName, type: e.type, ref: e.refNumber ?? "", debit: e.debit, credit: e.credit, note: e.note ?? "" })),
   };
+}
+
+/** Startseite Finanzen: die wichtigsten Zahlen in einfacher Sprache */
+export async function financeOverview(now = new Date()) {
+  const today = startOfBusinessDay(businessDate(now));
+  const monthStart = startOfBusinessDay(`${businessDate(now).slice(0, 7)}-01`);
+  const [items, payToday, payMonth, driverCash, latest] = await Promise.all([
+    openItems(now),
+    prisma.payment.aggregate({ where: { voidedAt: null, receivedAt: { gte: today } }, _sum: { amount: true }, _count: true }),
+    prisma.payment.aggregate({ where: { voidedAt: null, receivedAt: { gte: monthStart } }, _sum: { amount: true } }),
+    prisma.cashCollection.aggregate({ where: { closingId: null }, _sum: { amount: true } }),
+    prisma.payment.findMany({ where: { voidedAt: null }, orderBy: { receivedAt: "desc" }, take: 8, include: { customer: { select: { id: true, displayName: true } } } }),
+  ]);
+  const s = items.summary;
+  const overdue = s.total - s.current;
+  return {
+    owedToUs: s.total,
+    overdue,
+    overdueCustomers: items.customers.filter((c) => c.summary.total - c.summary.current > 0).length,
+    debtorCount: items.customers.length,
+    paidToday: payToday._sum.amount ?? 0,
+    paidTodayCount: payToday._count,
+    paidMonth: payMonth._sum.amount ?? 0,
+    driverCash: driverCash._sum.amount ?? 0,
+    topDebtors: items.customers.slice(0, 6).map((c) => ({ id: c.customer.id, name: c.customer.displayName, number: c.customer.number, open: c.summary.total, overdue: c.summary.total - c.summary.current, oldestDays: c.oldestDays })),
+    latest,
+  };
+}
+
+/** Offene Rechnungen eines Kunden (älteste Fälligkeit zuerst) für die Zahlungserfassung */
+export async function customerOpenInvoices(customerId: string, today = new Date()) {
+  const invoices = await prisma.invoice.findMany({
+    where: { customerId, status: { in: [...OPEN_STATUSES] } },
+    orderBy: { dueDate: "asc" },
+    select: { id: true, number: true, issueDate: true, dueDate: true, totalGross: true, paidAmount: true, creditedAmount: true },
+  });
+  return invoices
+    .map((i) => ({ id: i.id, number: i.number, issueDate: businessDate(i.issueDate), dueDate: businessDate(i.dueDate), total: i.totalGross, open: invoiceOpenAmount(i), daysOverdue: daysOverdue(i.dueDate, today) }))
+    .filter((i) => i.open > 0);
+}
+
+/** Kundenliste für „Zahlung erfassen“: Schuldner zuerst, mit offenem Betrag */
+export async function payCustomers() {
+  const [customers, items] = await Promise.all([
+    prisma.customer.findMany({ where: { status: { in: ["ACTIVE", "BLOCKED"] } }, select: { id: true, displayName: true, number: true }, orderBy: { displayName: "asc" }, take: 5000 }),
+    openItems(),
+  ]);
+  const open = new Map(items.customers.map((c) => [c.customer.id, c.summary.total]));
+  return customers
+    .map((c) => ({ id: c.id, name: c.displayName, number: c.number, open: open.get(c.id) ?? 0 }))
+    .sort((a, b) => b.open - a.open || a.name.localeCompare(b.name));
 }

@@ -1,15 +1,15 @@
 import { hasPermission } from "@sa/core";
-import { prisma } from "@sa/db";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { ApiButton, ApiForm } from "@/components/admin/ApiForm";
+import { ApiButton } from "@/components/admin/ApiForm";
+import { PaymentPanel } from "@/components/admin/PaymentPanel";
 import { Forbidden } from "@/components/admin/Forbidden";
 import { Pagination } from "@/components/admin/Pagination";
 import { PrintButton } from "@/components/print/PrintButton";
 import { PrintTableButton } from "@/components/print/PrintTableButton";
-import { Badge, Button, Card, EmptyState, Input, Table, Td, Th } from "@/components/ui";
+import { Badge, Button, EmptyState, Input, Table, Td, Th } from "@/components/ui";
 import { staffPagePermission } from "@/server/auth/page-guards";
 import { dateTimeText, money } from "@/server/format";
-import { listPayments } from "@/server/services/finance";
+import { listPayments, payCustomers } from "@/server/services/finance";
 
 export default async function PaymentsPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { locale } = await params;
@@ -24,31 +24,12 @@ export default async function PaymentsPage({ params, searchParams }: { params: P
     getTranslations("common"),
     getTranslations(),
     listPayments({ q: sp.q, page }),
-    canPay ? prisma.customer.findMany({ where: { status: "ACTIVE" }, select: { id: true, displayName: true, number: true }, orderBy: { displayName: "asc" }, take: 2000 }) : Promise.resolve([]),
+    canPay ? payCustomers() : Promise.resolve([]),
   ]);
   const rows = data.items.map((p) => ({ number: p.number, date: dateTimeText(p.receivedAt), customer: p.customer.displayName, method: tAll(`paymentMethod.${p.method}`), amount: money(p.amount), invoices: p.allocations.map((a) => a.invoice.number).join(" "), reference: p.reference ?? "" }));
   return (
     <div className="space-y-6">
-      {canPay ? (
-        <Card title={t("recordPayment")}>
-          <ApiForm
-            endpoint="/api/v1/admin/payments"
-            testId="payment"
-            submitLabel={t("recordPaymentSubmit")}
-            successText={t("paymentRecorded")}
-            defaults={{ method: "BANK_TRANSFER" }}
-            fields={[
-              { name: "customerId", label: t("customer"), type: "select", required: true, options: customers.map((c) => ({ value: c.id, label: `${c.displayName} (${c.number})` })) },
-              { name: "method", label: t("method"), type: "select", required: true, options: ["BANK_TRANSFER", "CASH_ON_DELIVERY", "CARD_GATEWAY"].map((m) => ({ value: m, label: tAll(`paymentMethod.${m}`) })) },
-              { name: "amount", label: t("amount"), type: "money", required: true },
-              { name: "receivedAt", label: t("date"), type: "day" },
-              { name: "reference", label: t("reference"), type: "text", dir: "ltr" },
-              { name: "note", label: t("note"), type: "text" },
-            ]}
-          />
-          <p className="mt-2 text-xs text-ink-500">{t("allocationHint")}</p>
-        </Card>
-      ) : null}
+      {canPay ? <PaymentPanel customers={customers} initialCustomerId={sp.customer} open={Boolean(sp.new || sp.customer)} /> : null}
       <div className="flex flex-wrap items-center gap-2">
         <form method="get" className="flex gap-2">
           <Input name="q" defaultValue={sp.q} placeholder={t("searchPlaceholder")} className="max-w-xs" />

@@ -566,7 +566,19 @@
       "noOrders": "No orders yet.",
       "topProducts": "Top sellers this month",
       "noSales": "No sales this month yet.",
-      "withCourier": "With courier"
+      "withCourier": "With courier",
+      "sales": {
+        "title": "Sales & delivery",
+        "goods": "Goods",
+        "delivery": "Delivery",
+        "total": "Total",
+        "note": "By order date, without cancelled orders. Amounts as the customer pays them.",
+        "courierTitle": "To collect from couriers",
+        "courierOwed": "Collected from customers – they must hand it over",
+        "courierWay": "On the way (to be collected)",
+        "courierNone": "No money with the couriers",
+        "courierAction": "Collect the money"
+      }
     },
     "customers": {
       "title": "Customers",

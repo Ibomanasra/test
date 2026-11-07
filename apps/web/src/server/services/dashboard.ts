@@ -136,3 +136,57 @@ export async function getDashboard() {
     inProgress: (basics.ordersByStatus.CONFIRMED ?? 0) + (basics.ordersByStatus.PICKING ?? 0) + (basics.ordersByStatus.READY ?? 0),
   };
 }
+
+export interface SalesSplit {
+  /** Verkaufspreis der Ware (brutto, ohne Lieferung) */
+  goods: number;
+  /** Liefergebühren, die die Kunden zahlen */
+  delivery: number;
+  total: number;
+  orders: number;
+}
+
+async function salesSplit(from: Date, to: Date): Promise<SalesSplit> {
+  const r = await prisma.order.aggregate({
+    where: { status: { not: "CANCELLED" }, placedAt: { gte: from, lt: to } },
+    _sum: { totalGross: true, deliveryFeeGross: true },
+    _count: { _all: true },
+  });
+  const total = r._sum.totalGross ?? 0;
+  const delivery = r._sum.deliveryFeeGross ?? 0;
+  return { goods: total - delivery, delivery, total, orders: r._count._all };
+}
+
+/** Verkauf (Ware) und Lieferkosten getrennt: heute, diese Woche, dieser Monat */
+export async function salesOverview() {
+  const now = new Date();
+  const today = startOfBusinessDay(businessDate(now));
+  const tomorrow = new Date(today.getTime() + 86_400_000);
+  const dow = new Date(`${businessDate(now)}T12:00:00Z`).getUTCDay();
+  const weekStart = new Date(today.getTime() - dow * 86_400_000);
+  const monthStart = startOfBusinessDay(`${businessDate(now).slice(0, 7)}-01`);
+  const [day, week, month] = await Promise.all([salesSplit(today, tomorrow), salesSplit(weekStart, tomorrow), salesSplit(monthStart, tomorrow)]);
+  return { today: day, week, month };
+}
+
+/** Geld bei den Zustellfirmen: schon kassiert (schulden uns) und noch unterwegs – je Firma */
+export async function courierMoney() {
+  const [owed, way, companies] = await Promise.all([
+    prisma.shipment.groupBy({ by: ["deliveryCompanyId"], where: { deliveryCompanyId: { not: null }, status: "DELIVERED", codAmount: { gt: 0 }, courierSettlementId: null }, _sum: { codAmount: true }, _count: { _all: true } }),
+    prisma.shipment.groupBy({ by: ["deliveryCompanyId"], where: { deliveryCompanyId: { not: null }, status: "LOADED", codAmount: { gt: 0 } }, _sum: { codAmount: true }, _count: { _all: true } }),
+    prisma.deliveryCompany.findMany({ select: { id: true, name: true } }),
+  ]);
+  const rows = companies
+    .map((c) => {
+      const o = owed.find((x) => x.deliveryCompanyId === c.id);
+      const w = way.find((x) => x.deliveryCompanyId === c.id);
+      return { id: c.id, name: c.name, owed: o?._sum.codAmount ?? 0, owedCount: o?._count._all ?? 0, onTheWay: w?._sum.codAmount ?? 0, onTheWayCount: w?._count._all ?? 0 };
+    })
+    .filter((r) => r.owed > 0 || r.onTheWay > 0)
+    .sort((a, b) => b.owed - a.owed || b.onTheWay - a.onTheWay);
+  return {
+    owed: rows.reduce((a, r) => a + r.owed, 0),
+    onTheWay: rows.reduce((a, r) => a + r.onTheWay, 0),
+    companies: rows,
+  };
+}

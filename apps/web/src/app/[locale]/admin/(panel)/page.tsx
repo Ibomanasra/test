@@ -9,7 +9,7 @@ import { Badge, Card, Num, cn } from "@/components/ui";
 import { Link, redirect } from "@/i18n/navigation";
 import { requireStaffPage, staffPagePermission } from "@/server/auth/page-guards";
 import { dateTimeText, money } from "@/server/format";
-import { getDashboard } from "@/server/services/dashboard";
+import { courierMoney, getDashboard, salesOverview } from "@/server/services/dashboard";
 import { ownDriversEnabled } from "@/server/services/delivery-mode";
 
 const PIPELINE = ["NEW", "CONFIRMED", "PICKING", "READY", "OUT_FOR_DELIVERY"] as const;
@@ -24,7 +24,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
     if (hasPermission(ctx.permissions, "delivery.driver")) redirect({ href: "/driver", locale });
     return <Forbidden />;
   }
-  const [t, tAll, d, ownDrivers] = await Promise.all([getTranslations("admin.dashboard"), getTranslations(), getDashboard(), ownDriversEnabled()]);
+  const [t, tAll, d, ownDrivers, sales, courier] = await Promise.all([getTranslations("admin.dashboard"), getTranslations(), getDashboard(), ownDriversEnabled(), salesOverview(), courierMoney()]);
   const showMargin = hasPermission(auth.permissions, "dashboard.view_margin");
   const can = (p: Parameters<typeof hasPermission>[1]) => hasPermission(auth.permissions, p);
 
@@ -90,6 +90,58 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
             </Link>
           ))}
         </div>
+      </div>
+
+      {/* Verkauf & Lieferung getrennt + was die Zustellfirmen uns geben müssen */}
+      <div className="grid gap-6 xl:grid-cols-3">
+        <Card title={`🧾 ${t("sales.title")}`} className="xl:col-span-2">
+          <div className="-mx-1 overflow-x-auto px-1">
+            <table className="w-full min-w-[22rem] text-sm" data-testid="sales-split">
+              <thead className="text-xs text-ink-500">
+                <tr>
+                  <th className="py-2 text-start font-medium" />
+                  <th className="py-2 text-end font-medium">{t("sales.goods")}</th>
+                  <th className="py-2 text-end font-medium">{t("sales.delivery")}</th>
+                  <th className="py-2 text-end font-medium">{t("sales.total")}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-ink-100">
+                {(["today", "week", "month"] as const).map((k) => (
+                  <tr key={k}>
+                    <td className="py-2.5">
+                      <p className="font-medium text-ink-900">{t(`period.${k}`)}</p>
+                      <p className="text-xs text-ink-500">{t("ordersCount", { count: sales[k].orders })}</p>
+                    </td>
+                    <td className="num py-2.5 text-end font-semibold text-ink-900">{money(sales[k].goods)}</td>
+                    <td className="num py-2.5 text-end text-sky-800">{money(sales[k].delivery)}</td>
+                    <td className="num py-2.5 text-end font-bold text-ink-900">{money(sales[k].total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-2 text-xs text-ink-500">{t("sales.note")}</p>
+        </Card>
+
+        <Link href="/admin/finance/couriers" className={cn("block rounded-2xl p-5 shadow-sm ring-1 transition hover:shadow-md", courier.owed > 0 ? "bg-amber-50 ring-amber-200" : "bg-white ring-ink-200")} data-testid="courier-card">
+          <p className="text-sm font-medium text-ink-700">🚚 {t("sales.courierTitle")}</p>
+          <p className="num mt-2 text-3xl font-bold text-ink-900" data-testid="courier-owed-total">{money(courier.owed)}</p>
+          <p className="text-xs text-ink-600">{t("sales.courierOwed")}</p>
+          <p className="mt-3 text-sm text-ink-700">{t("sales.courierWay")}: <span className="num font-semibold">{money(courier.onTheWay)}</span></p>
+          {courier.companies.length ? (
+            <ul className="mt-3 space-y-1 border-t border-ink-200/70 pt-3 text-sm">
+              {courier.companies.slice(0, 4).map((c) => (
+                <li key={c.id} className="flex justify-between gap-2">
+                  <span className="truncate text-ink-700">{c.name}</span>
+                  <span className="num shrink-0 font-semibold text-ink-900">{money(c.owed)}{c.onTheWay ? <span className="text-xs font-normal text-ink-500"> + {money(c.onTheWay)}</span> : null}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-3 text-sm text-green-700">✓ {t("sales.courierNone")}</p>
+          )}
+          <p className="mt-3 text-sm font-semibold text-brand-700">{t("sales.courierAction")} →</p>
+        </Link>
       </div>
 
       {/* Kennzahlen */}

@@ -190,6 +190,10 @@ test("3-step flow: confirm → prepared → hand over to a courier company → d
   const inv = await db.invoice.findFirstOrThrow({ where: { orderId } });
   expect(inv.status).toBe("PAID");
   expect((await db.order.findUniqueOrThrow({ where: { id: orderId } })).paymentStatus).toBe("PAID");
+  // Dashboard: Verkauf/Lieferung getrennt und Karte „von Zustellfirmen kassieren“
+  await page.goto("/ar/admin");
+  await expect(page.getByTestId("sales-split")).toBeVisible();
+  await expect(page.getByTestId("courier-card")).toBeVisible();
   // Testfirma ausschalten (bleibt wegen der Abrechnungs-Historie erhalten)
   await db.deliveryCompany.update({ where: { name: company }, data: { active: false } });
 });

@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.18.1] – 2026-11-08 – Dashboard: Verkauf, Lieferung & Geld bei Zustellfirmen
+
+### Hinzugefügt
+- **Dashboard ganz oben „المبيعات والتوصيل“**: für heute, diese Woche und diesen Monat getrennt **Warenwert (Verkaufspreis)**, **Liefergebühren** und **Gesamt**, mit Anzahl der Bestellungen.
+- Daneben die Karte **„المطلوب من شركات التوصيل“**: wie viel die Zustellfirmen schon kassiert haben und uns geben müssen (groß), wie viel noch unterwegs ist, Aufteilung je Firma, Link „استلام المال“ zur Abrechnung.
+
 ## [0.18.0] – 2026-11-08 – Bestandsschutz, nur Rechnungen, Produkte am Handy
 
 ### Hinzugefügt

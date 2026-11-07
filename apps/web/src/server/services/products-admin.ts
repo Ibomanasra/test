@@ -381,3 +381,100 @@ export async function importProducts(ctx: AuthContext, rows: Record<string, stri
   );
   return out;
 }
+
+// ---------------------------------------------------------------------------
+// Schnell anlegen: Name, Kategorie (auch neu), Preise, Karton, Bestand, Fotos
+// ---------------------------------------------------------------------------
+
+export interface QuickProductInput {
+  nameAr: string;
+  nameEn?: string;
+  categoryId?: string;
+  newCategoryAr?: string;
+  b2cPrice: number;
+  b2bPrice?: number;
+  costPrice?: number;
+  /** Stück pro Karton (leer/1 = nur Stückverkauf) */
+  cartonSize?: number;
+  /** Anfangsbestand in Stück */
+  stockQty?: number;
+  barcode?: string;
+  descriptionAr?: string;
+}
+
+/** lateinischer URL-Teil; arabische Namen bekommen einen kurzen Zufallsteil */
+function slugFrom(name: string, fallbackPrefix: string) {
+  const base = name
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 50);
+  const rnd = Math.random().toString(36).slice(2, 7);
+  return base.length >= 3 ? `${base}-${rnd}` : `${fallbackPrefix}-${rnd}`;
+}
+
+async function nextSku() {
+  for (let n = (await prisma.productVariant.count()) + 1; ; n++) {
+    const sku = `P-${String(n).padStart(4, "0")}`;
+    if (!(await prisma.productVariant.findUnique({ where: { sku }, select: { id: true } }))) return sku;
+  }
+}
+
+export async function createQuickProduct(ctx: AuthContext, input: QuickProductInput, images: { data: Buffer; name: string }[]) {
+  // Kategorie: vorhandene oder neue direkt anlegen
+  let categoryId = input.categoryId;
+  if (!categoryId) {
+    const name = input.newCategoryAr?.trim();
+    if (!name) throw badRequest("category_required");
+    const existing = await prisma.category.findFirst({ where: { OR: [{ nameAr: name }, { nameEn: name }] } });
+    categoryId = existing
+      ? existing.id
+      : (await upsertCategory(ctx, null, { slug: slugFrom(name, "cat"), nameAr: name, nameEn: name, parentId: null, sortOrder: await prisma.category.count(), active: true })).id;
+  } else if (!(await prisma.category.findUnique({ where: { id: categoryId }, select: { id: true } }))) {
+    throw badRequest("category_required");
+  }
+
+  const carton = input.cartonSize && input.cartonSize > 1 ? input.cartonSize : null;
+  const sku = await nextSku();
+  const nameEn = input.nameEn?.trim() || input.nameAr;
+  const product = await createProduct(
+    ctx,
+    {
+      slug: slugFrom(nameEn, "p"),
+      nameAr: input.nameAr,
+      nameEn,
+      descriptionAr: input.descriptionAr,
+      descriptionEn: undefined,
+      categoryId,
+      brand: undefined,
+      visibleB2C: true,
+      visibleB2B: true,
+      active: true,
+    },
+    {
+      sku,
+      barcode: input.barcode || null,
+      nameAr: undefined,
+      nameEn: undefined,
+      costPrice: input.costPrice ?? 0,
+      b2cPrice: input.b2cPrice,
+      // ohne eigenen Händlerpreis: Endkundenpreis als Basis (Rabatte über Händlergruppen)
+      b2bBasePrice: input.b2bPrice ?? input.b2cPrice,
+      minStock: 0,
+      defaultBinCode: undefined,
+      active: true,
+      units: [{ unitCode: "PIECE", factor: 1, barcode: null }, ...(carton ? [{ unitCode: "CARTON" as const, factor: carton, barcode: null }] : [])],
+      rules: [
+        { channel: "B2C", defaultUnitCode: "PIECE", allowedUnitCodes: carton ? ["PIECE", "CARTON"] : ["PIECE"], minQtyBase: 1, qtyStepBase: 1 },
+        { channel: "B2B", defaultUnitCode: carton ? "CARTON" : "PIECE", allowedUnitCodes: carton ? ["CARTON", "PIECE"] : ["PIECE"], minQtyBase: 1, qtyStepBase: 1 },
+      ],
+    },
+  );
+  for (const img of images) await addProductImage(ctx, product.id, img);
+  if (input.stockQty && input.stockQty > 0 && hasPermission(ctx.permissions, "stock.adjust")) {
+    const { adjustStock } = await import("./inventory");
+    await adjustStock(ctx, { sku, qtyBase: input.stockQty, reason: "Anfangsbestand / رصيد افتتاحي" });
+  }
+  return { id: product.id, sku };
+}

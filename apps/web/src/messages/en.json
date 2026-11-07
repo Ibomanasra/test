@@ -100,10 +100,15 @@
     },
     "searchPlaceholder": "Search by product name or barcode…",
     "hero": {
-      "title": "Everything your home and shop needs – at wholesale prices",
-      "text": "Delivery to Hebron, Bethlehem, Ramallah, Jerusalem, Nablus, Jenin, Tulkarm and Jericho.",
+      "title": "Everything your home and shop need – at wholesale prices",
+      "text": "Cleaning, household and food products – over {count} items straight from our warehouse, delivered to your door across the West Bank.",
       "ctaShop": "Start shopping",
-      "ctaBusiness": "Register as a business"
+      "ctaBusiness": "Register as a business",
+      "badge": "Delivery across the West Bank",
+      "ctaOffers": "Offers",
+      "trust1": "Pay on delivery",
+      "trust2": "Special dealer prices",
+      "trust3": "Fast delivery"
     },
     "benefits": {
       "delivery": "Delivery across the West Bank",
@@ -687,7 +692,23 @@
       "vatEnableConfirm": "Enable VAT at {rate} from now on? Earlier orders and invoices stay unchanged.",
       "vatDisableConfirm": "Turn VAT off (0%) from now on? Earlier orders and invoices stay unchanged.",
       "vatHint": "The change applies immediately to new prices and orders. The consumer price you enter is the final price; dealer prices are net and VAT is added on top when enabled.",
-      "offers": "Offers & coupons"
+      "offers": "Offers & coupons",
+      "storefrontTab": "Storefront",
+      "storefront": {
+        "imageTitle": "Home page background image",
+        "imageHint": "A wide photo (e.g. 1920×800) of your shop or products. Without one, your product photos are shown automatically.",
+        "noImage": "No image – product photos are shown automatically.",
+        "upload": "Upload image",
+        "replace": "Replace image",
+        "remove": "Remove image",
+        "textTitle": "Headline and text",
+        "titleAr": "Headline (Arabic)",
+        "titleEn": "Headline (English)",
+        "textAr": "Text (Arabic)",
+        "textEn": "Text (English)",
+        "emptyDefault": "Leave empty to use the default text.",
+        "preview": "View shop"
+      }
     },
     "audit": {
       "title": "Audit log",
@@ -1119,6 +1140,41 @@
       "actions": {
         "create": "New",
         "update": "Update"
+      },
+      "quick": {
+        "photos": "Photos",
+        "addPhotos": "Add photos or take one",
+        "photosHint": "Up to 8 photos – the first is the main one",
+        "main": "Main",
+        "basics": "Product",
+        "name": "Product name",
+        "namePlaceholder": "e.g. Lemon dish soap 1 L",
+        "category": "Category",
+        "newCategory": "New category…",
+        "newCategoryName": "New category name",
+        "newCategoryPlaceholder": "e.g. Cleaning products",
+        "prices": "Prices (₪ per piece)",
+        "b2c": "Consumer price",
+        "b2cHint": "Final price the customer pays",
+        "b2b": "Dealer price",
+        "b2bHint": "Optional – empty = same as consumer price",
+        "cost": "Purchase price",
+        "costHint": "Optional – for the margin",
+        "stockAndUnits": "Stock & packaging",
+        "stock": "Quantity in stock now (pieces)",
+        "stockHint": "Without stock the product shows as “out of stock”",
+        "carton": "Also sold by the carton",
+        "cartonSize": "Pieces per carton",
+        "cartonHint": "e.g. a carton of 12 – dealers order by the carton.",
+        "more": "More details (English name, barcode, description)",
+        "nameEn": "English name",
+        "barcode": "Barcode",
+        "description": "Description",
+        "save": "Save product",
+        "saveAndNew": "Save and add another",
+        "advanced": "Advanced form",
+        "saved": "Saved “{name}” (no. {sku}).",
+        "open": "Open product"
       }
     },
     "documents": {
@@ -1870,7 +1926,8 @@
     "invalid_coupon_code": "Coupon code: 3–30 Latin letters or digits.",
     "offer_used_up": "This offer just ran out. Please refresh.",
     "invalid_username": "Username: 3–32 lowercase Latin letters, digits or . _ -",
-    "username_taken": "This username is already taken."
+    "username_taken": "This username is already taken.",
+    "category_required": "Choose a category or type a new one."
   },
   "permissions": {
     "dashboard_view": "View dashboard",

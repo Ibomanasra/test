@@ -345,6 +345,13 @@ model CompanySettings {
   quoteValidityDays      Int         @default(14)
   /// Konfigurierbare Pflichtangaben der Steuerrechnung (mit Steuerberater prüfen)
   taxInvoiceFields       Json        @default("{}")
+  /// Startseite (Einstellungen → واجهة المتجر); leer = Standardtexte
+  heroTitleAr            String?
+  heroTitleEn            String?
+  heroTextAr             String?
+  heroTextEn             String?
+  /// eigenes Hintergrundbild (FileObject, purpose storefront-image); leer = Produktfotos
+  heroImageFileId        String?
   updatedAt              DateTime    @updatedAt
 }
 

@@ -10,6 +10,7 @@ const TABS = [
   { href: "/admin/settings/zones", key: "zones" },
   { href: "/admin/settings/payment-methods", key: "paymentMethods" },
   { href: "/admin/settings/documents", key: "documents" },
+  { href: "/admin/settings/storefront", key: "storefrontTab" },
   // Angebote haben eine eigene Seite – hier nur als Verknüpfung
   { href: "/admin/offers", key: "offers" },
 ] as const;

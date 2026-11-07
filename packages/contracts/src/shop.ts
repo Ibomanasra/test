@@ -133,3 +133,23 @@ export const categorySchema = z.object({
   sortOrder: z.number().int().min(0).default(0),
   active: z.boolean().default(true),
 });
+
+const optInt = (min: number, max: number) =>
+  z.union([z.literal(""), z.coerce.number().int().min(min).max(max)]).optional().transform((v) => (v === "" || v === undefined ? undefined : v));
+
+/** Schnell-Produkt (Formulardaten, Beträge in Agorot) */
+export const quickProductSchema = z
+  .object({
+    nameAr: nameSchema,
+    nameEn: z.string().trim().max(120).optional().transform((v) => v || undefined),
+    categoryId: z.string().max(64).optional().transform((v) => v || undefined),
+    newCategoryAr: z.string().trim().max(80).optional().transform((v) => v || undefined),
+    b2cPrice: z.coerce.number().int().min(1).max(100_000_000),
+    b2bPrice: optInt(1, 100_000_000),
+    costPrice: optInt(0, 100_000_000),
+    cartonSize: optInt(1, 100_000),
+    stockQty: optInt(0, 10_000_000),
+    barcode: z.string().trim().max(14).optional().transform((v) => v || undefined),
+    descriptionAr: z.string().trim().max(5000).optional().transform((v) => v || undefined),
+  })
+  .refine((v) => Boolean(v.categoryId || v.newCategoryAr), { message: "category_required", path: ["categoryId"] });

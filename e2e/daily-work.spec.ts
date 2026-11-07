@@ -73,3 +73,32 @@ test("finance: record a payment in three steps and print the receipt", async ({ 
   expect(p.allocations).toHaveLength(1);
   expect((await page.request.post(`/api/v1/admin/payments/${p.id}/void`, { data: { reason: "E2E test" }, headers: ORIGIN })).ok()).toBe(true);
 });
+
+test("quick product: new category, prices, photo and stock in one step", async ({ page }) => {
+  await staffLogin(page, OWNER.phone, OWNER.password, "en");
+  await page.goto("/en/admin/products/new");
+  const name = `Quick test ${Date.now()}`;
+  await page.locator("#q-name").fill(name);
+  await page.selectOption("#q-cat", "__new__");
+  await page.locator("#q-newcat").fill("E2E Kategorie");
+  await page.locator("#q-b2c").fill("9.90");
+  await page.locator("#q-stock").fill("25");
+  // 1×1-PNG als Foto
+  const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
+  await page.getByTestId("q-photos").setInputFiles({ name: "p.png", mimeType: "image/png", buffer: png });
+  await page.getByTestId("q-save").click();
+  await page.waitForURL((u) => /\/admin\/products\/(?!new)[a-z0-9]+$/.test(u.pathname));
+  const p = await db.product.findFirstOrThrow({ where: { nameAr: name }, include: { variants: { include: { stockLevels: true } }, images: true, category: true } });
+  expect(p.category.nameAr).toBe("E2E Kategorie");
+  expect(p.variants[0]!.b2cPrice).toBe(990);
+  expect(p.variants[0]!.b2bBasePrice).toBe(990);
+  expect(p.variants[0]!.stockLevels.reduce((a, s) => a + s.onHand, 0)).toBe(25);
+  expect(p.images).toHaveLength(1);
+  expect(p.visibleB2C).toBe(true);
+});
+
+test("home page hero shows headline and offers link", async ({ page }) => {
+  await page.goto("/en");
+  await expect(page.getByTestId("hero")).toContainText("wholesale");
+  await expect(page.getByTestId("hero").getByRole("link", { name: /Offers/ })).toBeVisible();
+});

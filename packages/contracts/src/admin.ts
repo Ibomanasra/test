@@ -148,3 +148,11 @@ export const auditQuerySchema = z.object({
 
 /** MwSt.-Schalter: Satz gilt ab sofort */
 export const vatSwitchSchema = z.object({ rateBps: z.number().int().min(0).max(5000) });
+
+/** Startseite: Überschrift und Text (leer = Standard) */
+export const storefrontTextSchema = z.object({
+  heroTitleAr: z.string().trim().max(120).optional().transform((v) => v || null),
+  heroTitleEn: z.string().trim().max(120).optional().transform((v) => v || null),
+  heroTextAr: z.string().trim().max(300).optional().transform((v) => v || null),
+  heroTextEn: z.string().trim().max(300).optional().transform((v) => v || null),
+});

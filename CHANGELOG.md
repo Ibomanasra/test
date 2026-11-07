@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.0] – 2026-11-07 – Produkt schnell anlegen & neue Startseite
+
+### Hinzugefügt
+- **Neues Produkt in einem Schritt** (Produkte → Neu): Fotos (mehrere, auch direkt mit der Handykamera), Name, Kategorie – oder **neue Kategorie direkt eintippen** –, Endkunden- und Händlerpreis, Einkaufspreis, „auch im Karton zu X Stück“, Anfangsbestand. Artikelnummer (P-0001 …), Link und Verkaufseinheiten setzt das System selbst. „Speichern und nächstes Produkt“ für schnelles Erfassen. Das bisherige Formular bleibt als „Erweitertes Formular“.
+- **Startseite neu**: dunkler Kopf in Logofarben mit Hinweis „Lieferung in alle Städte der Westbank“, starker Überschrift, Knöpfen „Jetzt einkaufen“, „🔥 Angebote“, „Als Händler registrieren“ und Vertrauenszeichen. Hintergrund: eigenes Bild → sonst Collage echter Produktfotos → sonst Illustration.
+- **Einstellungen → واجهة المتجر**: Hintergrundbild hochladen/entfernen, Überschrift und Text (Arabisch/Englisch) ändern.
+
 ## [0.10.1] – 2026-11-07 – Admin-Login mit Benutzername
 
 ### Geändert

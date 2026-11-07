@@ -70,7 +70,7 @@ export async function createTour(ctx: AuthContext, input: z.infer<typeof tourCre
     await audit(ctx, { action: "tour.create", entityType: "Tour", entityId: tour.id, after: { number, stops: input.shipmentIds.length } }, tx);
     return tour;
   }).then(async (tour) => {
-    await pushToUsers([input.driverId], { title: tour.number, body: `جولة جديدة: ${input.shipmentIds.length} محطات / New tour: ${input.shipmentIds.length} stops`, data: { tourId: tour.id } });
+    await pushToUsers([input.driverId], { title: `🚚 ${tour.number}`, body: `جولة جديدة: ${input.shipmentIds.length} محطات / New tour: ${input.shipmentIds.length} stops`, data: { tourId: tour.id, url: "/ar/driver", tag: `tour-${tour.id}` } });
     return tour;
   });
 }
@@ -87,13 +87,17 @@ async function addStops(tx: Tx, tourId: string, shipmentIds: string[]) {
 }
 
 export async function addTourStops(ctx: AuthContext, tourId: string, shipmentIds: string[]) {
-  await prisma.$transaction(async (tx) => {
+  const t = await prisma.$transaction(async (tx) => {
     const t = await tx.tour.findUnique({ where: { id: tourId } });
     if (!t) throw notFound();
     if (t.status === "COMPLETED" || t.status === "CLOSED") throw new AppError(409, "invalid_status");
     await addStops(tx, tourId, shipmentIds);
     await audit(ctx, { action: "tour.add_stops", entityType: "Tour", entityId: tourId, after: { shipmentIds } }, tx);
+    return t;
   });
+  if (t.driverId && shipmentIds.length) {
+    await pushToUsers([t.driverId], { title: `🚚 ${t.number}`, body: `طلبية جديدة أضيفت إلى جولتك (${shipmentIds.length}) / New delivery added to your tour`, data: { tourId, url: "/ar/driver" } });
+  }
 }
 
 export async function removeTourStop(ctx: AuthContext, stopId: string) {
@@ -263,7 +267,6 @@ export async function assignShipmentToDriver(ctx: AuthContext, shipmentId: strin
   });
   if (tour) {
     await addTourStops(ctx, tour.id, [shipmentId]);
-    await pushToUsers([driverId], { title: tour.number, body: "طلبية جديدة أضيفت إلى جولتك / A new delivery was added to your tour", data: { tourId: tour.id } });
     return { tourId: tour.id, tourNumber: tour.number, driverName: driver.name };
   }
   const created = await createTour(ctx, { date: new Date(), driverId, zoneId: null, note: undefined, shipmentIds: [shipmentId] });

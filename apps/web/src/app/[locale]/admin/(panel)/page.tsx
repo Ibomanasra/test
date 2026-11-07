@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Forbidden } from "@/components/admin/Forbidden";
 import { Icon, type IconName } from "@/components/admin/Icon";
 import { RevenueChart } from "@/components/admin/RevenueChart";
+import { PushToggle } from "@/components/notifications/PushToggle";
 import { ORDER_STATUS_TONE } from "@/components/admin/status";
 import { Badge, Card, Num, cn } from "@/components/ui";
 import { Link, redirect } from "@/i18n/navigation";
@@ -73,6 +74,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
 
   return (
     <div className="space-y-6">
+      <PushToggle hideWhenOn />
       {/* Kopf */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>

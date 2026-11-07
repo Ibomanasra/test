@@ -7,10 +7,13 @@ import { MobileMenu } from "@/components/admin/MobileMenu";
 import { ADMIN_NAV } from "@/components/admin/nav";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { LogoutButton } from "@/components/LogoutButton";
+import { PushToggle } from "@/components/notifications/PushToggle";
 import { Link } from "@/i18n/navigation";
 import { requireStaffPage } from "@/server/auth/page-guards";
 
 export const dynamic = "force-dynamic";
+
+export const metadata = { manifest: "/api/v1/manifest/admin" };
 
 export default async function AdminLayout({ children, params }: { children: React.ReactNode; params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -36,6 +39,7 @@ export default async function AdminLayout({ children, params }: { children: Reac
           <MobileMenu label={t("nav.menu")} closeLabel={(await getTranslations("common"))("close")}>{sidebar}</MobileMenu>
           <p className="text-sm text-ink-600" data-testid="admin-user">{t("loggedInAs", { name: auth.user.name })}</p>
           <div className="ms-auto flex items-center gap-2">
+            <PushToggle compact />
             <Link href="/" className="text-sm text-ink-600 hover:text-ink-900">{t("nav.toShop")}</Link>
             <Suspense>
               <LanguageSwitcher />

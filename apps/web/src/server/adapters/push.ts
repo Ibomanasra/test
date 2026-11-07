@@ -41,6 +41,10 @@ export async function sendExpoPush(tokens: string[], m: PushMessage, http: Fetch
 /** An alle Geräte eines oder mehrerer Benutzer senden – Fehler blockieren nie den Vorgang */
 export async function pushToUsers(userIds: string[], m: PushMessage): Promise<void> {
   if (!userIds.length) return;
+  // Browser-Push (Handy/PC) – unabhängig vom App-Push
+  if (env().NODE_ENV !== "test") {
+    await import("./web-push").then((w) => w.sendWebPush(userIds, m)).catch((err) => console.error("[web-push]", err));
+  }
   try {
     const tokens = (await prisma.pushToken.findMany({ where: { userId: { in: userIds } }, select: { token: true } })).map((t) => t.token);
     if (!tokens.length) return;

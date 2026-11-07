@@ -2117,5 +2117,19 @@
     "pendingText": "Waiting for the bank's confirmation. The order status updates automatically.",
     "toOrder": "View order",
     "retry": "Try again"
+  },
+  "push": {
+    "enable": "Turn on notifications",
+    "enableShort": "Notifications",
+    "on": "Notifications are on for this device",
+    "offTitle": "Notifications are off on this device",
+    "offText": "Turn them on to get an alert as soon as a new order or delivery comes in – even when the site is closed.",
+    "test": "Send a test",
+    "testSent": "Test notification sent – it should appear within seconds.",
+    "disable": "Turn off",
+    "failed": "It did not work. Try again or use Chrome.",
+    "denied": "Notifications are blocked in the browser. Open the site settings (lock icon next to the address) and allow notifications.",
+    "iosTitle": "On iPhone: add the site to the home screen first",
+    "iosText": "In Safari tap the share button ⬆️ then “Add to Home Screen”, open the app from there and turn on notifications."
   }
 }

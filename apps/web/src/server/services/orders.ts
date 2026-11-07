@@ -275,7 +275,28 @@ export async function placeOrder(ctx: AuthContext & { customer: NonNullable<Auth
     { timeout: 20_000 },
   );
   await notifyCustomer(order.id, "order.placed");
+  await notifyStaffNewOrder(order.id);
   return order;
+}
+
+/** Büro benachrichtigen: alle aktiven Mitarbeiter, die Bestellungen bestätigen dürfen */
+async function notifyStaffNewOrder(orderId: string) {
+  try {
+    const o = await prisma.order.findUnique({ where: { id: orderId }, select: { id: true, number: true, totalGross: true, customer: { select: { displayName: true } }, items: { select: { id: true } } } });
+    if (!o) return;
+    const staff = await prisma.user.findMany({
+      where: { kind: "STAFF", isActive: true, roles: { some: { role: { permissions: { hasSome: ["order.confirm", "*"] } } } } },
+      select: { id: true },
+    });
+    const total = (o.totalGross / 100).toFixed(2);
+    await pushToUsers(staff.map((u) => u.id), {
+      title: `🛒 طلب جديد ${o.number} / New order`,
+      body: `${o.customer.displayName} · ${total} ₪ · ${o.items.length} أصناف`,
+      data: { orderId: o.id, url: `/ar/admin/orders/${o.id}`, tag: `order-${o.id}` },
+    });
+  } catch (err) {
+    console.error("[notify-staff]", err);
+  }
 }
 
 // ---------------------------------------------------------------------------

@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.14.0] – 2026-11-08 – Benachrichtigungen aufs Handy (kostenlos)
+
+### Hinzugefügt
+- **Browser-Benachrichtigungen (Web Push)** – kostenlos, ohne App-Store und ohne Fremdanbieter-Konto. Funktioniert auf Android (Chrome), am PC und auf dem iPhone (iOS 16.4+, nachdem die Seite „Zum Home-Bildschirm“ hinzugefügt wurde).
+- **Neue Bestellung** → alle Mitarbeiter, die Bestellungen bestätigen dürfen, bekommen „🛒 طلب جديد“ mit Kunde und Betrag; Tippen öffnet die Bestellung.
+- **Neue Lieferung für den Fahrer** → beim Laden mit Fahrer, bei neuer Tour und beim Hinzufügen von Stopps bekommt der Fahrer „🚚 …“; Tippen öffnet „جولتي“.
+- Schalter **„تفعيل الإشعارات“** auf dem Dashboard, in der Kopfzeile und in der Fahreransicht, mit **Testnachricht**; Hinweis für iPhone und für blockierte Benachrichtigungen.
+- Web-App-Manifeste für Shop, Büro und Fahrer (als App auf dem Home-Bildschirm, startet direkt am richtigen Ort).
+- Die nötigen Schlüssel (VAPID) werden automatisch erzeugt und in der Datenbank gespeichert – auf dem Server ist nichts einzurichten.
+
 ## [0.13.1] – 2026-11-07 – Fahrer beim Laden auswählen
 
 ### Hinzugefügt

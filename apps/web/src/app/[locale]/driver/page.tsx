@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Forbidden } from "@/components/admin/Forbidden";
 import { CashClosingForm, DriverStop } from "@/components/driver/DriverStop";
 import { LogoutButton } from "@/components/LogoutButton";
+import { PushToggle } from "@/components/notifications/PushToggle";
 import { PrintButton } from "@/components/print/PrintButton";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui";
 import { requireStaffPage } from "@/server/auth/page-guards";
@@ -10,6 +11,8 @@ import { day, money } from "@/server/format";
 import { driverCash, driverTours } from "@/server/services/delivery";
 
 export const dynamic = "force-dynamic";
+
+export const metadata = { manifest: "/api/v1/manifest/driver" };
 
 /** Fahreransicht (mobil): eigene Touren, Zustellung mit Unterschrift und Bargeld, Kassenabschluss */
 export default async function DriverPage({ params }: { params: Promise<{ locale: string }> }) {
@@ -21,6 +24,7 @@ export default async function DriverPage({ params }: { params: Promise<{ locale:
   return (
     <main className="mx-auto max-w-md space-y-4 p-4">
       <PageHeader title={t("title")} subtitle={auth.user.name} actions={<LogoutButton redirectTo="/admin/login" />} />
+      <PushToggle />
       {tours.length === 0 ? <EmptyState>{t("noTours")}</EmptyState> : null}
       {tours.map((tour) => (
         <section key={tour.id} className="space-y-3">

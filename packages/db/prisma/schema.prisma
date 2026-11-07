@@ -513,6 +513,7 @@ model User {
   customerNotes    CustomerNote[]
   uploadedFiles    FileObject[]
   pushTokens       PushToken[]
+  webPushSubscriptions WebPushSubscription[]
 }
 
 model Session {
@@ -1824,6 +1825,21 @@ model NotificationLog {
 }
 
 /// Push-Token der Mobile-App (Expo Push) – je Gerät ein Eintrag
+/// Browser-Push (Web Push / VAPID) – kostenlos, ohne App-Store (Android, PC, iPhone als Home-Bildschirm-App)
+model WebPushSubscription {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint   String   @unique
+  p256dh     String
+  auth       String
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+
+  @@index([userId])
+}
+
 model PushToken {
   id         String   @id @default(cuid())
   userId     String

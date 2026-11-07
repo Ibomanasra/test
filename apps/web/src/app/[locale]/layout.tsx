@@ -16,6 +16,9 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   return {
     title: { default: t("appName"), template: `%s · ${t("appName")}` },
     description: t("tagline"),
+    manifest: "/api/v1/manifest/shop",
+    // iPhone: „Zum Home-Bildschirm“ → eigene App mit Benachrichtigungen
+    appleWebApp: { capable: true, title: t("appName"), statusBarStyle: "default" },
   };
 }
 

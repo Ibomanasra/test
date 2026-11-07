@@ -8,6 +8,7 @@ import { PrintTableButton } from "@/components/print/PrintTableButton";
 import { Badge, Button, EmptyState, cn } from "@/components/ui";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useApi } from "@/lib/api-client";
+import { CompanyPicker, choiceBody, choiceReady, emptyChoice } from "./CompanyPicker";
 
 export interface OrderRow {
   id: string;
@@ -28,16 +29,19 @@ export interface OrderRow {
   total: string;
   payment: string;
   paid: boolean;
+  /** Zustellfirma des offenen Lieferscheins (unterwegs) */
+  company?: string;
 }
 
-type Step = "CONFIRMED" | "PICKING" | "READY";
-const NEXT: Partial<Record<OrderRow["status"], Step>> = { NEW: "CONFIRMED", CONFIRMED: "PICKING", PICKING: "READY" };
+type Step = "CONFIRMED" | "READY";
+/** 3 Schritte: 1 Bestätigen → 2 Vorbereitet → 3 Übergeben (Dialog) */
+const NEXT: Partial<Record<OrderRow["status"], Step>> = { NEW: "CONFIRMED", CONFIRMED: "READY", PICKING: "READY" };
 
 /**
  * Tagesarbeit: Zeilen mit „nächster Schritt“-Knopf, Mehrfachauswahl für
  * Sammel-Weiterschalten und Sammeldruck (A4-PDF mehrerer Bestellungen).
  */
-export function OrderBoard({ rows, canConfirm, canStatus }: { rows: OrderRow[]; canConfirm: boolean; canStatus: boolean }) {
+export function OrderBoard({ rows, canConfirm, canStatus, companies = [] }: { rows: OrderRow[]; canConfirm: boolean; canStatus: boolean; companies?: { id: string; name: string }[] }) {
   const t = useTranslations("admin.orders");
   const tc = useTranslations("common");
   const router = useRouter();
@@ -45,6 +49,9 @@ export function OrderBoard({ rows, canConfirm, canStatus }: { rows: OrderRow[]; 
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
+  /** Übergabe-Dialog für diese Bestellungen */
+  const [handOver, setHandOver] = useState<string[] | null>(null);
+  const [company, setCompany] = useState(() => emptyChoice(companies));
 
   const allowed = (s: Step) => (s === "CONFIRMED" ? canConfirm : canStatus);
   const toggle = (id: string) => setSel((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
@@ -65,9 +72,34 @@ export function OrderBoard({ rows, canConfirm, canStatus }: { rows: OrderRow[]; 
     router.refresh();
   }
 
+  async function doHandOver(ids: string[]) {
+    let ok = 0;
+    for (const id of ids) {
+      setBusy(id);
+      if (await call(`/api/v1/admin/orders/${id}/dispatch`, { body: { remainder: "BACKORDER", ...choiceBody(company) } })) ok++;
+      else break;
+    }
+    setBusy(null);
+    setHandOver(null);
+    setSel(new Set());
+    setDone(ok ? t("board.handedOver", { count: ok }) : null);
+    router.refresh();
+  }
+
+  async function delivered(id: string) {
+    setBusy(id);
+    const ok = await call(`/api/v1/admin/orders/${id}/deliver`, { body: {} });
+    setBusy(null);
+    if (ok) {
+      setDone(t("board.deliveredOne"));
+      router.refresh();
+    }
+  }
+
   if (rows.length === 0) return <EmptyState>{tc("noResults")}</EmptyState>;
   const ids = [...sel].join(",");
   const advanceable = [...sel].filter((id) => { const r = rows.find((x) => x.id === id); const to = r && NEXT[r.status]; return to && allowed(to); });
+  const readySel = canStatus ? [...sel].filter((id) => rows.find((x) => x.id === id)?.status === "READY") : [];
 
   return (
     <div className="space-y-3">
@@ -79,6 +111,11 @@ export function OrderBoard({ rows, canConfirm, canStatus }: { rows: OrderRow[]; 
             <Button size="sm" disabled={!advanceable.length || pending} onClick={() => advance(advanceable)} data-testid="batch-advance">
               <Icon name="check" className="size-4" /> {t("board.advanceSelected", { count: advanceable.length })}
             </Button>
+            {readySel.length ? (
+              <Button size="sm" disabled={pending} onClick={() => setHandOver(readySel)} data-testid="batch-handover">
+                🚚 {t("board.handOverSelected", { count: readySel.length })}
+              </Button>
+            ) : null}
             {([["order-confirmation", "order-confirmation"], ["pick-list", "pick-list"], ["delivery-note", "delivery-note"], ["invoice", "invoice"], ["delivery-note,invoice", "dn-invoice"]] as const).map(([doc, key]) => (
               <a key={key} className="rounded-lg bg-white px-2.5 py-1 ring-1 ring-ink-300 hover:bg-ink-50" href={`/api/v1/print/batch?doc=${doc}&ids=${ids}`} target="_blank" rel="noopener" data-testid={`batch-${key}`}>
                 {t(`batch.${key}`)}
@@ -107,9 +144,25 @@ export function OrderBoard({ rows, canConfirm, canStatus }: { rows: OrderRow[]; 
         </span>
       </div>
       {error ? <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p> : null}
+      {handOver ? (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink-900/40 p-0 sm:items-center sm:p-4" role="dialog" aria-modal="true" onClick={() => setHandOver(null)}>
+          <div className="w-full max-w-lg space-y-4 rounded-t-2xl bg-white p-5 shadow-xl sm:rounded-2xl" onClick={(e) => e.stopPropagation()} data-testid="handover-dialog">
+            <div>
+              <h2 className="text-lg font-bold text-ink-900">🚚 {t("steps.do3")}</h2>
+              <p className="text-sm text-ink-600">{t("board.handOverText", { count: handOver.length })}</p>
+              <p className="num mt-1 text-xs text-ink-500">{handOver.map((id) => rows.find((r) => r.id === id)?.number).join(" · ")}</p>
+            </div>
+            <CompanyPicker companies={companies} value={company} onChange={setCompany} />
+            <div className="flex gap-2">
+              <Button disabled={pending || busy != null || !choiceReady(company)} onClick={() => void doHandOver(handOver)} data-testid="handover-confirm">✓ {t("handOverNow")}</Button>
+              <Button variant="secondary" onClick={() => setHandOver(null)}>{tc("cancel")}</Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       {done ? <p className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-800" role="status">{done}</p> : null}
 
-      <div className="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-ink-200">
+      <div className="relative overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-ink-200">
         <table className="min-w-full text-sm">
           <thead className="bg-ink-50 text-xs text-ink-500">
             <tr>
@@ -159,10 +212,17 @@ export function OrderBoard({ rows, canConfirm, canStatus }: { rows: OrderRow[]; 
                       <Button size="sm" variant={r.status === "NEW" ? "primary" : "secondary"} disabled={busy != null} onClick={() => advance([r.id])} data-testid="row-advance" className="whitespace-nowrap">
                         {busy === r.id ? "…" : t(`board.next.${next}`)}
                       </Button>
-                    ) : r.status === "READY" || r.status === "OUT_FOR_DELIVERY" ? (
-                      <Link href={`/admin/orders/${r.id}`} className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium text-brand-700 ring-1 ring-brand-200 hover:bg-brand-50">
-                        <Icon name="truck" className="size-4" /> {t(r.status === "READY" ? "board.toDispatch" : "board.toDelivery")}
-                      </Link>
+                    ) : r.status === "READY" && canStatus ? (
+                      <Button size="sm" disabled={busy != null} onClick={() => setHandOver([r.id])} data-testid="row-handover" className="whitespace-nowrap">
+                        🚚 {t("board.handOver")}
+                      </Button>
+                    ) : r.status === "OUT_FOR_DELIVERY" && canStatus ? (
+                      <div className="flex flex-col items-end gap-1">
+                        {r.company ? <span className="whitespace-nowrap text-xs text-ink-500">🚚 {r.company}</span> : null}
+                        <Button size="sm" variant="secondary" disabled={busy != null} onClick={() => void delivered(r.id)} data-testid="row-delivered" className="whitespace-nowrap">
+                          {busy === r.id ? "…" : `✓ ${t("board.markDelivered")}`}
+                        </Button>
+                      </div>
                     ) : (
                       <Link href={`/admin/orders/${r.id}`} className="text-sm text-ink-500 hover:text-ink-900">{t("board.open")}</Link>
                     )}

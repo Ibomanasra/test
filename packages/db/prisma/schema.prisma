@@ -498,21 +498,21 @@ model User {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  sessions         Session[]
-  roles            UserRole[]
-  memberships      CustomerMember[]
-  auditLogs        AuditLog[]
-  priceHistory     PriceHistory[]
-  ordersPlaced     Order[]            @relation("OrderPlacedBy")
-  orderEvents      OrderStatusEvent[]
-  toursAsDriver    Tour[]             @relation("TourDriver")
-  cashClosings     CashClosing[]      @relation("ClosingDriver")
-  cashCollections  CashCollection[]
-  paymentsReceived Payment[]          @relation("PaymentReceivedBy")
-  quotesCreated    Quote[]            @relation("QuoteCreatedBy")
-  customerNotes    CustomerNote[]
-  uploadedFiles    FileObject[]
-  pushTokens       PushToken[]
+  sessions             Session[]
+  roles                UserRole[]
+  memberships          CustomerMember[]
+  auditLogs            AuditLog[]
+  priceHistory         PriceHistory[]
+  ordersPlaced         Order[]               @relation("OrderPlacedBy")
+  orderEvents          OrderStatusEvent[]
+  toursAsDriver        Tour[]                @relation("TourDriver")
+  cashClosings         CashClosing[]         @relation("ClosingDriver")
+  cashCollections      CashCollection[]
+  paymentsReceived     Payment[]             @relation("PaymentReceivedBy")
+  quotesCreated        Quote[]               @relation("QuoteCreatedBy")
+  customerNotes        CustomerNote[]
+  uploadedFiles        FileObject[]
+  pushTokens           PushToken[]
   webPushSubscriptions WebPushSubscription[]
 }
 
@@ -774,25 +774,25 @@ model Brand {
 }
 
 model Product {
-  id            String   @id @default(cuid())
-  slug          String   @unique
+  id            String    @id @default(cuid())
+  slug          String    @unique
   nameAr        String
   nameEn        String
   descriptionAr String?
   descriptionEn String?
   categoryId    String
-  category      Category @relation(fields: [categoryId], references: [id])
+  category      Category  @relation(fields: [categoryId], references: [id])
   brandId       String?
-  brand         Brand?   @relation(fields: [brandId], references: [id])
-  taxCode       String   @default("STANDARD") // → TaxRate.code
-  visibleB2C    Boolean  @default(true)
-  visibleB2B    Boolean  @default(true)
-  active        Boolean  @default(true)
+  brand         Brand?    @relation(fields: [brandId], references: [id])
+  taxCode       String    @default("STANDARD") // → TaxRate.code
+  visibleB2C    Boolean   @default(true)
+  visibleB2B    Boolean   @default(true)
+  active        Boolean   @default(true)
   /// „gelöscht“, aber in Bestellungen/Rechnungen verwendet → archiviert (überall ausgeblendet)
   archivedAt    DateTime?
-  isDemo        Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  isDemo        Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   variants         ProductVariant[]
   images           ProductImage[]
@@ -1454,22 +1454,40 @@ model OrderStatusEvent {
 
 /// Eine (Teil-)Lieferung = ein Lieferschein (DN-…)
 model Shipment {
-  id              String         @id @default(cuid())
-  number          String         @unique // DN-2026-000001
-  orderId         String
-  order           Order          @relation(fields: [orderId], references: [id])
-  status          ShipmentStatus @default(PENDING)
-  deliveredAt     DateTime?
-  receivedByName  String?
-  signatureFileId String?
-  signatureFile   FileObject?    @relation("ShipmentSignature", fields: [signatureFileId], references: [id])
-  photoFileId     String?
-  photoFile       FileObject?    @relation("ShipmentPhoto", fields: [photoFileId], references: [id])
-  createdAt       DateTime       @default(now())
+  id                String           @id @default(cuid())
+  number            String           @unique // DN-2026-000001
+  orderId           String
+  order             Order            @relation(fields: [orderId], references: [id])
+  status            ShipmentStatus   @default(PENDING)
+  deliveredAt       DateTime?
+  receivedByName    String?
+  signatureFileId   String?
+  signatureFile     FileObject?      @relation("ShipmentSignature", fields: [signatureFileId], references: [id])
+  photoFileId       String?
+  photoFile         FileObject?      @relation("ShipmentPhoto", fields: [photoFileId], references: [id])
+  /// Übergabe an eine externe Zustellfirma
+  deliveryCompanyId String?
+  deliveryCompany   DeliveryCompany? @relation(fields: [deliveryCompanyId], references: [id])
+  trackingNumber    String?
+  handedOverAt      DateTime?
+  createdAt         DateTime         @default(now())
 
   items    ShipmentItem[]
   tourStop TourStop?
   invoice  Invoice?
+
+  @@index([deliveryCompanyId])
+}
+
+/// Externe Zustellfirma (Kurier), an die fertige Bestellungen übergeben werden
+model DeliveryCompany {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  phone     String?
+  note      String?
+  active    Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  shipments Shipment[]
 }
 
 model ShipmentItem {

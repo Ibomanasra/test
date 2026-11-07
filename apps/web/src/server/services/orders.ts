@@ -346,7 +346,12 @@ export async function listOrders(f: OrderFilter) {
       orderBy: { placedAt: "desc" },
       skip: (f.page - 1) * ORDER_PAGE_SIZE,
       take: ORDER_PAGE_SIZE,
-      include: { customer: { select: { id: true, displayName: true, number: true } }, zone: { select: { nameAr: true, nameEn: true } }, _count: { select: { items: true } } },
+      include: {
+        customer: { select: { id: true, displayName: true, number: true } },
+        zone: { select: { nameAr: true, nameEn: true } },
+        _count: { select: { items: true } },
+        shipments: { where: { status: "LOADED" }, orderBy: { createdAt: "desc" }, take: 1, select: { deliveryCompany: { select: { name: true } } } },
+      },
     }),
     prisma.order.count({ where }),
   ]);
@@ -359,7 +364,7 @@ const orderInclude = {
   items: { orderBy: { sortOrder: "asc" } },
   offer: { select: { nameAr: true, nameEn: true, kind: true } },
   events: { orderBy: { createdAt: "asc" }, include: { byUser: { select: { name: true } } } },
-  shipments: { include: { items: true, tourStop: { select: { tour: { select: { id: true, number: true, driver: { select: { name: true } } } } } } }, orderBy: { createdAt: "asc" } },
+  shipments: { include: { items: true, deliveryCompany: { select: { name: true } }, tourStop: { select: { tour: { select: { id: true, number: true, driver: { select: { name: true } } } } } } }, orderBy: { createdAt: "asc" } },
   parentOrder: { select: { id: true, number: true } },
   backorders: { select: { id: true, number: true, status: true } },
   placedBy: { select: { name: true } },

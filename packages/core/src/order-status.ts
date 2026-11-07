@@ -17,7 +17,8 @@ export type OrderStatusKey = (typeof ORDER_STATUSES)[number];
 
 const TRANSITIONS: Record<OrderStatusKey, readonly OrderStatusKey[]> = {
   NEW: ["CONFIRMED", "CANCELLED"],
-  CONFIRMED: ["PICKING", "CANCELLED"],
+  // „Vorbereitet“ in einem Schritt (Kommissionieren optional)
+  CONFIRMED: ["PICKING", "READY", "CANCELLED"],
   PICKING: ["READY", "CANCELLED"],
   READY: ["OUT_FOR_DELIVERY", "PICKING", "CANCELLED"],
   // Fehlgeschlagene Zustellung → zurück zu "Bereit"

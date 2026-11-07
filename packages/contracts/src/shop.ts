@@ -67,6 +67,17 @@ export const orderDispatchSchema = z.object({
   remainder: z.enum(["BACKORDER", "CANCEL"]).default("BACKORDER"),
   /** Fahrer gleich beim Laden zuteilen (heutige Tour) */
   driverId: idSchema.optional().or(z.literal("").transform(() => undefined)),
+  /** Übergabe an externe Zustellfirma: bestehende Firma oder neue (Name) */
+  companyId: idSchema.optional().or(z.literal("").transform(() => undefined)),
+  newCompanyName: optionalText(80),
+  trackingNumber: optionalText(60),
+});
+
+export const deliveryCompanySchema = z.object({
+  name: z.string().trim().min(2).max(80),
+  phone: optionalText(30),
+  note: optionalText(300),
+  active: z.boolean().default(true),
 });
 export const orderDeliverSchema = z.object({ receivedByName: optionalText(120) });
 export const orderFailSchema = z.object({ reason: z.string().trim().min(3).max(500) });

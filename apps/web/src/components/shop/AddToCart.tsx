@@ -3,8 +3,8 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { Alert, Button, Input, Select } from "@/components/ui";
-import { useRouter } from "@/i18n/navigation";
 import { useApi } from "@/lib/api-client";
+import { useCart } from "./CartContext";
 
 interface Unit {
   code: string;
@@ -21,6 +21,8 @@ export function AddToCart({
   qtyStepBase,
   disabled,
   compact,
+  name: productName,
+  imageId,
 }: {
   variantId: string;
   units: Unit[];
@@ -29,10 +31,13 @@ export function AddToCart({
   qtyStepBase: number;
   disabled?: boolean;
   compact?: boolean;
+  /** für die Bestätigung „Im Warenkorb“ */
+  name?: string;
+  imageId?: string | null;
 }) {
   const t = useTranslations("shop.cart");
   const locale = useLocale();
-  const router = useRouter();
+  const cart = useCart();
   const { call, pending, error } = useApi();
   const [unit, setUnit] = useState(defaultUnit);
   const factor = units.find((u) => u.code === unit)?.factor ?? 1;
@@ -41,11 +46,20 @@ export function AddToCart({
   const [added, setAdded] = useState(false);
 
   async function add() {
-    const res = await call("/api/v1/cart/items", { body: { variantId, unitCode: unit, qty: Number(qty) } });
+    const res = await call<{ count: number; goodsValue: number; lines: { variantId: string; nameAr: string; nameEn: string; imageId: string | null }[] }>("/api/v1/cart/items", { body: { variantId, unitCode: unit, qty: Number(qty) } });
     if (res) {
       setAdded(true);
-      router.refresh();
-      setTimeout(() => setAdded(false), 2500);
+      const line = res.lines.find((l) => l.variantId === variantId);
+      const u = units.find((x) => x.code === unit);
+      cart.notifyAdded({
+        name: productName ?? (line ? (locale === "ar" ? line.nameAr : line.nameEn) : ""),
+        imageId: imageId ?? line?.imageId ?? null,
+        qty: Number(qty),
+        unitName: u ? (locale === "ar" ? u.nameAr : u.nameEn) : "",
+        cartTotal: res.goodsValue,
+        count: res.count,
+      });
+      setTimeout(() => setAdded(false), 2000);
     }
   }
 
@@ -72,8 +86,8 @@ export function AddToCart({
         ) : (
           <span className="self-center text-sm text-ink-600">{units[0] ? name(units[0]) : ""}</span>
         )}
-        <Button onClick={() => void add()} disabled={disabled || pending || Number(qty) < 1} size={compact ? "sm" : "md"} data-testid="add-to-cart">
-          {added ? t("added") : t("add")}
+        <Button onClick={() => void add()} className={added ? "bg-green-600 hover:bg-green-700" : undefined} disabled={disabled || pending || Number(qty) < 1} size={compact ? "sm" : "md"} data-testid="add-to-cart">
+          {added ? `✓ ${t("added")}` : t("add")}
         </Button>
       </div>
       {minQtyBase > 1 || qtyStepBase > 1 ? <p className="text-xs text-ink-500">{t("qtyRule", { min: minQtyBase, step: qtyStepBase })}</p> : null}

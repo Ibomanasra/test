@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Alert, Button, Card, Input, cn } from "@/components/ui";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useApi } from "@/lib/api-client";
+import { useCart } from "./CartContext";
 import type { PricedCart } from "@/server/services/cart";
 
 export interface CartOfferHint {
@@ -23,13 +24,18 @@ export function CartView({ cart, loggedIn, isB2B, offer }: { cart: PricedCart; l
   const router = useRouter();
   const { call, pending, error } = useApi();
   const [busyLine, setBusyLine] = useState<string | null>(null);
+  const cartState = useCart();
   const [listName, setListName] = useState("");
   const [saved, setSaved] = useState(false);
   const nm = (a: string | null, e: string | null) => (locale === "ar" ? a : e);
 
   async function setQty(id: string, qty: number) {
     setBusyLine(id);
-    if (await call(`/api/v1/cart/items/${id}`, { method: "PATCH", body: { qty: Math.max(0, qty) } })) router.refresh();
+    const res = await call<{ count: number }>(`/api/v1/cart/items/${id}`, { method: "PATCH", body: { qty: Math.max(0, qty) } });
+    if (res) {
+      cartState.setCount(res.count);
+      router.refresh();
+    }
     setBusyLine(null);
   }
   async function saveList() {

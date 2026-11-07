@@ -66,7 +66,11 @@ test("B2C customer orders with cash on delivery", async ({ page }) => {
   await page.getByTestId("qty-input").first().fill("6");
   await page.getByTestId("add-to-cart").first().click();
   await expect(page.getByTestId("add-to-cart").first()).toHaveText(/✓/);
-  await page.goto("/ar/cart");
+  // Zähler und Bestätigung sofort – ohne Neuladen
+  await expect(page.getByTestId("cart-count")).toHaveText("1");
+  await expect(page.getByTestId("added-toast")).toBeVisible();
+  await page.getByTestId("toast-to-cart").click();
+  await expect(page).toHaveURL(/\/ar\/cart$/);
   await expect(page.getByTestId("cart-line")).toHaveCount(1);
   await page.getByTestId("to-checkout").click();
   await expect(page).toHaveURL(/\/ar\/checkout$/);
@@ -75,6 +79,8 @@ test("B2C customer orders with cash on delivery", async ({ page }) => {
   await page.getByTestId("place-order").click();
   await expect(page).toHaveURL(/\/ar\/account\/orders\/[^/?]+\?placed=1$/);
   await expect(page.getByTestId("status-timeline")).toBeVisible();
+  // Korb nach der Bestellung sofort leer (Kopfzeile ohne Neuladen)
+  await expect(page.getByTestId("cart-count")).toHaveCount(0);
 
   const id = new URL(page.url()).pathname.split("/").pop()!;
   const order = await db.order.findUniqueOrThrow({ where: { id }, include: { items: { include: { reservations: true } } } });

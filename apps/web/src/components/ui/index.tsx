@@ -149,7 +149,7 @@ export function DateText({ children }: { children: string }) {
 
 export function Table({ children }: { children: ReactNode }) {
   return (
-    <div className="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-ink-200">
+    <div className="relative overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-ink-200">
       <table className="min-w-full divide-y divide-ink-200 text-sm">{children}</table>
     </div>
   );

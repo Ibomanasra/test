@@ -123,6 +123,7 @@ test("dispatch: driver is chosen while loading and the shipment lands in the dri
   const driver = await db.user.findUniqueOrThrow({ where: { phone: DRIVER.e164 } });
   await staff.goto(`/ar/admin/orders/${orderId}`);
   await staff.getByTestId("open-dispatch").click();
+  await staff.getByTestId("dispatch-more").click();
   await staff.getByTestId("dispatch-driver").selectOption(driver.id);
   await staff.getByTestId("confirm-dispatch").click();
   await expect(staff.getByTestId("shipment-driver")).toContainText(driver.name, { timeout: 15_000 });

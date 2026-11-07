@@ -50,3 +50,13 @@
     @apply outline-2 outline-offset-2 outline-brand-600;
   }
 }
+
+/* Warenkorb-Zähler „hüpft“ beim Ändern */
+@keyframes cart-bump {
+  0% { transform: scale(0.6); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-testid="cart-count"] { animation: none !important; }
+}

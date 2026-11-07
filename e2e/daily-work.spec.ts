@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { OWNER, db, staffLogin } from "./helpers";
+import { OWNER, customerLogin, db, placeCodOrder, staffLogin } from "./helpers";
 
 const ORIGIN = { Origin: "http://localhost:3000" };
 
@@ -142,4 +142,40 @@ test("products: hide/show with one click, delete unused, archive used", async ({
   // zurücksetzen
   await page.request.patch(`/api/v1/admin/products/${used.id}`, { data: { active: true }, headers: ORIGIN });
   expect((await db.product.findUniqueOrThrow({ where: { id: used.id } })).archivedAt).toBeNull();
+});
+
+test("3-step flow: confirm → prepared → hand over to a courier company → delivered", async ({ page, browser }) => {
+  const B2C = { local: "0599100001", e164: "+970599100001" };
+  const shop = await browser.newPage();
+  await customerLogin(shop, B2C);
+  const orderId = await placeCodOrder(shop.request, B2C.e164, "BA-001", 3);
+  const { number } = await db.order.findUniqueOrThrow({ where: { id: orderId } });
+
+  await staffLogin(page, OWNER.phone, OWNER.password);
+  const row = () => page.getByTestId("order-row").filter({ hasText: number });
+  // Schritt 1 + 2 direkt in der Liste
+  await page.goto(`/ar/admin/orders?q=${number}`);
+  await row().getByTestId("row-advance").click();
+  await expect.poll(async () => (await db.order.findUniqueOrThrow({ where: { id: orderId } })).status).toBe("CONFIRMED");
+  await expect(row().getByTestId("row-advance")).toContainText("2");
+  await row().getByTestId("row-advance").click();
+  await expect.poll(async () => (await db.order.findUniqueOrThrow({ where: { id: orderId } })).status).toBe("READY");
+
+  // Schritt 3: an (neue) Zustellfirma übergeben
+  const company = `Courier E2E ${Date.now()}`;
+  await row().getByTestId("row-handover").click();
+  await page.getByTestId("company-new").click();
+  await page.getByTestId("company-new-name").fill(company);
+  await page.getByTestId("handover-confirm").click();
+  await expect.poll(async () => (await db.order.findUniqueOrThrow({ where: { id: orderId } })).status).toBe("OUT_FOR_DELIVERY");
+  const shipment = await db.shipment.findFirstOrThrow({ where: { orderId }, include: { deliveryCompany: true } });
+  expect(shipment.deliveryCompany?.name).toBe(company);
+  expect(shipment.handedOverAt).not.toBeNull();
+  await expect(row()).toContainText(company);
+
+  // Zugestellt direkt aus der Liste
+  await row().getByTestId("row-delivered").click();
+  await expect.poll(async () => (await db.order.findUniqueOrThrow({ where: { id: orderId } })).status).toBe("DELIVERED");
+  await db.shipment.update({ where: { id: shipment.id }, data: { deliveryCompanyId: null } });
+  await db.deliveryCompany.delete({ where: { name: company } });
 });

@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { Alert, Button, Field, Input, Textarea } from "@/components/ui";
 import { useRouter } from "@/i18n/navigation";
 import { apiFetch, useApi } from "@/lib/api-client";
+import { useCart } from "./CartContext";
 
 interface Options {
   channel: "B2C" | "B2B";
@@ -48,6 +49,7 @@ export function CheckoutForm({ options, zones }: { options: Options; zones: { id
   const tc = useTranslations("common");
   const locale = useLocale();
   const router = useRouter();
+  const cart = useCart();
   const { call, pending, error, translate } = useApi();
   const [addressId, setAddressId] = useState(options.addresses.find((a) => a.isDefault)?.id ?? options.addresses[0]?.id ?? "");
   const address = options.addresses.find((a) => a.id === addressId);
@@ -102,6 +104,8 @@ export function CheckoutForm({ options, zones }: { options: Options; zones: { id
   async function place() {
     const res = await call<{ id: string }>("/api/v1/orders", { body: { addressId, paymentMethod: method, requestedDeliveryDate: date, customerNote: note || undefined, couponCode: coupon } });
     if (!res) return;
+    // Bestellung angelegt → Korb ist leer: Zähler sofort auf 0
+    cart.setCount(0);
     if (method === "CARD_GATEWAY") {
       // Kartenzahlung: weiter zur gehosteten Bezahlseite des Gateways
       const pay = await call<{ redirectUrl: string }>(`/api/v1/orders/${res.id}/pay`, { body: {} });

@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Alert } from "@/components/ui";
 import { Logo } from "@/components/brand/Logo";
+import { CartLink, CartProvider } from "@/components/shop/CartContext";
 import { Link } from "@/i18n/navigation";
 import { getAuth } from "@/server/auth/context";
 import { cartCount, cartOwner } from "@/server/services/cart";
@@ -16,6 +17,7 @@ export default async function ShopLayout({ children, params }: { children: React
   const cartItems = auth?.isStaff ? 0 : await cartCount(cartOwner(auth));
 
   return (
+    <CartProvider initialCount={cartItems}>
     <div className="flex min-h-dvh flex-col">
       <header className="sticky top-0 z-20 border-b border-ink-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-3">
@@ -35,10 +37,7 @@ export default async function ShopLayout({ children, params }: { children: React
             <input name="q" placeholder={ts("searchPlaceholder")} aria-label={ts("searchPlaceholder")} className="w-full rounded-lg border border-ink-300 px-3 py-1.5 text-sm" />
           </form>
           <div className="ms-auto flex items-center gap-2">
-            <Link href="/cart" className="relative rounded-lg px-3 py-1.5 text-sm ring-1 ring-ink-300 hover:bg-ink-100" data-testid="cart-link">
-              {ts("nav.cart")}
-              {cartItems > 0 ? <span className="num ms-1 rounded-full bg-brand-700 px-1.5 text-xs text-white" data-testid="cart-count">{cartItems}</span> : null}
-            </Link>
+            <CartLink label={ts("nav.cart")} />
             <Suspense>
               <LanguageSwitcher />
             </Suspense>
@@ -80,5 +79,6 @@ export default async function ShopLayout({ children, params }: { children: React
         </div>
       </footer>
     </div>
+    </CartProvider>
   );
 }

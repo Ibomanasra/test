@@ -9,9 +9,17 @@ import { Button, Input, Num, Select, cn } from "@/components/ui";
 import { Link } from "@/i18n/navigation";
 import { staffPagePermission } from "@/server/auth/page-guards";
 import { dateTimeText, day, money } from "@/server/format";
+import { listDeliveryCompanies } from "@/server/services/delivery-companies";
 import { listOrders, orderStatusCounts } from "@/server/services/orders";
 
 const OPEN: OrderStatusKey[] = ["NEW", "CONFIRMED", "PICKING", "READY", "OUT_FOR_DELIVERY"];
+/** Reiter in Arbeitsschritten: „Vorbereiten“ zeigt auch alte „In Kommissionierung“-Bestellungen */
+const STEP_TABS: { key: OrderStatusKey; statuses: OrderStatusKey[] }[] = [
+  { key: "NEW", statuses: ["NEW"] },
+  { key: "CONFIRMED", statuses: ["CONFIRMED", "PICKING"] },
+  { key: "READY", statuses: ["READY"] },
+  { key: "OUT_FOR_DELIVERY", statuses: ["OUT_FOR_DELIVERY"] },
+];
 
 export default async function OrdersPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { locale } = await params;
@@ -33,17 +41,19 @@ export default async function OrdersPage({ params, searchParams }: { params: Pro
     from: f.from ? startOfBusinessDay(f.from) : undefined,
     to: f.to ? new Date(startOfBusinessDay(f.to).getTime() + 86_400_000) : undefined,
   };
-  const [t, tc, tAll, data, counts] = await Promise.all([
+  const stepTab = STEP_TABS.find((x) => x.key === view);
+  const [t, tc, tAll, data, counts, companies] = await Promise.all([
     getTranslations("admin.orders"),
     getTranslations("common"),
     getTranslations(),
     listOrders({
       ...base,
       page: f.page,
-      statuses: view === "open" ? OPEN : undefined,
-      status: view !== "open" && view !== "all" ? (view as OrderStatusKey) : undefined,
+      statuses: view === "open" ? OPEN : stepTab?.statuses,
+      status: view !== "open" && view !== "all" && !stepTab ? (view as OrderStatusKey) : undefined,
     }),
     orderStatusCounts(base),
+    listDeliveryCompanies(true),
   ]);
 
   const href = (patch: Record<string, string | undefined>) => {
@@ -56,7 +66,7 @@ export default async function OrdersPage({ params, searchParams }: { params: Pro
   const n = (s: OrderStatusKey) => counts[s] ?? 0;
   const tabs: { key: string; label: string; count: number }[] = [
     { key: "open", label: t("board.tabOpen"), count: OPEN.reduce((a, s) => a + n(s), 0) },
-    ...OPEN.map((s) => ({ key: s, label: tAll(`orderStatus.${s}`), count: n(s) })),
+    ...STEP_TABS.map((x) => ({ key: x.key, label: t(`board.tab.${x.key}`), count: x.statuses.reduce((a, s) => a + n(s), 0) })),
     { key: "DELIVERED", label: tAll("orderStatus.DELIVERED"), count: n("DELIVERED") },
     { key: "CANCELLED", label: tAll("orderStatus.CANCELLED"), count: n("CANCELLED") },
     { key: "all", label: tc("all"), count: ORDER_STATUSES.reduce((a, s) => a + n(s), 0) },
@@ -117,7 +127,7 @@ export default async function OrdersPage({ params, searchParams }: { params: Pro
         ))}
         <details className="group ms-auto" open={moreFilters}>
           <summary className="cursor-pointer list-none rounded-lg px-2.5 py-1 text-ink-600 ring-1 ring-ink-200 hover:bg-ink-50">{t("board.moreFilters")}</summary>
-          <form method="get" className="mt-2 flex flex-wrap gap-2">
+          <form method="get" className="mt-2 hidden flex-wrap gap-2 group-open:flex">
             {view !== "open" ? <input type="hidden" name="status" value={view} /> : null}
             {f.q ? <input type="hidden" name="q" value={f.q} /> : null}
             <Select name="channel" defaultValue={f.channel ?? ""} className="w-auto">
@@ -135,6 +145,7 @@ export default async function OrdersPage({ params, searchParams }: { params: Pro
       <OrderBoard
         canConfirm={hasPermission(auth.permissions, "order.confirm")}
         canStatus={hasPermission(auth.permissions, "order.status")}
+        companies={companies.map((c) => ({ id: c.id, name: c.name }))}
         rows={data.items.map((o) => {
           const snap = (o.addressSnapshot ?? {}) as { city?: string };
           const dd = day(o.requestedDeliveryDate);
@@ -158,6 +169,7 @@ export default async function OrdersPage({ params, searchParams }: { params: Pro
             total: money(o.totalGross),
             payment: tAll(`paymentMethod.${o.paymentMethod}`),
             paid: o.paymentStatus === "PAID",
+            company: o.shipments[0]?.deliveryCompany?.name,
           };
         })}
       />

@@ -135,7 +135,7 @@
       "title": "Shopping cart",
       "qty": "Quantity",
       "unit": "Unit",
-      "added": "✓ Added",
+      "added": "Added",
       "add": "Add to cart",
       "qtyRule": "Minimum {min} pcs, in steps of {step}",
       "empty": "Your cart is empty.",
@@ -172,7 +172,10 @@
       "nextOffer": "Add {missing} more and get {benefit} off 🎉",
       "trust1": "Pay on delivery available",
       "trust2": "Delivery across the West Bank",
-      "deliveryLater": "Next step"
+      "deliveryLater": "Next step",
+      "addedTitle": "Added to cart",
+      "inCart": "{count, plural, =1 {1 item in cart} other {# items in cart}}",
+      "viewCart": "View cart"
     },
     "availability": {
       "in_stock": "In stock",
@@ -748,7 +751,8 @@
         "textEn": "Text (English)",
         "emptyDefault": "Leave empty to use the default text.",
         "preview": "View shop"
-      }
+      },
+      "deliveryCompanies": "Couriers"
     },
     "audit": {
       "title": "Audit log",
@@ -1116,17 +1120,42 @@
           "late": "Late"
         },
         "next": {
-          "CONFIRMED": "Confirm",
+          "CONFIRMED": "1 Confirm",
           "PICKING": "Start picking",
-          "READY": "Mark ready"
+          "READY": "2 Prepared"
         },
         "toDispatch": "Dispatch",
         "toDelivery": "Delivery",
-        "open": "Open"
+        "open": "Open",
+        "handOver": "3 Hand over",
+        "handOverSelected": "Hand over {count} to courier",
+        "handOverText": "{count, plural, =1 {Creates the delivery note and invoice and hands the order to the courier.} other {Creates delivery notes and invoices and hands # orders to the courier.}}",
+        "handedOver": "{count} order(s) handed over to the courier.",
+        "markDelivered": "Delivered",
+        "deliveredOne": "Marked as delivered.",
+        "tab": {
+          "NEW": "1 To confirm",
+          "CONFIRMED": "2 To prepare",
+          "READY": "3 Ready to hand over",
+          "OUT_FOR_DELIVERY": "With courier"
+        }
       },
       "driver": "Driver",
       "noDriver": "No driver – assign later",
-      "driverHint": "The order is added to the driver's tour for today and they get a notification."
+      "driverHint": "The order is added to the driver's tour for today and they get a notification.",
+      "steps": {
+        "title": "Order steps",
+        "s1": "Confirm",
+        "s2": "Prepare",
+        "s3": "Hand to courier",
+        "do1": "Confirm order",
+        "do2": "Prepared – order is ready",
+        "do3": "Hand over to courier"
+      },
+      "handOverNow": "Hand over now",
+      "tracking": "Tracking number (optional)",
+      "trackingHint": "The number the courier gives the parcel.",
+      "partialTitle": "Partial delivery or own driver (optional)"
     },
     "products": {
       "title": "Products",
@@ -1839,6 +1868,19 @@
       "pause": "Pause",
       "resume": "Activate",
       "deleteConfirm": "Delete this offer? (If it was used, it is only paused)"
+    },
+    "companies": {
+      "intro": "Courier companies that pick up your ready orders. You choose one in step 3 “Hand over to courier”.",
+      "name": "Company name",
+      "namePlaceholder": "e.g. Express Delivery Co.",
+      "phone": "Phone",
+      "note": "Note",
+      "new": "New company",
+      "pick": "Which courier?",
+      "inactive": "Inactive",
+      "activate": "Activate",
+      "deactivate": "Deactivate",
+      "open": "{count} orders with them now"
     }
   },
   "driver": {
@@ -2021,7 +2063,10 @@
     "category_required": "Choose a category or type a new one.",
     "password_mismatch": "The passwords do not match.",
     "invalid_phone_or_password": "Wrong phone number or password.",
-    "password_not_set": "This account has no password yet – use “Forgot password?” or contact us."
+    "password_not_set": "This account has no password yet – use “Forgot password?” or contact us.",
+    "delivery_company_required": "Choose the courier company.",
+    "invalid_delivery_company": "This courier is not available.",
+    "name_taken": "This name is already in use."
   },
   "permissions": {
     "dashboard_view": "View dashboard",

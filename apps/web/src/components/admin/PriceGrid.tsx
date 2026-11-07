@@ -120,7 +120,7 @@ export function PriceGrid({
   };
 
   return (
-    <div className="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-ink-200">
+    <div className="relative overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-ink-200">
       <table className="min-w-full text-sm" data-testid="price-grid">
         <thead className="bg-ink-50 text-xs text-ink-500">
           <tr>

@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.15.0] – 2026-11-08 – Bestellungen in 3 Schritten & schneller Warenkorb
+
+### Geändert
+- **Bestellablauf in 3 klaren Schritten**: **1 تأكيد** (bestätigen) → **2 تم التجهيز** (vorbereitet, ein Klick statt „Kommissionierung starten“ + „Bereit“) → **3 تسليم لشركة التوصيل** (an die Zustellfirma übergeben). Reiter in der Bestellliste heißen jetzt nach den Schritten („1 للتأكيد“, „2 للتجهيز“, „3 جاهز للتسليم“, „عند شركة التوصيل“).
+- Schritt 3 direkt aus der Liste (auch **mehrere Bestellungen auf einmal**): Firma antippen oder „＋ شركة جديدة“ eintippen → Lieferschein + Rechnung entstehen automatisch.
+- Bei Bestellungen „bei der Zustellfirma“ steht der Firmenname in der Liste; **„وصل للزبون“** (zugestellt) mit einem Klick.
+- Bestellseite: Schrittanzeige 1-2-3 und große Knöpfe; Teillieferung/eigener Fahrer unter „optional“.
+
+### Hinzugefügt
+- **Zustellfirmen** (Einstellungen → شركات التوصيل): anlegen, bearbeiten, ausschalten; Anzeige, wie viele Bestellungen gerade bei jeder Firma sind. Lieferschein merkt Firma, Sendungsnummer (optional) und Übergabezeit.
+- **Warenkorb sofort**: Der Zähler im Kopf ändert sich beim Hinzufügen sofort (mit kleiner Animation), dazu eine moderne Bestätigung mit Foto, Menge, Korbsumme und „عرض السلة“.
+- Nach dem Bestellen ist der Korb-Zähler **sofort leer**.
+
+### Behoben
+- Bestellliste am Handy war breiter als der Bildschirm (versteckte Filter und Tabellen-Beschriftung ragten heraus).
+
 ## [0.14.1] – 2026-11-08
 
 ### Behoben

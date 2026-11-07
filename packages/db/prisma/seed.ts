@@ -308,9 +308,9 @@ async function seedDemo() {
 
 async function seedRounding() {
   if ((await prisma.roundingRule.count()) > 0) return;
-  // B2C-Aktionspreise enden auf ,90 (Basispreise bleiben wie gepflegt)
+  // Beispielregel „endet auf ,90“ – standardmäßig AUS für Angebote (Angebote gelten exakt wie eingegeben)
   await prisma.roundingRule.create({
-    data: { channel: "B2C", mode: "END_90", minAgorot: 0, appliesToPromotions: true, appliesToBasePrices: false, active: true, sortOrder: 10 },
+    data: { channel: "B2C", mode: "END_90", minAgorot: 0, appliesToPromotions: false, appliesToBasePrices: false, active: true, sortOrder: 10 },
   });
 }
 

@@ -179,6 +179,32 @@ export function isPromotionActive(p: PromotionRule, date: Date, channel: Pricing
 }
 
 /** Rundet einen Bruttopreis nach Modus (nur aufwärts zu „Preisschwellen“, nie unter 0). */
+/**
+ * Abrunden auf das nächste „schöne“ Preisende ≤ gross (für Aktionen: nie teurer als berechnet).
+ * Liegt kein passender Wert ≥ 0 darunter, bleibt der Preis unverändert.
+ */
+export function applyRoundingDown(gross: Agorot, mode: RoundingModeKey): Agorot {
+  let r: number;
+  switch (mode) {
+    case "NONE":
+      return gross;
+    case "END_90":
+      r = Math.floor(gross / 100) * 100 + 90;
+      if (r > gross) r -= 100;
+      break;
+    case "END_00":
+      r = Math.floor(gross / 100) * 100;
+      break;
+    case "END_50_OR_00":
+      r = Math.floor(gross / 50) * 50;
+      break;
+    case "NEAREST_10":
+      r = Math.floor(gross / 10) * 10;
+      break;
+  }
+  return r > 0 ? r : gross;
+}
+
 export function applyRounding(gross: Agorot, mode: RoundingModeKey): Agorot {
   assertAgorot(gross);
   if (gross <= 0) return gross;
@@ -390,10 +416,12 @@ function resolveB2C(product: PricingProduct, qty: number, date: Date): PriceResu
   const baseCandidate: Candidate = { rule: "B2C_PRICE", unitPrice: base, freeQtyBase: 0, note: "", rank: 2 };
 
   let promo = bestPromotion(r.promotions, date, "B2C", null, product.b2cPrice, base, qty, trace);
-  if (promo && promo.freeQtyBase === 0) {
+  // Festpreis-Aktionen gelten exakt wie eingegeben; Prozent-Aktionen werden nur ABgerundet
+  // (nie teurer als berechnet, nie zurück auf den Normalpreis)
+  if (promo && promo.freeQtyBase === 0 && promo.note !== "fixed") {
     const rule = pickRoundingRule(r.roundingRules, promo.unitPrice, "promotion");
-    if (rule) {
-      const rounded = applyRounding(promo.unitPrice, rule.mode);
+    const rounded = rule ? applyRoundingDown(promo.unitPrice, rule.mode) : promo.unitPrice;
+    if (rule && rounded !== promo.unitPrice) {
       trace.push({ rule: "PROMOTION", ref: promo.ref, unitPrice: rounded, note: `promotion rounded ${rule.mode}`, applied: false });
       promo = { ...promo, unitPrice: rounded };
     }

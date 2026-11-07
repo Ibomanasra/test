@@ -422,7 +422,9 @@
       "backorder": "The remaining quantity will be delivered with order: {numbers}",
       "confirmationPdf": "Order confirmation",
       "invoicePdf": "Invoice",
-      "placedText": "We'll contact you if needed – you can follow your order status here."
+      "placedText": "We'll contact you if needed – you can follow your order status here.",
+      "goodsValue": "Goods",
+      "deliveryFree": "Free"
     },
     "quick": {
       "title": "Quick order",
@@ -1145,7 +1147,9 @@
           "CONFIRMED": "2 To prepare",
           "READY": "3 Ready to hand over",
           "OUT_FOR_DELIVERY": "With courier"
-        }
+        },
+        "goods": "Goods",
+        "delivery": "Delivery"
       },
       "driver": "Driver",
       "noDriver": "No driver – assign later",
@@ -1162,7 +1166,9 @@
       "handOverNow": "Hand over now",
       "tracking": "Tracking number (optional)",
       "trackingHint": "The number the courier gives the parcel.",
-      "partialTitle": "Partial delivery or own driver (optional)"
+      "partialTitle": "Partial delivery or own driver (optional)",
+      "goodsValue": "Goods (selling price)",
+      "deliveryFree": "Free"
     },
     "products": {
       "title": "Products",
@@ -1874,7 +1880,17 @@
       "used": "Used {count} times",
       "pause": "Pause",
       "resume": "Activate",
-      "deleteConfirm": "Delete this offer? (If it was used, it is only paused)"
+      "deleteConfirm": "Delete this offer? (If it was used, it is only paused)",
+      "products": {
+        "title": "Products on offer",
+        "hint": "Every product with an offer now or soon – with the normal price and the price the customer actually pays.",
+        "none": "No products on offer right now.",
+        "viaCategory": "via category “{name}”",
+        "freeQty": "{qty} free",
+        "noEffect": "no discount (a better price applies)",
+        "until": "until {date}",
+        "from": "from {date}"
+      }
     },
     "companies": {
       "intro": "Courier companies that pick up your ready orders. You choose one in step 3 “Hand over to courier”.",

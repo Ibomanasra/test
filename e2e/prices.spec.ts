@@ -12,8 +12,8 @@ test("price preview explains the B2C promotion price", async ({ page }) => {
   await page.locator("#p-qty").fill("1");
   await page.getByTestId("preview-calc").click();
   await expect(page.getByTestId("preview-result")).toBeVisible();
-  // 12,90 − 10 % = 11,61 → Rundung auf ,90 → 11,90
-  await expect(page.getByTestId("preview-price")).toContainText("11.90");
+  // 12,90 − 10 % = 11,61 – Angebote gelten exakt (keine ,90-Rundung)
+  await expect(page.getByTestId("preview-price")).toContainText("11.61");
 });
 
 test("saving a price below minimum margin needs explicit confirmation and is logged", async ({ page }) => {

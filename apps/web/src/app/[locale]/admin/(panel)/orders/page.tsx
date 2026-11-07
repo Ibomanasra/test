@@ -167,6 +167,8 @@ export default async function OrdersPage({ params, searchParams }: { params: Pro
             deliveryHint: hint,
             items: o._count.items,
             total: money(o.totalGross),
+            goods: money(o.totalGross - o.deliveryFeeGross),
+            delivery: o.deliveryFeeGross > 0 ? money(o.deliveryFeeGross) : "",
             payment: tAll(`paymentMethod.${o.paymentMethod}`),
             paid: o.paymentStatus === "PAID",
             company: o.shipments[0]?.deliveryCompany?.name,

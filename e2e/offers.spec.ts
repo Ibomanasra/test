@@ -67,3 +67,31 @@ test("customer redeems a coupon at checkout; cancelling frees it again", async (
   await db.orderOffer.delete({ where: { id: offer.id } });
   await staff.close();
 });
+
+test("fixed offer price stays exact (10 ₪ = 10.00) and shows up in the offer product list", async ({ page }) => {
+  await staffLogin(page, OWNER.phone, OWNER.password);
+  const fmt = (d: Date) => d.toISOString().slice(0, 16);
+  const res = await page.request.post("/api/v1/admin/prices/rules/promotions", {
+    data: { nameAr: "عشرة شيكل", nameEn: "Ten shekel", channel: "B2C", type: "FIXED_PRICE", startsAt: fmt(new Date(Date.now() - 3_600_000)), endsAt: fmt(new Date(Date.now() + 86_400_000)), targetSku: "CL-003", fixedPrice: 1000 },
+    headers: ORIGIN,
+  });
+  expect(res.ok(), await res.text()).toBe(true);
+  const { id } = await res.json();
+  try {
+    await page.goto("/en/admin/offers");
+    const row = page.getByTestId("offer-product-row").filter({ hasText: "CL-003" }).filter({ hasText: "Ten shekel" });
+    await expect(row.getByTestId("offer-price")).toContainText("10.00");
+  } finally {
+    await db.promotion.delete({ where: { id } });
+  }
+});
+
+test("order page shows the goods price and the delivery cost separately", async ({ page }) => {
+  await staffLogin(page, OWNER.phone, OWNER.password);
+  const o = await db.order.findFirstOrThrow({ orderBy: { placedAt: "desc" } });
+  await page.goto(`/en/admin/orders/${o.id}`);
+  await expect(page.getByTestId("order-goods")).toBeVisible();
+  await expect(page.getByTestId("order-delivery")).toBeVisible();
+  await page.goto(`/en/admin/orders?status=all&q=${o.number}`);
+  await expect(page.getByTestId("row-split").first()).toContainText("Goods");
+});

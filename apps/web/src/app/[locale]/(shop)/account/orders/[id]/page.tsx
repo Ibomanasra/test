@@ -80,10 +80,10 @@ export default async function MyOrderPage({ params, searchParams }: { params: Pr
       <Card>
         <div className="ms-auto max-w-xs space-y-1 text-sm">
           {o.offerDiscount > 0 ? <p className="flex justify-between font-medium text-green-700" data-testid="order-offer"><span>🎁 {o.offer ? (locale === "ar" ? o.offer.nameAr : o.offer.nameEn) : tAll("shop.checkout.offers.discount")}{o.couponCode ? ` (${o.couponCode})` : ""}</span><span className="num">−{money(o.offerDiscount)}</span></p> : null}
-          {o.deliveryFeeGross > 0 ? <p className="flex justify-between"><span>{t("deliveryFee")}</span><span className="num">{money(o.deliveryFeeGross)}</span></p> : null}
-          <p className="flex justify-between"><span>{t("net")}</span><span className="num">{money(o.subtotalNet)}</span></p>
-          <p className="flex justify-between"><span>{t("vat")}</span><span className="num">{money(o.vatTotal)}</span></p>
-          <p className="flex justify-between font-bold"><span>{t("total")}</span><span className="num">{money(o.totalGross)}</span></p>
+          <p className="flex justify-between"><span>{t("goodsValue")}</span><span className="num">{money(o.totalGross - o.deliveryFeeGross)}</span></p>
+          <p className="flex justify-between"><span>{t("deliveryFee")}</span>{o.deliveryFeeGross > 0 ? <span className="num">{money(o.deliveryFeeGross)}</span> : <span className="text-green-700">{t("deliveryFree")}</span>}</p>
+          <p className="flex justify-between border-t border-ink-200 pt-1 font-bold"><span>{t("total")}</span><span className="num">{money(o.totalGross)}</span></p>
+          {o.vatTotal > 0 ? <p className="flex justify-between text-xs text-ink-500"><span>{t("net")} / {t("vat")}</span><span className="num">{money(o.subtotalNet)} / {money(o.vatTotal)}</span></p> : null}
         </div>
       </Card>
       {o.backorders.length ? <Alert tone="blue">{t("backorder", { numbers: o.backorders.map((b) => b.number).join(", ") })}</Alert> : null}

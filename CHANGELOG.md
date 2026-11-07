@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.16.1] – 2026-11-08 – Angebote exakt, Produktliste, Ware & Lieferung getrennt
+
+### Behoben
+- **Angebotspreise gelten exakt wie eingegeben**: Ein Festpreis von 10 ₪ ist 10,00 ₪ (vorher wurde durch die „,90“-Rundung 10,90 daraus); 10 % Rabatt sind genau 10 % (vorher konnte ein 10-%-Angebot auf 8,90 durch Aufrunden wieder 8,90 ergeben = gar kein Rabatt). Die Beispiel-Rundungsregel gilt nicht mehr für Angebote (Migration); wer sie wieder einschaltet, bekommt nur noch **Ab**rundung zugunsten des Kunden, Festpreise bleiben immer exakt.
+- Angebotsseite am Handy war breiter als der Bildschirm.
+
+### Hinzugefügt
+- **Angebote → „Produkte in Angeboten“**: Liste aller Produkte mit laufendem oder geplantem Angebot – Foto, Name, welches Angebot (auch über Kategorie), **Normalpreis durchgestrichen → Preis, den der Kunde wirklich zahlt** (Endkunde und Händler), Status und Enddatum.
+- **Verkaufspreis und Lieferkosten getrennt**: In der Bestellliste unter dem Gesamtbetrag „Ware X · Lieferung Y“ (oder „kostenlos“), auf der Bestellseite (Admin und Kunde) eigene Zeilen „سعر البضاعة“ und „التوصيل“, auch im Tabellendruck.
+
 ## [0.16.0] – 2026-11-08 – Hebräisch & Konto erstellen beim Bestellen
 
 ### Hinzugefügt

@@ -394,7 +394,7 @@ export function OffersCenter({
         </div>
         {error ? <div className="mb-3"><Alert tone="red">{error}</Alert></div> : null}
         {shown.length === 0 ? <p className="rounded-xl bg-white p-6 text-center text-sm text-ink-500 ring-1 ring-ink-200">{t("none")}</p> : null}
-        <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <ul className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           {shown.map((item) => (
             <li key={`${item.type}-${item.id}`} data-testid="offer-card" className={cn("flex flex-col rounded-2xl bg-white p-4 ring-1 ring-ink-200", item.status !== "active" && "opacity-75")}>
               <div className="flex items-start gap-3">

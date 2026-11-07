@@ -27,6 +27,10 @@ export interface OrderRow {
   deliveryHint: string;
   items: number;
   total: string;
+  /** Verkaufspreis der Ware (ohne Lieferung) */
+  goods: string;
+  /** Lieferkosten; "" = kostenlos */
+  delivery: string;
   payment: string;
   paid: boolean;
   /** Zustellfirma des offenen Lieferscheins (unterwegs) */
@@ -136,9 +140,11 @@ export function OrderBoard({ rows, canConfirm, canStatus, companies = [] }: { ro
                 { key: "zone", label: t("zone") },
                 { key: "placedAt", label: t("placedAt"), kind: "num" },
                 { key: "deliveryDay", label: t("deliveryDay"), kind: "num" },
+                { key: "goods", label: t("goodsValue"), kind: "num" },
+                { key: "delivery", label: t("deliveryFee"), kind: "num" },
                 { key: "total", label: t("total"), kind: "num" },
               ],
-              rows: (sel.size ? rows.filter((r) => sel.has(r.id)) : rows).map((r) => ({ number: r.number, customer: r.customer, channel: r.channelLabel, status: r.statusLabel, zone: [r.city, r.zone].filter(Boolean).join(" · "), placedAt: r.placedAt, deliveryDay: r.deliveryDay, total: r.total })),
+              rows: (sel.size ? rows.filter((r) => sel.has(r.id)) : rows).map((r) => ({ number: r.number, customer: r.customer, channel: r.channelLabel, status: r.statusLabel, zone: [r.city, r.zone].filter(Boolean).join(" · "), placedAt: r.placedAt, deliveryDay: r.deliveryDay, goods: r.goods, delivery: r.delivery || t("deliveryFree"), total: r.total })),
             }}
           />
         </span>
@@ -204,6 +210,9 @@ export function OrderBoard({ rows, canConfirm, canStatus, companies = [] }: { ro
                   </td>
                   <td className="px-3 py-3 text-end align-top">
                     <p className="num font-semibold text-ink-900">{r.total}</p>
+                    <p className="whitespace-nowrap text-[11px] text-ink-500" data-testid="row-split">
+                      {t("board.goods")} <span className="num">{r.goods}</span> · {t("board.delivery")} {r.delivery ? <span className="num">{r.delivery}</span> : <span className="text-green-700">{t("deliveryFree")}</span>}
+                    </p>
                     <p className={cn("mt-0.5 text-xs", r.paid ? "text-green-700" : "text-ink-500")}>{r.payment}</p>
                   </td>
                   <td className="px-3 py-3 align-top"><Badge tone={ORDER_STATUS_TONE[r.status]}>{r.statusLabel}</Badge></td>

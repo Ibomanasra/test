@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   PricingError,
   applyRounding,
+  applyRoundingDown,
   bulkAdjust,
   checkQuantity,
   isBelowMargin,
@@ -71,6 +72,22 @@ describe("validity helpers", () => {
   });
 });
 
+describe("applyRoundingDown", () => {
+  it.each([
+    [801, "END_90", 790],
+    [1161, "END_90", 1090],
+    [990, "END_90", 990],
+    [1000, "END_90", 990],
+    [50, "END_90", 50],
+    [1234, "END_00", 1200],
+    [1234, "END_50_OR_00", 1200],
+    [1234, "NEAREST_10", 1230],
+    [1234, "NONE", 1234],
+  ] as const)("%i %s → %i", (input, mode, expected) => {
+    expect(applyRoundingDown(input, mode)).toBe(expected);
+  });
+});
+
 describe("applyRounding", () => {
   it.each([
     ["END_90", 1234, 1290],
@@ -133,12 +150,29 @@ describe("resolvePrice – B2C", () => {
       promotions: [promo({ id: "p10", channel: "B2C", percentBps: 1000 })],
       roundingRules: [{ mode: "END_90" as const, minAgorot: 0, appliesToPromotions: true, appliesToBasePrices: false, active: true, sortOrder: 0 }],
     };
-    // 12,90 − 10 % = 11,61 → 11,90
+    // 12,90 − 10 % = 11,61 → abgerundet 10,90 (nie teurer als berechnet)
     const r = resolvePrice(product({}, rules), null, 1, NOW, "B2C");
     expect(r.rule).toBe("PROMOTION");
     expect(r.ruleRef).toBe("p10");
-    expect(r.unitPrice).toBe(1190);
+    expect(r.unitPrice).toBe(1090);
     expect(r.listUnitPrice).toBe(1290);
+  });
+
+  it("keeps a fixed offer price exactly as entered, even with a .90 rounding rule", () => {
+    const rules = {
+      promotions: [promo({ type: "FIXED_PRICE", fixedPrice: 1000, channel: "B2C" })],
+      roundingRules: [{ mode: "END_90" as const, minAgorot: 0, appliesToPromotions: true, appliesToBasePrices: false, active: true, sortOrder: 0 }],
+    };
+    expect(resolvePrice(product({}, rules), null, 1, NOW, "B2C")).toMatchObject({ unitPrice: 1000, rule: "PROMOTION" });
+  });
+
+  it("a 10 % offer on 8,90 still gives a discount (rounded down, not back up to 8,90)", () => {
+    const rules = {
+      promotions: [promo({ id: "p10", channel: "B2C", percentBps: 1000 })],
+      roundingRules: [{ mode: "END_90" as const, minAgorot: 0, appliesToPromotions: true, appliesToBasePrices: false, active: true, sortOrder: 0 }],
+    };
+    // 8,90 − 10 % = 8,01 → 7,90
+    expect(resolvePrice(product({ b2cPrice: 890 }, rules), null, 1, NOW, "B2C")).toMatchObject({ unitPrice: 790, rule: "PROMOTION" });
   });
 
   it("ignores B2B-only and expired promotions", () => {

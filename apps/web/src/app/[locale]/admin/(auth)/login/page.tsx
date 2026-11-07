@@ -22,7 +22,7 @@ export default async function StaffLoginPage({ params }: { params: Promise<{ loc
     <main className="grid min-h-dvh place-items-center bg-ink-100 p-4">
       <div className="w-full max-w-sm space-y-4">
         <div className="flex items-center justify-between">
-          <Logo size={44} />
+          <Logo size={96} />
           <Suspense>
             <LanguageSwitcher />
           </Suspense>

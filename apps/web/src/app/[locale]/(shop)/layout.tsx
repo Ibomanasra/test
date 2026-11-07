@@ -20,7 +20,7 @@ export default async function ShopLayout({ children, params }: { children: React
       <header className="sticky top-0 z-20 border-b border-ink-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-3">
           <Link href="/" aria-label={t("appName")} data-testid="site-logo">
-            <Logo size={40} />
+            <Logo size={56} className="-my-2" />
           </Link>
           <nav className="order-3 flex w-full gap-4 overflow-x-auto text-sm font-medium text-ink-700 sm:order-none sm:ms-6 sm:w-auto">
             <Link href="/products" className="whitespace-nowrap hover:text-brand-700">{ts("nav.catalog")}</Link>

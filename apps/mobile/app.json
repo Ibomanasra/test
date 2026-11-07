@@ -15,8 +15,8 @@
     "android": {
       "package": "ps.sholataljanoub.app",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.png",
-        "backgroundColor": "#1c1917"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
       }
     },
     "locales": {

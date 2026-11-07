@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.1] – 2026-11-07 – Eigenes Logo
+
+### Geändert
+- **Firmenlogo** (Haus mit Kalligrafie „شعلة الجنوب“) ersetzt das bisherige Zeichen: Shop-Kopf, Admin-Seitenleiste (helle Variante), Anmeldeseiten, Favicon/Apple-Icon, Standardlogo auf allen A4-Dokumenten, App-Icon, adaptives Android-Icon, Splash und App-Anmeldung.
+- Icons zeigen das Haus mit Fenster und den drei roten Quadraten aus dem Logo (Schrift wäre in Icon-Größe nicht lesbar).
+- Dateien: `apps/web/public/brand/{logo,logo-light,mark}.png`.
+
 ## [0.9.0] – 2026-11-07 – Angebotszentrum
 
 ### Hinzugefügt

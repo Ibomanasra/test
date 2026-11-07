@@ -11,7 +11,7 @@ export default async function ResetPasswordPage({ params, searchParams }: { para
   return (
     <main className="grid min-h-dvh place-items-center bg-ink-100 p-4">
       <div className="w-full max-w-sm space-y-4">
-        <Logo size={44} />
+        <Logo size={96} />
         <Card title={t("title")}>
           <p className="mb-4 text-sm text-ink-600">{token ? t("confirmIntro") : t("requestIntro")}</p>
           {token ? <PasswordResetConfirm token={token} /> : <PasswordResetRequest />}

@@ -21,7 +21,7 @@ export default async function AdminLayout({ children, params }: { children: Reac
   const sidebar = (
     <>
       <div className="mb-6 px-3">
-        <Logo tone="dark" size={40} subtitle={t("title")} />
+        <Logo tone="dark" size={64} subtitle={t("title")} />
       </div>
       <AdminSidebar items={items} />
     </>

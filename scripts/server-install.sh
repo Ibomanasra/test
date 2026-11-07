@@ -80,7 +80,9 @@ docker compose up -d --build
 say "6/6 Tägliches Backup (02:30) einrichten"
 mkdir -p /opt/sholat-backups
 CRON="30 2 * * * cd $PWD && ./scripts/backup.sh >> /var/log/sholat-backup.log 2>&1"
-( crontab -l 2>/dev/null | grep -v 'scripts/backup.sh' ; echo "$CRON" ) | crontab -
+# (ohne bestehende Crontab liefern crontab -l/grep Fehlercodes – hier bewusst ignorieren)
+{ crontab -l 2>/dev/null | grep -v 'scripts/backup.sh' || true; echo "$CRON"; } | crontab -
+echo "Backup täglich 02:30 → /opt/sholat-backups"
 
 DOMAIN_NOW="$(grep '^DOMAIN=' .env | cut -d= -f2)"
 say "Fertig!"

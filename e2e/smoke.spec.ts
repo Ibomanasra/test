@@ -10,12 +10,27 @@ test.describe("i18n & RTL", () => {
 
   test("switches to English (LTR) and back", async ({ page }) => {
     await page.goto("/ar/login");
-    await page.getByTestId("language-switcher").click();
+    await page.getByTestId("language-switcher").selectOption("en");
     await expect(page).toHaveURL(/\/en\/login$/);
     await expect(page.locator("html")).toHaveAttribute("dir", "ltr");
     await expect(page.getByRole("heading", { name: "Log in" })).toBeVisible();
-    await page.getByTestId("language-switcher").click();
+    await page.getByTestId("language-switcher").selectOption("ar");
     await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+  });
+
+  test("Hebrew: whole interface in Hebrew, right-to-left", async ({ page }) => {
+    await page.goto("/ar/login");
+    await page.getByTestId("language-switcher").selectOption("he");
+    await expect(page).toHaveURL(/\/he\/login$/);
+    await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+    await expect(page.locator("html")).toHaveAttribute("lang", "he");
+    await expect(page.getByRole("heading", { name: "התחברות" })).toBeVisible();
+    // Admin-Anmeldung ebenfalls hebräisch
+    await page.goto("/he/admin/login");
+    await expect(page.getByText("כניסת עובדים").first()).toBeVisible();
+    // Shop-Kopfzeile
+    await page.goto("/he");
+    await expect(page.getByRole("link", { name: "מוצרים" }).first()).toBeVisible();
   });
 
   test("uses latin digits in Arabic", async ({ page }) => {

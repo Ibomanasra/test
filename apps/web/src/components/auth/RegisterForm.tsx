@@ -18,12 +18,15 @@ export function RegisterForm({
   zones,
   initialType,
   maxUploadMb,
+  next,
 }: {
   /** SMS-Modus: bestätigte Nummer (Ticket); null = Telefon + Passwort im Formular */
   token: string | null;
   zones: Zone[];
   initialType: "b2c" | "b2b";
   maxUploadMb: number;
+  /** Ziel nach der Registrierung (z. B. /checkout, wenn man gerade bestellen wollte) */
+  next?: string;
 }) {
   const t = useTranslations("register");
   const locale = useLocale();
@@ -67,7 +70,8 @@ export function RegisterForm({
       return apiFetch("/api/v1/auth/register/b2b", { locale, form });
     });
     if (ok) {
-      router.replace("/account");
+      // Privatkunden gehen direkt weiter zur Kasse; Händler warten erst auf die Freigabe
+      router.replace(next && type === "b2c" ? next : "/account");
       router.refresh();
     }
   }

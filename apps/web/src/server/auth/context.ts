@@ -23,7 +23,7 @@ export interface CustomerRef {
 export interface AuthContext {
   sessionId: string;
   via: "cookie" | "bearer";
-  user: { id: string; kind: "STAFF" | "CUSTOMER"; name: string; phone: string; locale: "ar" | "en" };
+  user: { id: string; kind: "STAFF" | "CUSTOMER"; name: string; phone: string; locale: "ar" | "en" | "he" };
   /** Nur STAFF mit bestandenem 2. Faktor erhält Rechte */
   permissions: ReadonlySet<string>;
   roleKeys: string[];

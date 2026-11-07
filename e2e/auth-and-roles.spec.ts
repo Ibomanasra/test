@@ -68,6 +68,33 @@ test("B2C customer registers with phone + password (no SMS) and logs in again", 
   await expect(page.getByText("Wrong phone number or password.")).toBeVisible();
 });
 
+test("guest with a full cart sees “create account”, registers and lands at checkout with the cart kept", async ({ page }) => {
+  const phone = randomPhone();
+  await page.goto("/ar/products");
+  await page.getByTestId("add-to-cart").first().click();
+  await expect(page.getByTestId("cart-count")).toHaveText("1");
+  await page.goto("/ar/cart");
+  await expect(page.getByTestId("cart-register")).toBeVisible();
+  await page.getByTestId("cart-register").click();
+  await expect(page).toHaveURL(/\/ar\/register\?next=%2Fcheckout|\/ar\/register\?next=\/checkout/);
+  await page.locator("#phone").fill(phone.local);
+  await page.locator("#password").fill("Geheim-123");
+  await page.locator("#password2").fill("Geheim-123");
+  await page.locator("#name").fill("زبون جديد");
+  await page.locator("#zoneId").selectOption({ index: 1 });
+  await page.locator("#city").fill("الخليل");
+  await page.locator("form button[type=submit]").click();
+  await expect(page).toHaveURL(/\/ar\/checkout$/);
+  await expect(page.getByTestId("cart-count")).toHaveText("1");
+});
+
+test("login page shows a clear “new customer” box", async ({ page }) => {
+  await page.goto("/ar/login?next=/checkout");
+  await expect(page.getByTestId("new-customer-box")).toBeVisible();
+  await page.getByTestId("login-register").click();
+  await expect(page).toHaveURL(/\/ar\/register\?next=/);
+});
+
 test("B2B dealer registers with licence, waits for approval, then gets B2B channel", async ({ page, browser }) => {
   const phone = randomPhone();
   await page.goto("/ar/register?type=b2b");

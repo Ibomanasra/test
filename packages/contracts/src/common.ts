@@ -15,7 +15,7 @@ export const otpCodeSchema = z
   .transform((v) => normalizeDigits(v).replace(/\s/g, ""))
   .pipe(z.string().regex(/^\d{6}$/, "invalid_code"));
 
-export const localeSchema = z.enum(["ar", "en"]);
+export const localeSchema = z.enum(["ar", "en", "he"]);
 export const channelSchema = z.enum(["B2C", "B2B"]);
 export const idSchema = z.string().min(1).max(64);
 

@@ -3,7 +3,7 @@ import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { dirFor, routing } from "@/i18n/routing";
-import { plexArabic } from "../fonts";
+import { plexArabic, plexHebrew } from "../fonts";
 import "../globals.css";
 
 export function generateStaticParams() {
@@ -35,7 +35,7 @@ export default async function LocaleLayout({
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
   return (
-    <html lang={locale} dir={dirFor(locale)} className={plexArabic.variable}>
+    <html lang={locale} dir={dirFor(locale)} className={`${plexArabic.variable} ${plexHebrew.variable}`}>
       <body className="min-h-dvh font-sans">
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
       </body>

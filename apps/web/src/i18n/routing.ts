@@ -1,7 +1,10 @@
 import { defineRouting } from "next-intl/routing";
 
-export const locales = ["ar", "en"] as const;
+export const locales = ["ar", "en", "he"] as const;
 export type AppLocale = (typeof locales)[number];
+
+/** Anzeigename jeder Sprache in der eigenen Sprache (für den Umschalter) */
+export const LOCALE_NAMES: Record<AppLocale, string> = { ar: "العربية", en: "English", he: "עברית" };
 
 export const routing = defineRouting({
   locales,
@@ -13,7 +16,7 @@ export const routing = defineRouting({
 });
 
 export function dirFor(locale: string): "rtl" | "ltr" {
-  return locale === "ar" ? "rtl" : "ltr";
+  return locale === "ar" || locale === "he" ? "rtl" : "ltr";
 }
 
 /**
@@ -21,5 +24,5 @@ export function dirFor(locale: string): "rtl" | "ltr" {
  * "ar-u-nu-latn" → arabische Monatsnamen, aber 0–9.
  */
 export function intlLocale(locale: string): string {
-  return locale === "ar" ? "ar-u-nu-latn" : "en-GB";
+  return locale === "ar" ? "ar-u-nu-latn" : locale === "he" ? "he-IL" : "en-GB";
 }

@@ -20,7 +20,7 @@ import { badRequest } from "../errors";
 const TTL_SECONDS = 30 * 60;
 const fingerprint = (hash: string | null) => createHash("sha256").update(hash ?? "none").digest("hex").slice(0, 16);
 
-export async function requestPasswordReset(identifier: string, ip: string | null, locale: "ar" | "en") {
+export async function requestPasswordReset(identifier: string, ip: string | null, locale: "ar" | "en" | "he") {
   await hitRateLimit(`pwreset:ip:${ip ?? "unknown"}`, 10, 3600);
   const id = identifier.trim();
   let phone: string | null = null;

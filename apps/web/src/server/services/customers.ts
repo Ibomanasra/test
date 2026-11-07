@@ -157,10 +157,12 @@ const STATUS_TEXT: Record<"approved" | "rejected", Record<Locale, string>> = {
   approved: {
     ar: "تمت الموافقة على حساب التاجر الخاص بك لدى شعلة الجنوب. يمكنك الآن مشاهدة أسعار الجملة.",
     en: "Your Sholat Aljanoub business account has been approved. Wholesale prices are now available.",
+    he: "חשבון העסק שלך בשולת אלג'נוב אושר. מחירי הסיטונאות זמינים כעת.",
   },
   rejected: {
     ar: "نعتذر، لم تتم الموافقة على طلب حساب التاجر. يرجى التواصل معنا.",
     en: "Sorry, your business account request was not approved. Please contact us.",
+    he: "מצטערים, בקשת חשבון העסק שלך לא אושרה. אנא צור איתנו קשר.",
   },
 };
 

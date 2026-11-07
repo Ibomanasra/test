@@ -175,7 +175,11 @@
       "deliveryLater": "Next step",
       "addedTitle": "Added to cart",
       "inCart": "{count, plural, =1 {1 item in cart} other {# items in cart}}",
-      "viewCart": "View cart"
+      "viewCart": "View cart",
+      "guestTitle": "One step and your order is ready!",
+      "registerToOrder": "Create an account and order",
+      "registerHint": "Takes one minute – your cart is kept",
+      "haveAccount": "I have an account – log in"
     },
     "availability": {
       "in_stock": "In stock",
@@ -319,7 +323,10 @@
     "loginIntroPassword": "Log in with your phone number and password.",
     "loginButton": "Log in",
     "forgot": "Forgot password?",
-    "createAccount": "Create an account"
+    "createAccount": "Create an account",
+    "newCustomerTitle": "New customer?",
+    "newCustomerText": "Create your account in one minute with your phone number and a password – your cart is kept.",
+    "newCustomerButton": "Create a new account"
   },
   "register": {
     "title": "Create account",

@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.16.0] – 2026-11-08 – Hebräisch & Konto erstellen beim Bestellen
+
+### Hinzugefügt
+- **Hebräisch (עברית) als dritte Sprache**: Shop, Kundenkonto, Admin, Fahreransicht und Fehlermeldungen vollständig übersetzt (rund 1.900 Texte), von rechts nach links wie Arabisch, mit hebräischer Schrift (IBM Plex Sans Hebrew, lokal). Adressen `/he/…`.
+- Sprachauswahl jetzt als Auswahlfeld: **العربية · English · עברית** (überall: Shop, Admin, Anmeldung).
+- Kunden können Hebräisch als bevorzugte Sprache haben (Datenbank-Migration); SMS-Texte für Code und Händler-Freigabe auch auf Hebräisch.
+- Neue Texte ohne Hebräisch fallen automatisch auf Englisch zurück; `scripts/i18n/add-messages.py` nimmt optional eine 4. Spalte (Hebräisch).
+- **„Neues Konto erstellen“ gut sichtbar beim Bestellen**: Gäste sehen im Warenkorb einen großen Knopf „إنشاء حساب جديد وإتمام الطلب“ (plus „لدي حساب – تسجيل الدخول“); die Anmeldeseite zeigt oben einen auffälligen Kasten „زبون جديد؟“. Nach der Registrierung geht es **direkt zur Kasse**, der Warenkorb bleibt erhalten.
+
+### Hinweis
+- Produktnamen, Kategorien und Belege (PDF) gibt es weiterhin auf Arabisch/Englisch.
+
 ## [0.15.0] – 2026-11-08 – Bestellungen in 3 Schritten & schneller Warenkorb
 
 ### Geändert

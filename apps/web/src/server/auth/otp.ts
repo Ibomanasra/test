@@ -9,6 +9,7 @@ import { hitRateLimit } from "./rate-limit";
 const OTP_TEXT: Record<Locale, (code: string, minutes: number) => string> = {
   ar: (code, m) => `رمز التحقق الخاص بك في شعلة الجنوب: ${code} (صالح لمدة ${m} دقائق). لا تشاركه مع أحد.`,
   en: (code, m) => `Your Sholat Aljanoub verification code: ${code} (valid for ${m} minutes). Do not share it.`,
+  he: (code, m) => `קוד האימות שלך בשולת אלג'נוב: ${code} (בתוקף ${m} דקות). אל תשתף אותו עם אף אחד.`,
 };
 
 function codeHash(phone: string, purpose: OtpPurpose, code: string): string {

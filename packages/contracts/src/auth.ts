@@ -67,7 +67,7 @@ export const registerB2CSchema = z.object({
   phone: phoneSchema.optional(),
   password: customerPasswordSchema.optional(),
   name: nameSchema,
-  locale: z.enum(["ar", "en"]).default("ar"),
+  locale: z.enum(["ar", "en", "he"]).default("ar"),
   address: addressInputSchema.omit({ phone: true, recipient: true }),
 });
 export type RegisterB2C = z.infer<typeof registerB2CSchema>;
@@ -83,7 +83,7 @@ export const registerB2BSchema = z.object({
   phone: phoneSchema.optional(),
   password: customerPasswordSchema.optional(),
   name: nameSchema,
-  locale: z.enum(["ar", "en"]).default("ar"),
+  locale: z.enum(["ar", "en", "he"]).default("ar"),
   companyName: nameSchema,
   ownerName: nameSchema,
   dealerNumber: dealerNumberSchema,

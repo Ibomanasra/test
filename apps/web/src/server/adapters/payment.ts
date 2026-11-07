@@ -20,7 +20,7 @@ export interface SessionInput {
   amount: number;
   currency: "ILS";
   description: string;
-  locale: "ar" | "en";
+  locale: "ar" | "en" | "he";
   customer: { name: string; phone: string; email?: string | null; city?: string | null; street?: string | null };
   returnUrl: string;
   callbackUrl: string;

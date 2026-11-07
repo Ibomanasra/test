@@ -150,7 +150,12 @@ export function CartView({ cart, loggedIn, isB2B, offer }: { cart: PricedCart; l
             ) : loggedIn ? (
               <Button className="w-full py-3 text-base" onClick={() => router.push("/checkout")} data-testid="to-checkout">{t("checkout")} →</Button>
             ) : (
-              <Button className="w-full py-3 text-base" onClick={() => router.push("/login?next=/checkout")}>{t("loginToCheckout")}</Button>
+              <div className="space-y-2" data-testid="guest-checkout">
+                <p className="text-center text-sm font-medium text-ink-800">{t("guestTitle")}</p>
+                <Button className="w-full py-3 text-base" onClick={() => router.push("/register?next=/checkout")} data-testid="cart-register">✨ {t("registerToOrder")}</Button>
+                <p className="text-center text-xs text-ink-500">{t("registerHint")}</p>
+                <Button variant="secondary" className="w-full py-2.5" onClick={() => router.push("/login?next=/checkout")} data-testid="cart-login">{t("haveAccount")}</Button>
+              </div>
             )}
           </div>
           <ul className="mt-4 space-y-1 text-xs text-ink-500">

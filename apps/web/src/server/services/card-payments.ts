@@ -18,7 +18,7 @@ import { cancelOrder } from "./orders";
 
 const FINAL = new Set(["CAPTURED", "FAILED", "CANCELLED"]);
 
-export async function startCardPayment(ctx: AuthContext, orderId: string, locale: "ar" | "en") {
+export async function startCardPayment(ctx: AuthContext, orderId: string, locale: "ar" | "en" | "he") {
   const o = await prisma.order.findUnique({ where: { id: orderId }, include: { customer: true } });
   if (!o) throw notFound();
   if (!ctx.customer || ctx.customer.id !== o.customerId) throw forbidden();

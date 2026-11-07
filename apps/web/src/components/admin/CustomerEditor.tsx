@@ -17,7 +17,7 @@ export interface CustomerMaster {
   dealerNumber: string | null;
   phone: string;
   email: string | null;
-  preferredLocale: "ar" | "en";
+  preferredLocale: "ar" | "en" | "he";
 }
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();

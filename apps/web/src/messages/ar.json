@@ -175,7 +175,11 @@
       "deliveryLater": "في الخطوة التالية",
       "addedTitle": "تمت الإضافة إلى السلة",
       "inCart": "{count, plural, =1 {صنف واحد في السلة} =2 {صنفان في السلة} other {# أصناف في السلة}}",
-      "viewCart": "عرض السلة"
+      "viewCart": "عرض السلة",
+      "guestTitle": "خطوة واحدة وطلبك جاهز!",
+      "registerToOrder": "إنشاء حساب جديد وإتمام الطلب",
+      "registerHint": "يستغرق دقيقة واحدة – سلتك تبقى محفوظة",
+      "haveAccount": "لدي حساب – تسجيل الدخول"
     },
     "availability": {
       "in_stock": "متوفر",
@@ -319,7 +323,10 @@
     "loginIntroPassword": "ادخل برقم هاتفك وكلمة المرور.",
     "loginButton": "دخول",
     "forgot": "نسيت كلمة المرور؟",
-    "createAccount": "إنشاء حساب جديد"
+    "createAccount": "إنشاء حساب جديد",
+    "newCustomerTitle": "زبون جديد؟",
+    "newCustomerText": "أنشئ حسابك في دقيقة واحدة برقم هاتفك وكلمة سر – سلتك تبقى محفوظة.",
+    "newCustomerButton": "إنشاء حساب جديد"
   },
   "register": {
     "title": "إنشاء حساب",

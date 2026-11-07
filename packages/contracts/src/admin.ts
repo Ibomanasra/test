@@ -42,7 +42,7 @@ export const customerUpdateSchema = z.object({
   dealerNumber: dealerNumberSchema.optional().or(z.literal("").transform(() => undefined)),
   phone: phoneSchema,
   email: z.string().trim().email().max(160).optional().or(z.literal("").transform(() => undefined)),
-  preferredLocale: z.enum(["ar", "en"]),
+  preferredLocale: z.enum(["ar", "en", "he"]),
 });
 export type CustomerUpdate = z.infer<typeof customerUpdateSchema>;
 
@@ -73,7 +73,7 @@ export const staffCreateSchema = z.object({
   email: z.string().trim().email().optional().or(z.literal("").transform(() => undefined)),
   password: passwordSchema,
   roleIds: z.array(idSchema).min(1),
-  locale: z.enum(["ar", "en"]).default("ar"),
+  locale: z.enum(["ar", "en", "he"]).default("ar"),
 });
 
 export const staffUpdateSchema = z.object({

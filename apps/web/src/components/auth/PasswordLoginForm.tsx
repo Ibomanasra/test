@@ -40,7 +40,7 @@ export function PasswordLoginForm({ next, registerType }: { next?: string; regis
       <Button type="submit" className="w-full" disabled={!hydrated || pending}>{t("loginButton")}</Button>
       <div className="flex items-center justify-between text-sm">
         <Link href="/forgot-password" className="text-ink-600 hover:underline">{t("forgot")}</Link>
-        <Link href={`/register${registerType ? `?type=${registerType}` : ""}`} className="font-semibold text-brand-700 hover:underline" data-testid="to-register">{t("createAccount")}</Link>
+        <Link href={`/register?${new URLSearchParams({ ...(registerType ? { type: registerType } : {}), ...(next ? { next } : {}) }).toString()}`} className="font-semibold text-brand-700 hover:underline" data-testid="to-register">{t("createAccount")}</Link>
       </div>
     </form>
   );

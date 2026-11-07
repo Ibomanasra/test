@@ -826,27 +826,31 @@ model UnitOfMeasure {
 /// Jedes Produkt hat ≥ 1 Variante. Preise, SKU, Barcode und Bestand hängen an
 /// der Variante. Alle Preise beziehen sich auf die BASISEINHEIT (Stück).
 model ProductVariant {
-  id           String   @id @default(cuid())
-  productId    String
-  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  sku          String   @unique
-  barcode      String?  @unique // EAN-13 der Basiseinheit
-  nameAr       String? // z. B. "أحمر – 1 لتر"
-  nameEn       String?
-  attributes   Json     @default("{}") // {"color":"red","size":"1L"}
+  id                String    @id @default(cuid())
+  productId         String
+  product           Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku               String    @unique
+  barcode           String?   @unique // EAN-13 der Basiseinheit
+  nameAr            String? // z. B. "أحمر – 1 لتر"
+  nameEn            String?
+  attributes        Json      @default("{}") // {"color":"red","size":"1L"}
   // --- Preise (Agorot) ---
-  costPrice    Int // netto, intern
-  b2cPrice     Int // BRUTTO inkl. MwSt.
-  b2bBasePrice Int // NETTO exkl. MwSt.
+  costPrice         Int // netto, intern
+  b2cPrice          Int // BRUTTO inkl. MwSt.
+  b2bBasePrice      Int // NETTO exkl. MwSt.
   // ---
-  weightGrams  Int?
-  minStock     Int      @default(0)
-  defaultBinId String?
-  defaultBin   Bin?     @relation(fields: [defaultBinId], references: [id])
-  active       Boolean  @default(true)
-  sortOrder    Int      @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  weightGrams       Int?
+  minStock          Int       @default(0)
+  /// Mindestbestand automatisch = 10 % des Bestands nach jeder Auffüllung (aus, sobald er von Hand gesetzt wird)
+  minStockAuto      Boolean   @default(true)
+  /// Warnung „Bestand niedrig“ schon verschickt (zurückgesetzt, sobald wieder genug da ist)
+  lowStockAlertedAt DateTime?
+  defaultBinId      String?
+  defaultBin        Bin?      @relation(fields: [defaultBinId], references: [id])
+  active            Boolean   @default(true)
+  sortOrder         Int       @default(0)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   units            VariantUnit[]
   channelRules     VariantChannelRule[]

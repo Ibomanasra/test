@@ -37,7 +37,6 @@ export default async function MyOrderPage({ params, searchParams }: { params: Pr
         subtitle={dateTimeText(o.placedAt)}
         actions={
           <div className="flex flex-wrap gap-2">
-            <PrintButton href={`/api/v1/documents/order-confirmation/${o.id}`} label={t("confirmationPdf")} testId="print-confirmation" />
             {o.invoices.map((inv) => <PrintButton key={inv.id} href={`/api/v1/documents/invoice/${inv.id}`} label={`${t("invoicePdf")} ${inv.number}`} />)}
             {o.paymentMethod === "CARD_GATEWAY" && o.paymentStatus !== "PAID" && o.status === "NEW" ? <PayNowButton orderId={o.id} /> : null}
             <CartActionButton endpoint="/api/v1/cart/reorder" body={{ orderId: o.id }} label={t("reorder")} testId="reorder" />

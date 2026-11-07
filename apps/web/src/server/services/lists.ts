@@ -25,7 +25,8 @@ export async function saveCartAsList(owner: CartOwner, name: string) {
 export async function addListToCart(owner: CartOwner, listId: string) {
   const list = await prisma.savedOrderList.findFirst({ where: { id: listId, customerId: owner.customerId ?? "-" }, include: { items: true } });
   if (!list) throw notFound();
-  for (const i of list.items) await addCartItem(owner, { variantId: i.variantId, unitCode: i.unitCode, qty: i.qty });
+  // Was nicht (mehr) verfügbar ist, wird übersprungen – der Rest kommt in den Korb
+  for (const i of list.items) await addCartItem(owner, { variantId: i.variantId, unitCode: i.unitCode, qty: i.qty }).catch(() => undefined);
 }
 
 export async function deleteList(customerId: string, listId: string) {

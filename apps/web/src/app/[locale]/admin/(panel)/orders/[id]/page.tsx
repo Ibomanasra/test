@@ -45,13 +45,6 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ loc
           <div className="flex flex-wrap gap-2">
             <Badge tone="brand">{tAll(`orderStatus.${o.status}`)}</Badge>
             <Badge>{tAll(`channel.${o.channel}`)}</Badge>
-            {can("order.print") ? (
-              <>
-                <PrintButton href={`/api/v1/documents/order-confirmation/${o.id}`} label={t("print.confirmation")} testId="print-confirmation" />
-                <PrintButton href={`/api/v1/documents/pick-list/${o.id}`} label={t("print.pickList")} testId="print-pick-list" />
-                {o.shipments.length ? <PrintButton href={`/api/v1/print/batch?doc=delivery-note,invoice&ids=${o.id}`} label={t("print.dnAndInvoice")} testId="print-dn-invoice" /> : null}
-              </>
-            ) : null}
           </div>
         }
       />
@@ -174,12 +167,6 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ loc
                 {s.receivedByName ? ` · ${s.receivedByName}` : ""}
                 {s.signatureFileId ? <> · <a href={`/api/v1/files/${s.signatureFileId}`} target="_blank" rel="noopener" className="text-brand-700 underline" data-testid="proof-signature">{t("signature")}</a></> : null}
                 {s.photoFileId ? <> · <a href={`/api/v1/files/${s.photoFileId}`} target="_blank" rel="noopener" className="text-brand-700 underline" data-testid="proof-photo">{t("photo")}</a></> : null}
-                {can("order.print") ? (
-                  <span className="mt-1 flex flex-wrap gap-2">
-                    <PrintButton href={`/api/v1/documents/delivery-note/${s.id}`} label={t("print.deliveryNote")} testId="print-delivery-note" />
-                    <PrintButton href={`/api/v1/documents/delivery-note/${s.id}?prices=0`} label={t("print.deliveryNoteNoPrices")} />
-                  </span>
-                ) : null}
               </li>
             ))}
           </ul>

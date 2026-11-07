@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { customerLogin, db } from "./helpers";
+import { ORIGIN, OWNER, customerLogin, db, staffLogin } from "./helpers";
 
 test.afterAll(async () => {
   await db.$disconnect();
@@ -93,6 +93,8 @@ test("B2C customer orders with cash on delivery", async ({ page }) => {
 
 test("B2B dealer quick-orders cartons and pays on account", async ({ page }) => {
   await clearCart(B2B.e164);
+  // Wiederholbare Läufe: offene Testbestellungen sollen das Kreditlimit nicht ausschöpfen
+  await db.customer.updateMany({ where: { phone: B2B.e164 }, data: { creditLimitAgorot: 1_000_000_000 } });
   await ensureStock(["CL-001", "PA-001"]);
   await customerLogin(page, B2B);
   await page.goto("/ar/account/quick-order");
@@ -116,4 +118,33 @@ test("B2B dealer quick-orders cartons and pays on account", async ({ page }) => 
   expect(order.items.map((i) => i.qtyBase).sort((a, b) => a - b)).toEqual([10, 60]);
   // B2B: Positionen netto bepreist, Preisherkunft gespeichert
   expect(order.items.every((i) => i.priceRule && i.unitPriceNet > 0)).toBe(true);
+});
+
+test("stock: cannot add more than available, and a sale down to 10 % flags the low-stock alert", async ({ page, browser }) => {
+  const staff = await browser.newPage();
+  await staffLogin(staff, OWNER.phone, OWNER.password);
+  const v = await db.productVariant.findFirstOrThrow({ where: { sku: "KI-001" }, include: { stockLevels: true } });
+  const lvl = v.stockLevels[0]!;
+  // automatischer Mindestbestand (Demo-Daten haben einen von Hand gesetzten Wert)
+  await db.productVariant.update({ where: { id: v.id }, data: { minStockAuto: true, minStock: 0, lowStockAlertedAt: null } });
+  // Ausgangslage: 99 verfügbar, dann +1 über die API → 100 (Auffüllung setzt die Schwelle auf 10 %)
+  await db.stockLevel.update({ where: { variantId_warehouseId: { variantId: lvl.variantId, warehouseId: lvl.warehouseId } }, data: { onHand: lvl.reserved + 99 } });
+  expect((await staff.request.post("/api/v1/admin/stock/adjust", { data: { sku: "KI-001", qtyBase: 1, reason: "E2E refill" }, headers: ORIGIN })).ok()).toBe(true);
+  const after = await db.productVariant.findUniqueOrThrow({ where: { id: v.id } });
+  expect(after.minStock).toBe(10);
+  expect(after.lowStockAlertedAt).toBeNull();
+
+  await clearCart(B2C.e164);
+  await customerLogin(page, B2C);
+  // mehr als verfügbar → abgelehnt
+  const tooMuch = await page.request.post("/api/v1/cart/items", { data: { variantId: v.id, unitCode: "PIECE", qty: 101 }, headers: ORIGIN });
+  expect(tooMuch.status()).toBe(400);
+  expect((await tooMuch.json()).error.code).toBe("only_available");
+  // 90 kaufen → 10 bleiben = 10 % → Warnung
+  expect((await page.request.post("/api/v1/cart/items", { data: { variantId: v.id, unitCode: "PIECE", qty: 90 }, headers: ORIGIN })).ok()).toBe(true);
+  const opts = await (await page.request.get("/api/v1/checkout")).json();
+  const address = opts.addresses[0];
+  const res = await page.request.post("/api/v1/orders", { data: { addressId: address.id, paymentMethod: "CASH_ON_DELIVERY", requestedDeliveryDate: address.deliveryDates[0] }, headers: ORIGIN });
+  expect(res.ok(), await res.text()).toBe(true);
+  await expect.poll(async () => (await db.productVariant.findUniqueOrThrow({ where: { id: v.id } })).lowStockAlertedAt).not.toBeNull();
 });

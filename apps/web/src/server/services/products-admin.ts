@@ -154,6 +154,12 @@ async function writeVariant(tx: Tx, ctx: AuthContext, productId: string, v: Vari
     nameAr: v.nameAr || null,
     nameEn: v.nameEn || null,
     minStock: v.minStock,
+    // 0 = automatisch (10 % nach Auffüllung); eine geänderte Zahl gilt als „von Hand“
+    ...(v.minStock === 0
+      ? { minStockAuto: true }
+      : existingId && (await tx.productVariant.findUnique({ where: { id: existingId }, select: { minStock: true } }))?.minStock === v.minStock
+        ? {}
+        : { minStockAuto: false }),
     active: v.active,
     defaultBinId: await binId(tx, v.defaultBinCode),
   };
@@ -355,6 +361,7 @@ export async function importProducts(ctx: AuthContext, rows: Record<string, stri
           nameAr: r.variant_name_ar || null,
           nameEn: r.variant_name_en || null,
           minStock: Number(r.min_stock) || 0,
+          minStockAuto: !(Number(r.min_stock) > 0),
           active: r.active !== "0",
           defaultBinId: await binId(tx, r.bin),
         };

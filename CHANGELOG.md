@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.18.0] – 2026-11-08 – Bestandsschutz, nur Rechnungen, Produkte am Handy
+
+### Hinzugefügt
+- **Nie mehr verkaufen als vorhanden**: Schon beim Hinzufügen/Erhöhen im Warenkorb wird geprüft; sonst „المتوفر في المخزن X فقط“. (An der Kasse war es bereits gesperrt.) Bestelllisten überspringen nicht verfügbare Positionen.
+- **Warnung bei 10 %**: Nach jeder Auffüllung (Wareneingang, Korrektur +, Inventur) wird der Mindestbestand automatisch auf 10 % des verfügbaren Bestands gesetzt (z. B. 100 → 10). Fällt der Bestand durch Bestellungen oder Abgänge darauf oder darunter, bekommen Lager/Büro **einmal** eine Push-Nachricht „⚠️ مخزون منخفض“ bzw. „⛔ نفد من المخزون“ (Tippen öffnet das Produkt). Von Hand gesetzte Mindestbestände bleiben unverändert; 0 = automatisch.
+- **Produkte am Handy**: 2 Produkte nebeneinander, großes Foto mit Angebots-/Bestandsschild, Name, Preis groß, Mengen-Stepper „− 1 +“ und runder Warenkorb-Knopf.
+
+### Geändert
+- **Belege: nur Rechnungen** – Kundenkonto „Dokumente“ und Bestellseite zeigen nur Rechnungen; im Admin keine Auftragsbestätigung/Kommissionierliste/Lieferschein-Knöpfe mehr, Sammeldruck nur Rechnungen, Dokumente-Seite nur Rechnungen, Dokument-Einstellungen nur für die Rechnung. (Gutschriften laufen für Rückgaben weiter im Hintergrund.)
+
 ## [0.17.0] – 2026-11-08 – Lieferung nur über Zustellfirmen & Abrechnung des Nachnahme-Gelds
 
 ### Geändert

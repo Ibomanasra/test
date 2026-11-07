@@ -11,7 +11,7 @@ export default async function DocumentsPage({ params }: { params: Promise<{ loca
   const { locale } = await params;
   setRequestLocale(locale);
   const auth = await requireCustomerPage(locale, "/account/documents");
-  const [t, docs] = await Promise.all([getTranslations("account.documents"), customerDocuments(auth.customer!.id)]);
+  const [t, docs] = await Promise.all([getTranslations("account.documents"), customerDocuments(auth.customer!.id).then((all) => all.filter((d) => d.kind === "INVOICE"))]);
   return (
     <div className="space-y-4">
       <PageHeader title={t("title")} />

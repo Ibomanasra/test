@@ -51,7 +51,7 @@ export default async function ProductsPage({ params, searchParams }: { params: P
       {data.items.length === 0 ? (
         <EmptyState>{tc("noResults")}</EmptyState>
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <ul className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
           {data.items.map((p) => <ProductCard key={p.id} product={p} vatBps={vat} />)}
         </ul>
       )}

@@ -2117,7 +2117,8 @@
     "delivery_company_required": "اختر شركة التوصيل.",
     "invalid_delivery_company": "شركة التوصيل غير متاحة.",
     "name_taken": "هذا الاسم مستخدم بالفعل.",
-    "nothing_to_settle": "لا توجد مبالغ للتسوية."
+    "nothing_to_settle": "لا توجد مبالغ للتسوية.",
+    "only_available": "{available, plural, =0 {هذا المنتج غير متوفر حالياً.} other {المتوفر في المخزن # فقط – لا يمكن إضافة أكثر.}}"
   },
   "permissions": {
     "dashboard_view": "عرض لوحة المعلومات",

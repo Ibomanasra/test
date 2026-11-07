@@ -122,7 +122,7 @@ export function OrderBoard({ rows, canConfirm, canStatus, companies = [] }: { ro
                 🚚 {t("board.handOverSelected", { count: readySel.length })}
               </Button>
             ) : null}
-            {([["order-confirmation", "order-confirmation"], ["pick-list", "pick-list"], ["delivery-note", "delivery-note"], ["invoice", "invoice"], ["delivery-note,invoice", "dn-invoice"]] as const).map(([doc, key]) => (
+            {([["invoice", "invoice"]] as const).map(([doc, key]) => (
               <a key={key} className="rounded-lg bg-white px-2.5 py-1 ring-1 ring-ink-300 hover:bg-ink-50" href={`/api/v1/print/batch?doc=${doc}&ids=${ids}`} target="_blank" rel="noopener" data-testid={`batch-${key}`}>
                 {t(`batch.${key}`)}
               </a>

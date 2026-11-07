@@ -60,6 +60,10 @@ export function useApi() {
           const seconds = (err.body.details as { retryAfter?: number } | undefined)?.retryAfter ?? 60;
           return t("rate_limited", { seconds });
         }
+        if (code === "only_available") {
+          const available = (err.body.details as { available?: number } | undefined)?.available ?? 0;
+          return t("only_available", { available });
+        }
         if (t.has(code)) return t(code);
       }
       return t("generic");

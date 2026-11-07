@@ -19,6 +19,7 @@ import {
 } from "@sa/core";
 import { allocateDocumentNumber, prisma, type OrderStatus, type PaymentMethod, type Prisma, type Tx } from "@sa/db";
 import { pushToUsers } from "../adapters/push";
+import { checkLowStock } from "./stock-alerts";
 import { smsAdapter, whatsappAdapter } from "../adapters/sms";
 import { audit } from "../audit";
 import type { AuthContext } from "../auth/context";
@@ -276,6 +277,8 @@ export async function placeOrder(ctx: AuthContext & { customer: NonNullable<Auth
   );
   await notifyCustomer(order.id, "order.placed");
   await notifyStaffNewOrder(order.id);
+  // Bestand auf 10 % oder darunter gefallen → Lager/Büro benachrichtigen
+  await checkLowStock(order.items.map((i) => i.variantId));
   return order;
 }
 

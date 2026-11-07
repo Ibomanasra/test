@@ -4,6 +4,7 @@ import type { binSchema, goodsReceiptSchema, purchaseOrderSchema, stockAdjustSch
 import { allocateDocumentNumber, prisma, type Prisma } from "@sa/db";
 import type { z } from "zod";
 import { audit } from "../audit";
+import { afterStockIncrease, checkLowStock } from "./stock-alerts";
 import type { AuthContext } from "../auth/context";
 import { AppError, badRequest, notFound } from "../errors";
 import { currentTaxRateBps } from "./pricing";
@@ -68,7 +69,7 @@ export async function listMovements(f: { sku?: string; type?: string; page: numb
 
 /** Bestandskorrektur (Bruch, Schwund, Fund) – nie unter die Reservierung */
 export async function adjustStock(ctx: AuthContext, input: z.infer<typeof stockAdjustSchema>) {
-  return prisma.$transaction(async (tx) => {
+  const m = await prisma.$transaction(async (tx) => {
     const v = await tx.productVariant.findUnique({ where: { sku: input.sku }, select: { id: true, costPrice: true, defaultBinId: true } });
     if (!v) throw notFound("unknown_sku");
     const warehouseId = await defaultWarehouseId(tx);
@@ -77,8 +78,11 @@ export async function adjustStock(ctx: AuthContext, input: z.infer<typeof stockA
     await tx.stockLevel.update({ where: { variantId_warehouseId: { variantId: v.id, warehouseId } }, data: { onHand: { increment: input.qtyBase } } });
     const m = await tx.stockMovement.create({ data: { variantId: v.id, warehouseId, binId: v.defaultBinId, type: "ADJUSTMENT", qtyBase: input.qtyBase, unitCost: v.costPrice, refType: "Adjustment", note: input.reason, createdById: ctx.user.id } });
     await audit(ctx, { action: "stock.adjust", entityType: "ProductVariant", entityId: v.id, before: { onHand: level.onHand }, after: { onHand: level.onHand + input.qtyBase, reason: input.reason } }, tx);
+    if (input.qtyBase > 0) await afterStockIncrease(tx, [v.id]);
     return m;
   });
+  if (input.qtyBase < 0) await checkLowStock([m.variantId]);
+  return m;
 }
 
 // --- Lagerplätze --------------------------------------------------------------
@@ -187,6 +191,8 @@ export async function closeStocktake(ctx: AuthContext, id: string) {
         adjusted++;
       }
       await tx.stocktake.update({ where: { id }, data: { status: "CLOSED", closedAt: new Date() } });
+      // Inventur = neuer Ausgangsbestand für die 10-%-Schwelle
+      await afterStockIncrease(tx, counted.map((l) => l.variantId));
       await audit(ctx, { action: "stocktake.close", entityType: "Stocktake", entityId: id, after: { number: st.number, adjusted, counted: counted.length } }, tx);
       return { adjusted };
     },
@@ -336,6 +342,7 @@ export async function receiveGoods(ctx: AuthContext, poId: string, input: z.infe
       }
       const status = purchaseStatusFor(po.items.map((i) => ({ orderedBase: i.qty * i.unitFactor, receivedBase: i.receivedQtyBase })));
       await tx.purchaseOrder.update({ where: { id: poId }, data: { status } });
+      await afterStockIncrease(tx, items.map((x) => x.pi.variantId));
       await audit(ctx, { action: "goods.receive", entityType: "GoodsReceipt", entityId: receipt.id, after: { number, po: po.number, lines: items.length, status } }, tx);
       return { id: receipt.id, number, status };
     },

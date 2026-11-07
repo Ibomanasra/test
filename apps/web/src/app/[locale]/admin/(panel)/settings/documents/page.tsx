@@ -8,8 +8,8 @@ import { staffPagePermission } from "@/server/auth/page-guards";
 import { listAutoPrintRules, listBankAccounts, listDocumentTexts, listSequences } from "@/server/services/document-settings";
 import { getCompanySettings } from "@/server/services/settings";
 
-const TEXT_DOC_TYPES = ["QUOTE", "ORDER_CONFIRMATION", "PICK_LIST", "DELIVERY_NOTE", "INVOICE", "RECEIPT", "CREDIT_NOTE", "TOUR_SHEET", "CASH_CLOSING", "ACCOUNT_STATEMENT", "DUNNING", "PURCHASE_ORDER", "PRICE_LIST", "STOCKTAKE", "STOCK_LIST"] as const;
-const AUTO_DOC_TYPES = ["ORDER_CONFIRMATION", "PICK_LIST", "DELIVERY_NOTE", "INVOICE"] as const;
+const TEXT_DOC_TYPES = ["INVOICE"] as const;
+const AUTO_DOC_TYPES = ["INVOICE"] as const;
 const STATUSES = ["NEW", "CONFIRMED", "PICKING", "READY", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"] as const;
 
 export default async function DocumentSettingsPage({ params }: { params: Promise<{ locale: string }> }) {

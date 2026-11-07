@@ -2117,7 +2117,8 @@
     "delivery_company_required": "בחרו את חברת השליחויות.",
     "invalid_delivery_company": "חברת השליחויות הזו אינה זמינה.",
     "name_taken": "השם הזה כבר בשימוש.",
-    "nothing_to_settle": "אין מה להתחשבן."
+    "nothing_to_settle": "אין מה להתחשבן.",
+    "only_available": "{available, plural, =0 {המוצר אזל מהמלאי כרגע.} other {רק # במלאי – אי אפשר להוסיף יותר.}}"
   },
   "permissions": {
     "dashboard_view": "צפייה בלוח הבקרה",

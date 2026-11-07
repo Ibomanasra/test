@@ -22,22 +22,23 @@ export function PriceTag({
   factor?: number;
   unitName?: string;
   vatBps: number;
-  size?: "md" | "lg";
+  size?: "sm" | "md" | "lg";
 }) {
   const t = useTranslations("shop.price");
   return (
     <div className="space-y-0.5" data-testid="price-tag">
       <div className="flex flex-wrap items-baseline gap-2">
-        <span className={cn("num font-bold text-ink-900", size === "lg" ? "text-3xl" : "text-lg")}>{formatMoney(unitPrice)}</span>
-        {listUnitPrice ? <span className="num text-sm text-ink-400 line-through">{formatMoney(listUnitPrice)}</span> : null}
-        <span className="text-xs text-ink-500">{channel === "B2B" ? t("perPieceNet") : t("perPiece")}</span>
+        <span className={cn("num font-bold", listUnitPrice ? "text-red-700" : "text-ink-900", size === "lg" ? "text-3xl" : size === "sm" ? "text-base sm:text-lg" : "text-lg")}>{formatMoney(unitPrice)}</span>
+        {listUnitPrice ? <span className={cn("num text-ink-400 line-through", size === "sm" ? "text-xs" : "text-sm")}>{formatMoney(listUnitPrice)}</span> : null}
+        <span className={cn("text-ink-500", size === "sm" ? "text-[11px]" : "text-xs")}>{channel === "B2B" ? t("perPieceNet") : t("perPiece")}</span>
       </div>
       {channel === "B2B" && factor && factor > 1 ? (
-        <p className="text-sm text-ink-700">
+        <p className={size === "sm" ? "text-xs text-ink-700" : "text-sm text-ink-700"}>
           <span className="num font-semibold">{formatMoney(unitPrice * factor)}</span> / {unitName} ({t("pieces", { count: factor })})
         </p>
       ) : null}
-      <p className="text-xs text-ink-500">{channel === "B2B" ? t("netPlusVat", { rate: formatBps(vatBps) }) : t("inclVat")}</p>
+      {/* auf Karten (sm) nur für Händler – Endkundenpreise sind immer inkl. MwSt. (steht im Fuß) */}
+      {size !== "sm" || channel === "B2B" ? <p className={cn("text-ink-500", size === "sm" ? "text-[11px]" : "text-xs")}>{channel === "B2B" ? t("netPlusVat", { rate: formatBps(vatBps) }) : t("inclVat")}</p> : null}
     </div>
   );
 }

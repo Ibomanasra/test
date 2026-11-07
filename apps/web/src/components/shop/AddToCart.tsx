@@ -2,7 +2,7 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
-import { Alert, Button, Input, Select } from "@/components/ui";
+import { Alert, Button, Input, Select, cn } from "@/components/ui";
 import { useApi } from "@/lib/api-client";
 import { useCart } from "./CartContext";
 
@@ -64,6 +64,57 @@ export function AddToCart({
   }
 
   const name = (u: Unit) => (locale === "ar" ? u.nameAr : u.nameEn);
+  const n = Math.max(0, Number(qty) || 0);
+  const step = (d: number) => setQty(String(Math.max(minUnits, n + d)));
+
+  // Kompakt (Produktkarten): Einheit, Mengen-Stepper − 1 + und runder Warenkorb-Knopf
+  if (compact) {
+    return (
+      <div className="space-y-2">
+        {units.length > 1 ? (
+          <Select aria-label={t("unit")} value={unit} onChange={(e) => { setUnit(e.target.value); const f = units.find((u) => u.code === e.target.value)?.factor ?? 1; setQty(String(Math.max(1, Math.ceil(minQtyBase / f)))); }} className="w-full py-1.5 text-xs">
+            {units.map((u) => (
+              <option key={u.code} value={u.code}>{name(u)}{u.factor > 1 ? ` (${u.factor})` : ""}</option>
+            ))}
+          </Select>
+        ) : null}
+        <div className="flex items-center gap-1.5">
+          <div className={cn("flex h-10 min-w-0 flex-1 items-center rounded-full bg-ink-50 ring-1 ring-ink-200", disabled && "opacity-50")}>
+            <button type="button" onClick={() => step(-1)} disabled={disabled || n <= minUnits} className="grid size-9 shrink-0 place-items-center rounded-full text-lg font-semibold text-ink-700 disabled:text-ink-300" aria-label="−">−</button>
+            <input
+              inputMode="numeric"
+              dir="ltr"
+              aria-label={t("qty")}
+              value={qty}
+              onChange={(e) => setQty(e.target.value.replace(/[^0-9]/g, ""))}
+              className="num w-full min-w-0 bg-transparent text-center text-sm font-bold text-ink-900 outline-none"
+              data-testid="qty-input"
+              disabled={disabled}
+            />
+            <button type="button" onClick={() => step(1)} disabled={disabled} className="grid size-9 shrink-0 place-items-center rounded-full text-lg font-semibold text-ink-700 disabled:text-ink-300" aria-label="+">+</button>
+          </div>
+          <button
+            type="button"
+            onClick={() => void add()}
+            disabled={disabled || pending || n < 1}
+            aria-label={t("add")}
+            title={t("add")}
+            className={cn("grid size-10 shrink-0 place-items-center rounded-full text-white shadow-sm transition active:scale-95 disabled:bg-ink-300", added ? "bg-green-600" : "bg-brand-700 hover:bg-brand-800")}
+            data-testid="add-to-cart"
+          >
+            {added ? "✓" : (
+              <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
+                <path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.5L21 8H6.2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M14 3v6M11 6h6" strokeLinecap="round" />
+              </svg>
+            )}
+          </button>
+        </div>
+        {error ? <p className="text-xs text-red-700" role="alert">{error}</p> : null}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap gap-2">

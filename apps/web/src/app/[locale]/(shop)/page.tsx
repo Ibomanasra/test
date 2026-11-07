@@ -19,7 +19,7 @@ function ProductRow({ title, href, more, items, vatBps, testId }: { title: strin
         <h2 className="text-xl font-bold">{title}</h2>
         <Link href={href} className="text-sm font-medium whitespace-nowrap text-brand-700 hover:underline">{more}</Link>
       </div>
-      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <ul className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
         {items.map((p) => <ProductCard key={p.id} product={p} vatBps={vatBps} />)}
       </ul>
     </section>

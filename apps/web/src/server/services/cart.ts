@@ -78,8 +78,25 @@ async function variantForCart(variantId: string, unitCode: string, channel: Pric
   return { factor: unit.factor, rule };
 }
 
+/** Nie mehr in den Warenkorb, als im Lager verfügbar ist (alle Zeilen dieser Variante zusammen) */
+async function assertAvailable(cartId: string | null, variantId: string, addBase: number, exceptItemId?: string) {
+  const [levels, lines] = await Promise.all([
+    prisma.stockLevel.aggregate({ where: { variantId }, _sum: { onHand: true, reserved: true } }),
+    cartId ? prisma.cartItem.findMany({ where: { cartId, variantId, ...(exceptItemId ? { id: { not: exceptItemId } } : {}) }, select: { qty: true, unitCode: true } }) : Promise.resolve([]),
+  ]);
+  const available = Math.max(0, (levels._sum.onHand ?? 0) - (levels._sum.reserved ?? 0));
+  let inCart = 0;
+  if (lines.length) {
+    const units = await prisma.variantUnit.findMany({ where: { variantId }, select: { factor: true, unit: { select: { code: true } } } });
+    for (const l of lines) inCart += l.qty * (units.find((u) => u.unit.code === l.unitCode)?.factor ?? 1);
+  }
+  if (inCart + addBase > available) throw badRequest("only_available", { available: Math.max(0, available - inCart) });
+}
+
 export async function addCartItem(owner: CartOwner, input: { variantId: string; unitCode: string; qty: number }) {
-  await variantForCart(input.variantId, input.unitCode, owner.channel);
+  const { factor } = await variantForCart(input.variantId, input.unitCode, owner.channel);
+  const existing = await findCart(owner);
+  await assertAvailable(existing?.id ?? null, input.variantId, input.qty * factor);
   const cart = (await findCart(owner, true))!;
   await prisma.cartItem.upsert({
     where: { cartId_variantId_unitCode: { cartId: cart.id, variantId: input.variantId, unitCode: input.unitCode } },
@@ -95,7 +112,13 @@ export async function setCartItemQty(owner: CartOwner, itemId: string, qty: numb
   const item = cart ? await prisma.cartItem.findFirst({ where: { id: itemId, cartId: cart.id } }) : null;
   if (!item) throw notFound();
   if (qty <= 0) await prisma.cartItem.delete({ where: { id: itemId } });
-  else await prisma.cartItem.update({ where: { id: itemId }, data: { qty } });
+  else {
+    if (qty > item.qty) {
+      const unit = await prisma.variantUnit.findFirst({ where: { variantId: item.variantId, unit: { code: item.unitCode } }, select: { factor: true } });
+      await assertAvailable(cart!.id, item.variantId, qty * (unit?.factor ?? 1), item.id);
+    }
+    await prisma.cartItem.update({ where: { id: itemId }, data: { qty } });
+  }
 }
 
 export async function clearCart(cartId: string) {

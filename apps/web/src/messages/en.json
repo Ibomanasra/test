@@ -2117,7 +2117,8 @@
     "delivery_company_required": "Choose the courier company.",
     "invalid_delivery_company": "This courier is not available.",
     "name_taken": "This name is already in use.",
-    "nothing_to_settle": "Nothing to settle."
+    "nothing_to_settle": "Nothing to settle.",
+    "only_available": "{available, plural, =0 {This product is out of stock right now.} other {Only # in stock – you cannot add more.}}"
   },
   "permissions": {
     "dashboard_view": "View dashboard",

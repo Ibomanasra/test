@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.19.3] – 2026-11-08 – Testbestellungen löschen
+
+### Hinzugefügt
+- **`bash scripts/delete-orders.sh`** (auf dem Server): macht zuerst ein Backup, listet alle Bestellungen, löscht nach Bestätigung **alle** oder **bestimmte Nummern** – samt Rechnungen, Zahlungen, Lieferscheinen, Zustellfirmen-Abrechnungen und Kundenkonto-Buchungen. Bestand wird zurückgebucht (Versand zurück, Reservierungen frei), Gutschein-/Angebotsnutzung freigegeben, Rückstands-Bestellungen mitgelöscht. Bei „alle“ auch übrige Test-Zahlungen und Mahnungen. Optional Nummernkreise ab 1 (je Belegart nur, wenn davon nichts mehr existiert). Produkte, Kunden und Einstellungen bleiben. Läuft im geschützten Wartungsmodus nur innerhalb dieser einen Transaktion.
+
 ## [0.19.2] – 2026-11-08
 
 ### Behoben

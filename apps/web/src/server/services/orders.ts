@@ -19,6 +19,7 @@ import {
 } from "@sa/core";
 import { allocateDocumentNumber, prisma, type OrderStatus, type PaymentMethod, type Prisma, type Tx } from "@sa/db";
 import { pushToUsers } from "../adapters/push";
+import { escapeHtml, sendTelegram } from "../adapters/telegram";
 import { checkLowStock } from "./stock-alerts";
 import { smsAdapter, whatsappAdapter } from "../adapters/sms";
 import { audit } from "../audit";
@@ -285,7 +286,14 @@ export async function placeOrder(ctx: AuthContext & { customer: NonNullable<Auth
 /** Büro benachrichtigen: alle aktiven Mitarbeiter, die Bestellungen bestätigen dürfen */
 async function notifyStaffNewOrder(orderId: string) {
   try {
-    const o = await prisma.order.findUnique({ where: { id: orderId }, select: { id: true, number: true, totalGross: true, customer: { select: { displayName: true } }, items: { select: { id: true } } } });
+    const o = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: {
+        id: true, number: true, totalGross: true, deliveryFeeGross: true, paymentMethod: true, channel: true, addressSnapshot: true,
+        customer: { select: { displayName: true, phone: true } },
+        items: { orderBy: { sortOrder: "asc" }, select: { nameArSnapshot: true, qty: true, unitCode: true } },
+      },
+    });
     if (!o) return;
     const staff = await prisma.user.findMany({
       where: { kind: "STAFF", isActive: true, roles: { some: { role: { permissions: { hasSome: ["order.confirm", "*"] } } } } },
@@ -297,6 +305,25 @@ async function notifyStaffNewOrder(orderId: string) {
       body: `${o.customer.displayName} · ${total} ₪ · ${o.items.length} أصناف`,
       data: { orderId: o.id, url: `/ar/admin/orders/${o.id}`, tag: `order-${o.id}` },
     });
+    // Telegram (kostenlos): Kunde, Ort, Positionen, Betrag
+    const addr = (o.addressSnapshot ?? {}) as { city?: string };
+    const PAY: Record<string, string> = { CASH_ON_DELIVERY: "الدفع عند الاستلام", BANK_TRANSFER: "تحويل بنكي", CARD_GATEWAY: "بطاقة", ON_ACCOUNT: "على الحساب" };
+    const UNIT: Record<string, string> = { PIECE: "قطعة", PACK: "علبة", CARTON: "كرتونة", PALLET: "مشطاح" };
+    const lines = o.items.slice(0, 8).map((i) => `• ${escapeHtml(i.nameArSnapshot)} × ${i.qty} ${UNIT[i.unitCode] ?? i.unitCode}`);
+    if (o.items.length > 8) lines.push(`… +${o.items.length - 8}`);
+    await sendTelegram(
+      "order.new",
+      [
+        `🛒 <b>طلب جديد ${o.number}</b>${o.channel === "B2B" ? " (تاجر)" : ""}`,
+        `👤 ${escapeHtml(o.customer.displayName)} · ${escapeHtml(o.customer.phone ?? "")}`,
+        addr.city ? `📍 ${escapeHtml(addr.city)}` : "",
+        "",
+        ...lines,
+        "",
+        `💰 <b>${total} ₪</b>${o.deliveryFeeGross ? ` (منها توصيل ${(o.deliveryFeeGross / 100).toFixed(2)} ₪)` : ""} · ${PAY[o.paymentMethod] ?? o.paymentMethod}`,
+      ].filter((x, i, a) => x !== "" || (a[i - 1] !== "" && i > 0)).join("\n"),
+      { url: `/ar/admin/orders/${o.id}`, label: "فتح الطلب" },
+    );
   } catch (err) {
     console.error("[notify-staff]", err);
   }

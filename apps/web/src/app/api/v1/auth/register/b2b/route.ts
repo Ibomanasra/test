@@ -7,6 +7,7 @@ import { apiRoute } from "@/server/http";
 import { getRequestMeta } from "@/server/request-meta";
 import { registrationIdentity } from "@/server/services/auth";
 import { registerB2B } from "@/server/services/customers";
+import { escapeHtml, sendTelegram } from "@/server/adapters/telegram";
 
 /** multipart/form-data: "data" (JSON nach registerB2BSchema) + "license" (PDF/JPG/PNG/WEBP) */
 export const POST = apiRoute(async (req) => {
@@ -36,6 +37,12 @@ export const POST = apiRoute(async (req) => {
     auth,
   );
   await mergeGuestCart(customer.id);
+  // Büro informieren: neuer Händler wartet auf Freigabe
+  await sendTelegram(
+    "dealer.new",
+    `🏪 <b>تاجر جديد بانتظار الموافقة</b>\n${escapeHtml(input.companyName)} · ${escapeHtml(phone)}`,
+    { url: `/ar/admin/customers/${customer.id}`, label: "مراجعة" },
+  );
   const client = req.headers.get("x-client") === "mobile" ? "MOBILE" : "WEB";
   const s = await createSession({ userId: user.id, kind: "CUSTOMER", mfaPassed: true, client, ip: meta.ip, userAgent: meta.userAgent });
   return { customer: { id: customer.id, number: customer.number, status: customer.status }, ...(await issueSession(s, client)) };

@@ -29,6 +29,10 @@ const schema = z.object({
   PUSH_PROVIDER: z.enum(["log", "expo"]).default("log"),
   /** optional: Expo-Access-Token (erhöhte Sicherheit beim Push-Versand) */
   EXPO_ACCESS_TOKEN: z.string().default(""),
+  /** optional: Telegram-Bot-Token (sonst in Einstellungen → Benachrichtigungen gespeichert) */
+  TELEGRAM_BOT_TOKEN: z.string().default(""),
+  /** nur für Tests: andere Telegram-API-Adresse */
+  TELEGRAM_API_URL: z.string().url().default("https://api.telegram.org"),
   WHATSAPP_PROVIDER: z.enum(["log", "cloud"]).default("log"),
   WHATSAPP_PHONE_NUMBER_ID: z.string().default(""),
   WHATSAPP_TOKEN: z.string().default(""),

@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.19.0] – 2026-11-08 – Telegram-Benachrichtigungen (kostenlos)
+
+### Hinzugefügt
+- **Telegram-Bot** schickt kostenlos Nachrichten an Mitarbeiter oder eine Gruppe:
+  - 🛒 **neue Bestellung**: Nummer, Kunde mit Telefon, Ort, Positionen, Betrag (inkl. Lieferkosten), Zahlungsart, Knopf „فتح الطلب“
+  - ⚠️/⛔ **Bestand niedrig / ausverkauft** (10-%-Regel), Knopf „فتح المنتج“
+  - 🏪 **neuer Händler** wartet auf Freigabe, Knopf „مراجعة“
+- **Einstellungen → الإشعارات**: Bot-Token einfügen (wird bei Telegram geprüft, sicher gespeichert und nie wieder angezeigt), „بحث عن المحادثات“ findet Gruppen/Chats, je Chat die Nachrichtenarten wählen, Testnachricht. Browser-Benachrichtigungen dieses Geräts auf derselben Seite.
+- `TELEGRAM_BOT_TOKEN` in `.env` optional (hat Vorrang).
+
 ## [0.18.1] – 2026-11-08 – Dashboard: Verkauf, Lieferung & Geld bei Zustellfirmen
 
 ### Hinzugefügt

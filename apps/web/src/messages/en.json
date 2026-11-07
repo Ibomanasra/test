@@ -774,7 +774,8 @@
         "emptyDefault": "Leave empty to use the default text.",
         "preview": "View shop"
       },
-      "deliveryCompanies": "Couriers"
+      "deliveryCompanies": "Couriers",
+      "notifications": "Notifications"
     },
     "audit": {
       "title": "Audit log",
@@ -1943,6 +1944,31 @@
       "open": "{count} orders with them now",
       "ownDrivers": "We also have our own drivers",
       "ownDriversHint": "Shows “Delivery & drivers” (tours, driver cash, driver selection). Leave off if you only deliver through external couriers."
+    },
+    "notify": {
+      "title": "Telegram notifications (free)",
+      "intro": "Get an instant Telegram message for every new order, low stock or new dealer – free, on every device.",
+      "step1": "Connect the bot",
+      "howBot1": "In Telegram open @BotFather and send /newbot (or /token for an existing bot).",
+      "howBot2": "Copy the token and paste it here – never send it in any chat.",
+      "token": "Bot token",
+      "connect": "Connect",
+      "connected": "Connected",
+      "disconnect": "Disconnect",
+      "disconnectConfirm": "Disconnect the bot? No more messages will be sent.",
+      "step2": "Who receives the messages?",
+      "howChat": "Add the bot to your staff group (or open the bot and press Start), write any message in the group, then press “Find chats”.",
+      "discover": "Find chats",
+      "noneFound": "No chats found. Write a message to the bot or in the group, then search again.",
+      "add": "Add",
+      "test": "Send test",
+      "testSent": "Test message sent – check Telegram.",
+      "saved": "Saved ✓",
+      "events": {
+        "order_new": "🛒 New order",
+        "stock_low": "⚠️ Low stock",
+        "dealer_new": "🏪 New dealer"
+      }
     }
   },
   "driver": {
@@ -2130,7 +2156,11 @@
     "invalid_delivery_company": "This courier is not available.",
     "name_taken": "This name is already in use.",
     "nothing_to_settle": "Nothing to settle.",
-    "only_available": "{available, plural, =0 {This product is out of stock right now.} other {Only # in stock – you cannot add more.}}"
+    "only_available": "{available, plural, =0 {This product is out of stock right now.} other {Only # in stock – you cannot add more.}}",
+    "telegram_invalid_token": "The token is not valid. Copy it again from @BotFather.",
+    "telegram_not_connected": "The bot is not connected yet.",
+    "telegram_unreachable": "Could not reach Telegram. Try again later.",
+    "telegram_send_failed": "Could not send. Is the bot a member of this group?"
   },
   "permissions": {
     "dashboard_view": "View dashboard",

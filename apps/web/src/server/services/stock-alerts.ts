@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma, type Tx } from "@sa/db";
 import { pushToUsers } from "../adapters/push";
+import { escapeHtml, sendTelegram } from "../adapters/telegram";
 
 /** Warnschwelle: 10 % des Bestands nach der letzten Auffüllung (aufgerundet) */
 export const LOW_STOCK_SHARE = 0.1;
@@ -64,6 +65,11 @@ export async function checkLowStock(variantIds: string[]) {
         body: `${name} (${v.sku}): ${left}`,
         data: { url: `/ar/admin/products/${v.productId}`, tag: `low-${v.id}` },
       });
+      await sendTelegram(
+        "stock.low",
+        `${left === 0 ? "⛔ <b>نفد من المخزون</b>" : "⚠️ <b>مخزون منخفض</b>"}\n${escapeHtml(name)} (${escapeHtml(v.sku)})\nالمتبقي: <b>${left}</b>`,
+        { url: `/ar/admin/products/${v.productId}`, label: "فتح المنتج" },
+      );
     }
   } catch (err) {
     console.error("[low-stock]", err);

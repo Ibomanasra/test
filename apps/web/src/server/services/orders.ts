@@ -37,7 +37,7 @@ import { consumeForShipment, defaultWarehouseId, lockStock, releaseReservations,
 // Checkout
 // ---------------------------------------------------------------------------
 
-function hebronHour(d = new Date()): number {
+export function hebronHour(d = new Date()): number {
   return Number(new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Hebron", hour: "numeric", hourCycle: "h23" }).format(d));
 }
 
@@ -94,31 +94,44 @@ export interface CheckoutInput {
   requestedDeliveryDate: string;
   customerNote?: string;
   couponCode?: string;
+  /** Gast-Bestellung (ohne Konto): kein Willkommens-Rabatt, kein Benutzer als Besteller */
+  guest?: boolean;
 }
 
-async function evaluateCheckout(ctx: AuthContext & { customer: NonNullable<AuthContext["customer"]> }, input: Pick<CheckoutInput, "addressId" | "couponCode">) {
-  const owner: CartOwner = { customerId: ctx.customer.id, channel: ctx.channel };
+type ZoneRate = { feeGrossAgorot: number; minOrderAgorot: number; freeFromAgorot: number | null } | null;
+
+/**
+ * Kern der Kassenberechnung (Kunden und Gäste): Warenkorb, Liefergebühr der Zone, Angebote.
+ * allowWelcome=false: Willkommens-Rabatt nur für registrierte Kunden.
+ */
+export async function evaluateCore(owner: CartOwner, customerId: string | null, channel: CartOwner["channel"], rate: ZoneRate, couponCode?: string, allowWelcome = true) {
   const cart = await pricedCart(owner);
-  const address = await prisma.address.findFirst({ where: { id: input.addressId, customerId: ctx.customer.id }, include: { zone: { include: { rates: { where: { channel: ctx.channel } } } } } });
-  if (!address || !address.zone.active) throw badRequest("invalid_address");
-  const rate = address.zone.rates[0] ?? null;
   const taxRateBps = await currentTaxRateBps(new Date());
   const baseLines = cart.lines.map((l) => ({ unitPrice: l.unitPrice, payableQtyBase: l.qtyBase - l.freeQtyBase, taxRateBps }));
-  const base = computeCheckout(ctx.channel, baseLines, rate, taxRateBps);
+  const base = computeCheckout(channel, baseLines, rate, taxRateBps);
   // Angebote auf Bestellebene: Rabatt anteilig auf die Stückpreise, Gratis-Lieferung erlässt die Gebühr
-  const offers = await evaluateOrderOffers({ customerId: ctx.customer.id, channel: ctx.channel, goodsValue: base.goodsValue, couponCode: input.couponCode });
+  const offers = await evaluateOrderOffers({ customerId, channel, goodsValue: base.goodsValue, couponCode, allowWelcome });
   const units = distributeDiscount(baseLines.map((l) => ({ unitPrice: l.unitPrice, qty: l.payableQtyBase })), offers.discount?.amount ?? 0);
   const effectiveRate = offers.freeDelivery && rate ? { ...rate, feeGrossAgorot: 0 } : rate;
-  const discounted = computeCheckout(ctx.channel, baseLines.map((l, i) => ({ ...l, unitPrice: units[i]! })), effectiveRate, taxRateBps);
+  const discounted = computeCheckout(channel, baseLines.map((l, i) => ({ ...l, unitPrice: units[i]! })), effectiveRate, taxRateBps);
   // Mindestbestellwert gilt vor Rabatt
   const totals = { ...discounted, belowMinimum: base.belowMinimum, freeDelivery: discounted.freeDelivery || Boolean(offers.freeDelivery) };
   const offerDiscount = base.goodsValue - discounted.goodsValue;
   const deliverySaved = offers.freeDelivery ? base.deliveryFeeGross : 0;
-  return { cart, address, rate, taxRateBps, totals, offers, units, offerDiscount, deliverySaved };
+  return { cart, rate, taxRateBps, totals, offers, units, offerDiscount, deliverySaved };
 }
 
-export async function previewCheckout(ctx: AuthContext & { customer: NonNullable<AuthContext["customer"]> }, input: Pick<CheckoutInput, "addressId" | "couponCode">) {
-  const { cart, totals, offers, offerDiscount, deliverySaved } = await evaluateCheckout(ctx, input);
+async function evaluateCheckout(ctx: AuthContext & { customer: NonNullable<AuthContext["customer"]> }, input: Pick<CheckoutInput, "addressId" | "couponCode" | "guest">) {
+  const owner: CartOwner = { customerId: ctx.customer.id, channel: ctx.channel };
+  const address = await prisma.address.findFirst({ where: { id: input.addressId, customerId: ctx.customer.id }, include: { zone: { include: { rates: { where: { channel: ctx.channel } } } } } });
+  if (!address || !address.zone.active) throw badRequest("invalid_address");
+  const core = await evaluateCore(owner, ctx.customer.id, ctx.channel, address.zone.rates[0] ?? null, input.couponCode, !input.guest);
+  return { ...core, address };
+}
+
+/** Vorschau-Antwort (gleich für Kunden und Gäste) */
+export function previewPayload(e: Awaited<ReturnType<typeof evaluateCore>>) {
+  const { cart, totals, offers, offerDiscount, deliverySaved } = e;
   const pick = (o: { nameAr: string; nameEn: string; kind: string }) => ({ nameAr: o.nameAr, nameEn: o.nameEn, kind: o.kind });
   return {
     offer: offers.discount && offerDiscount > 0 ? { ...pick(offers.discount.rule), discount: offerDiscount } : null,
@@ -136,6 +149,10 @@ export async function previewCheckout(ctx: AuthContext & { customer: NonNullable
     gross: totals.gross,
     hasProblems: cart.hasProblems,
   };
+}
+
+export async function previewCheckout(ctx: AuthContext & { customer: NonNullable<AuthContext["customer"]> }, input: Pick<CheckoutInput, "addressId" | "couponCode">) {
+  return previewPayload(await evaluateCheckout(ctx, input));
 }
 
 async function notifyCustomer(orderId: string, template: "order.placed" | "order.confirmed" | "order.out_for_delivery" | "order.delivered" | "order.cancelled") {
@@ -197,7 +214,7 @@ export async function placeOrder(ctx: AuthContext & { customer: NonNullable<Auth
           number,
           customerId: customer.id,
           channel: ctx.channel,
-          placedById: ctx.user.id,
+          placedById: ctx.user.id || null,
           quoteId,
           zoneId: address.zoneId,
           addressSnapshot: {
@@ -259,7 +276,7 @@ export async function placeOrder(ctx: AuthContext & { customer: NonNullable<Auth
               };
             }),
           },
-          events: { create: { toStatus: "NEW", byUserId: ctx.user.id } },
+          events: { create: { toStatus: "NEW", byUserId: ctx.user.id || null } },
         },
         include: { items: true },
       });

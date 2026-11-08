@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.20.0] – 2026-11-08 – Bestellen ohne Konto, Foto-Galerie, Zurück-Pfeil
+
+### Hinzugefügt
+- **Bestellen ohne Konto (Gast-Kasse)**: Im Warenkorb führt „إتمام الطلب“ direkt zur Kasse. Gäste geben **Name, Telefonnummer und Adresse** (Ort, Straße, Details – wie bisher) an, wählen Liefertag und Zahlart (Bar bei Lieferung oder Überweisung). Lieferzone, Liefertage und Liefergebühr ergeben sich aus dem Ort. Danach Bestätigungsseite mit Status, nur über einen geheimen Link erreichbar.
+  - Für das Büro sieht die Bestellung wie jede andere aus (Telegram/Push, 3-Schritte-Ablauf, Zustellfirma); der Gast wird als Kunde ohne Login angelegt bzw. per Telefonnummer wiederverwendet.
+  - Gehört die Nummer zu einem Konto, kommt „bitte anmelden“ (keine Bestellungen in fremden Konten). Schutz gegen Spam: begrenzte Gast-Bestellungen je Stunde.
+  - Der Willkommens-Rabatt bleibt ein Vorteil für Kunden mit Konto; Gutscheine gelten auch für Gäste.
+- **Mehrere Produktfotos zum Wischen**: auf der Produktkarte (mit Punkten) und auf der Produktseite (groß, Pfeile, Vorschaubilder).
+- **Zurück-Pfeil auf der Produktseite**: führt zurück an genau die Stelle in der Liste, an der man war (sonst zur Produktliste).
+
 ## [0.19.3] – 2026-11-08 – Testbestellungen löschen
 
 ### Hinzugefügt

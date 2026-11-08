@@ -4,7 +4,8 @@ import { notFound } from "next/navigation";
 import { AddToCart } from "@/components/shop/AddToCart";
 import { AvailabilityBadge } from "@/components/shop/AvailabilityBadge";
 import { PriceTag } from "@/components/shop/PriceTag";
-import { ProductImage } from "@/components/shop/ProductImage";
+import { BackButton } from "@/components/shop/BackButton";
+import { ImageCarousel } from "@/components/shop/ImageCarousel";
 import { Badge, Card, Num, Table, Td, Th } from "@/components/ui";
 import { Link } from "@/i18n/navigation";
 import { getCatalogProduct } from "@/server/services/catalog";
@@ -22,19 +23,15 @@ export default async function ProductPage({ params }: { params: Promise<{ locale
   const nm = (o: { nameAr: string | null; nameEn: string | null }) => (locale === "ar" ? o.nameAr : o.nameEn);
   return (
     <div className="space-y-6">
-      <nav className="text-sm text-ink-500">
-        <Link href="/products" className="hover:underline">{t("title")}</Link> / <Link href={`/products?category=${p.category.slug}`} className="hover:underline">{nm(p.category)}</Link>
-      </nav>
+      <div className="flex flex-wrap items-center gap-3">
+        <BackButton />
+        <nav className="text-sm text-ink-500">
+          <Link href="/products" className="hover:underline">{t("title")}</Link> / <Link href={`/products?category=${p.category.slug}`} className="hover:underline">{nm(p.category)}</Link>
+        </nav>
+      </div>
       <div className="grid gap-8 md:grid-cols-2">
         <div className="space-y-3">
-          <ProductImage imageId={p.imageIds[0]} name={nm(p) ?? ""} className="max-h-[28rem]" />
-          {p.imageIds.length > 1 ? (
-            <div className="grid grid-cols-4 gap-2">
-              {p.imageIds.slice(1, 5).map((id) => (
-                <ProductImage key={id} imageId={id} name={nm(p) ?? ""} />
-              ))}
-            </div>
-          ) : null}
+          <ImageCarousel imageIds={p.imageIds} name={nm(p) ?? ""} variant="page" />
         </div>
         <div className="space-y-4">
           <div>

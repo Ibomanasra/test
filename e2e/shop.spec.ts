@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { ORIGIN, OWNER, customerLogin, db, staffLogin } from "./helpers";
+import { ORIGIN, OWNER, customerLogin, db, randomPhone, staffLogin } from "./helpers";
 
 test.afterAll(async () => {
   await db.$disconnect();
@@ -161,4 +161,72 @@ test("guests see the welcome banner and, after 3 products, the sign-up invite; '
   await customerLogin(page, B2C);
   await page.goto("/ar");
   await expect(page.getByTestId("guest-banner")).toHaveCount(0);
+});
+
+test("guest checkout: order without an account (name, phone, address), confirmation page via secret link", async ({ page }) => {
+  await ensureStock(["CL-001"]);
+  await page.context().addInitScript(() => { try { localStorage.setItem("sa-invite-dismissed", String(Date.now())); } catch {} });
+  const v = await db.productVariant.findFirstOrThrow({ where: { sku: "CL-001" } });
+  await page.goto("/ar/products");
+  expect((await page.request.post("/api/v1/cart/items", { data: { variantId: v.id, unitCode: "PIECE", qty: 30 }, headers: ORIGIN })).ok()).toBe(true);
+  await page.goto("/ar/cart");
+  await page.getByTestId("to-checkout").click();
+  await expect(page).toHaveURL(/\/ar\/checkout$/);
+  await expect(page.getByTestId("guest-hint")).toBeVisible();
+
+  const phone = randomPhone();
+  await page.getByTestId("guest-name").fill("زبون بدون حساب");
+  await page.getByTestId("guest-phone").fill(phone.local);
+  await page.locator("#g-city").fill("الخليل");
+  await page.locator("#g-street").fill("شارع السلام 5");
+  await expect(page.getByTestId("checkout-total")).toBeVisible();
+  await page.getByTestId("pm-CASH_ON_DELIVERY").check();
+  await page.getByTestId("place-order").click();
+  await expect(page).toHaveURL(/\/ar\/order\/[^/?]+\?k=/);
+  await expect(page.getByTestId("order-placed")).toBeVisible();
+
+  const id = new URL(page.url()).pathname.split("/").pop()!;
+  const order = await db.order.findUniqueOrThrow({ where: { id }, include: { customer: { include: { members: true } } } });
+  expect(order.customer.phone).toBe(phone.e164);
+  expect(order.customer.members).toHaveLength(0);
+  expect(order.placedById).toBeNull();
+  expect((order.addressSnapshot as { city: string }).city).toBe("الخليل");
+  // ohne gültigen Schlüssel kein Zugriff
+  expect((await page.request.get(`/ar/order/${id}?k=falsch`)).status()).toBe(404);
+});
+
+test("guest checkout: a phone number that has an account must log in", async ({ page }) => {
+  await ensureStock(["CL-001"]);
+  const v = await db.productVariant.findFirstOrThrow({ where: { sku: "CL-001" } });
+  await page.goto("/ar/products");
+  expect((await page.request.post("/api/v1/cart/items", { data: { variantId: v.id, unitCode: "PIECE", qty: 30 }, headers: ORIGIN })).ok()).toBe(true);
+  const opts = await (await page.request.post("/api/v1/checkout/guest", { data: { city: "الخليل" }, headers: ORIGIN })).json();
+  const res = await page.request.post("/api/v1/orders/guest", { data: { name: "Test", phone: B2C.local, city: "الخليل", paymentMethod: "CASH_ON_DELIVERY", requestedDeliveryDate: opts.deliveryDates[0] }, headers: ORIGIN });
+  expect(res.status()).toBe(409);
+  expect((await res.json()).error.code).toBe("phone_registered_login");
+});
+
+test("product photos swipe; back arrow returns to the same place in the list", async ({ page }) => {
+  await page.context().addInitScript(() => { try { localStorage.setItem("sa-invite-dismissed", String(Date.now())); } catch {} });
+  const p = await db.product.findFirstOrThrow({ where: { active: true, archivedAt: null, visibleB2C: true, images: { some: {} } }, include: { images: true } });
+  const extra = await db.productImage.findFirstOrThrow({ where: { productId: { not: p.id } } });
+  const added = await db.productImage.create({ data: { productId: p.id, fileId: extra.fileId, sortOrder: 99 } });
+  try {
+    await page.goto(`/ar/products/${p.slug}`);
+    await expect(page.getByTestId("carousel-thumb")).toHaveCount(p.images.length + 1);
+    await page.getByTestId("carousel-thumb").last().click();
+    await expect.poll(() => page.getByTestId("image-carousel").first().evaluate((el) => Math.abs(el.scrollLeft))).toBeGreaterThan(0);
+
+    await page.goto("/ar/products");
+    const cards = page.getByTestId("product-card");
+    const target = cards.nth(Math.min(7, (await cards.count()) - 1));
+    await target.scrollIntoViewIfNeeded();
+    const y = await page.evaluate(() => window.scrollY);
+    await target.locator("h3").click();
+    await page.getByTestId("back-button").click();
+    await expect(page).toHaveURL(/\/ar\/products$/);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(y - 50);
+  } finally {
+    await db.productImage.delete({ where: { id: added.id } });
+  }
 });

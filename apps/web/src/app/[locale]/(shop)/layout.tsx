@@ -5,6 +5,7 @@ import { Alert } from "@/components/ui";
 import { Logo } from "@/components/brand/Logo";
 import { CartLink, CartProvider } from "@/components/shop/CartContext";
 import { GuestBanner, SignupInvite } from "@/components/shop/SignupNudges";
+import { NavTracker } from "@/components/shop/BackButton";
 import { formatMoney } from "@sa/core";
 import { shopOffers } from "@/server/services/offers";
 import { Link } from "@/i18n/navigation";
@@ -92,6 +93,7 @@ export default async function ShopLayout({ children, params }: { children: React
         </div>
       </footer>
       {guest ? <SignupInvite welcome={welcome} /> : null}
+      <NavTracker />
     </div>
     </CartProvider>
   );

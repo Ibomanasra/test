@@ -18,7 +18,7 @@ async function candidateOffers(db: Tx | typeof prisma = prisma): Promise<OrderOf
 /**
  * Angebote für einen Warenkorb bewerten. `customerId` null = Gast (nur Anzeige).
  */
-export async function evaluateOrderOffers(input: { customerId: string | null; channel: Channel; goodsValue: number; couponCode?: string | null }, db: Tx | typeof prisma = prisma) {
+export async function evaluateOrderOffers(input: { customerId: string | null; channel: Channel; goodsValue: number; couponCode?: string | null; allowWelcome?: boolean }, db: Tx | typeof prisma = prisma) {
   const rules = await candidateOffers(db);
   let firstOrder = false;
   let usesByCustomer = new Map<string, number>();
@@ -27,7 +27,8 @@ export async function evaluateOrderOffers(input: { customerId: string | null; ch
       db.order.count({ where: { customerId: input.customerId, status: { not: "CANCELLED" } } }),
       db.orderOfferRedemption.groupBy({ by: ["offerId"], where: { customerId: input.customerId }, _count: { _all: true } }),
     ]);
-    firstOrder = orders === 0;
+    // Willkommens-Rabatt nur für registrierte Kunden (Anreiz zum Konto)
+    firstOrder = orders === 0 && input.allowWelcome !== false;
     usesByCustomer = new Map(uses.map((u) => [u.offerId, typeof u._count === "object" ? (u._count._all ?? 0) : 0]));
   }
   const ctx: OfferContext = { channel: input.channel, goodsValue: input.goodsValue, now: new Date(), firstOrder, couponCode: input.couponCode, usesByCustomer };

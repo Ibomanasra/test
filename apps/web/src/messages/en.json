@@ -179,7 +179,10 @@
       "guestTitle": "One step and your order is ready!",
       "registerToOrder": "Create an account and order",
       "registerHint": "Takes one minute – your cart is kept",
-      "haveAccount": "I have an account – log in"
+      "haveAccount": "I have an account – log in",
+      "guestNoAccount": "No account needed – just name, phone and address",
+      "guestRegister": "Create account",
+      "guestLogin": "Log in"
     },
     "availability": {
       "in_stock": "In stock",
@@ -240,7 +243,20 @@
         "includedNote": "The discount is included in the item prices."
       },
       "soonest": "Soonest",
-      "secure": "Your data is protected – secure payment"
+      "secure": "Your data is protected – secure payment",
+      "guest": {
+        "title": "Your details & delivery address",
+        "hint": "You can order without an account. Have an account?",
+        "login": "Log in",
+        "name": "Full name",
+        "phoneHint": "We will call this number to confirm and deliver",
+        "cityFirst": "Enter your city first to see delivery fee and days.",
+        "placedText": "We will call you shortly to confirm your order.",
+        "saveLink": "Save this page to follow your order status.",
+        "accountTitle": "Follow your orders easily",
+        "accountText": "Create a free account to track orders and reorder with one tap.",
+        "accountCta": "Sign up"
+      }
     },
     "home": {
       "offers": "Current offers",
@@ -2176,7 +2192,8 @@
     "telegram_invalid_token": "The token is not valid. Copy it again from @BotFather.",
     "telegram_not_connected": "The bot is not connected yet.",
     "telegram_unreachable": "Could not reach Telegram. Try again later.",
-    "telegram_send_failed": "Could not send. Is the bot a member of this group?"
+    "telegram_send_failed": "Could not send. Is the bot a member of this group?",
+    "phone_registered_login": "This number already has an account – please log in to place the order."
   },
   "permissions": {
     "dashboard_view": "View dashboard",

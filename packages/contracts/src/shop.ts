@@ -48,6 +48,25 @@ export const placeOrderSchema = z.object({
   couponCode: couponField,
 });
 
+/** Gast-Kasse: Name, Telefon und Adresse wie bei Kunden – ohne Konto */
+const guestAddressFields = {
+  name: nameSchema,
+  phone: phoneSchema,
+  city: z.string().trim().min(2).max(80),
+  zoneId: idSchema.optional().or(z.literal("").transform(() => undefined)),
+  street: optionalText(160),
+  details: optionalText(300),
+};
+export const guestPreviewSchema = z.object({ city: z.string().trim().min(2).max(80), zoneId: guestAddressFields.zoneId, couponCode: couponField });
+export const guestOrderSchema = z.object({
+  ...guestAddressFields,
+  paymentMethod: paymentMethodSchema,
+  requestedDeliveryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "invalid_date"),
+  customerNote: optionalText(1000),
+  couponCode: couponField,
+  locale: z.enum(["ar", "en", "he"]).default("ar"),
+});
+
 export const orderStatusSchema = z.enum(["NEW", "CONFIRMED", "PICKING", "READY", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"]);
 
 export const orderListQuerySchema = z.object({

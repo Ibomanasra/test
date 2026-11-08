@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { CityZoneFields } from "@/components/shared/CityZoneFields";
 import { useEffect, useState } from "react";
 import { Alert, Button, Field, Input, Textarea } from "@/components/ui";
-import { useRouter } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { apiFetch, useApi } from "@/lib/api-client";
 import { useCart } from "./CartContext";
 
@@ -41,9 +41,13 @@ interface Preview {
   freeDeliveryOffer: { nameAr: string; nameEn: string; saved: number } | null;
   coupon: { status: "applied" | "not_better" | "invalid"; reason: string | null } | null;
   nextOffer: { nameAr: string; nameEn: string; missing: number; percentBps: number | null; amountAgorot: number | null } | null;
+  /** nur Gäste: Liefertage der aus dem Ort ermittelten Zone */
+  deliveryDates?: string[];
 }
 
-export function CheckoutForm({ options, zones }: { options: Options; zones: { id: string; name: string }[] }) {
+const EMPTY_GUEST = { name: "", phone: "", city: "", zoneId: "", street: "", details: "" };
+
+export function CheckoutForm({ options, zones, guest = false }: { options: Options; zones: { id: string; name: string }[]; guest?: boolean }) {
   const t = useTranslations("shop.checkout");
   const tr = useTranslations("register");
   const tc = useTranslations("common");
@@ -61,18 +65,30 @@ export function CheckoutForm({ options, zones }: { options: Options; zones: { id
 
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [couponInput, setCouponInput] = useState("");
+  // Gast: Name, Telefon, Adresse (wie bei Kunden), Vorschau nach dem Ort
+  const [g, setG] = useState(EMPTY_GUEST);
+  const [debouncedCity, setDebouncedCity] = useState({ city: "", zoneId: "" });
+  useEffect(() => {
+    if (!guest) return;
+    const timer = setTimeout(() => setDebouncedCity({ city: g.city.trim(), zoneId: g.zoneId }), 450);
+    return () => clearTimeout(timer);
+  }, [guest, g.city, g.zoneId]);
   const [coupon, setCoupon] = useState<string | undefined>(undefined);
   const nm = (o: { nameAr: string; nameEn: string }) => (locale === "ar" ? o.nameAr : o.nameEn);
 
-  // Vorschau neu laden, wenn sich die Adresse ändert (Zustand nur im Callback setzen)
+  // Vorschau neu laden, wenn sich die Adresse (Gast: der Ort) ändert (Zustand nur im Callback setzen)
   useEffect(() => {
-    if (!addressId) return;
+    if (guest ? debouncedCity.city.length < 2 : !addressId) return;
     let cancelled = false;
-    apiFetch<Preview>("/api/v1/checkout/preview", { body: { addressId, couponCode: coupon }, locale })
+    const req = guest
+      ? apiFetch<Preview>("/api/v1/checkout/guest", { body: { city: debouncedCity.city, zoneId: debouncedCity.zoneId || undefined, couponCode: coupon }, locale })
+      : apiFetch<Preview>("/api/v1/checkout/preview", { body: { addressId, couponCode: coupon }, locale });
+    req
       .then((p) => {
         if (!cancelled) {
           setPreview(p);
           setPreviewError(null);
+          if (guest && p.deliveryDates) setDate((d) => (d && p.deliveryDates!.includes(d) ? d : (p.deliveryDates![0] ?? "")));
         }
       })
       .catch((e: unknown) => {
@@ -81,7 +97,7 @@ export function CheckoutForm({ options, zones }: { options: Options; zones: { id
     return () => {
       cancelled = true;
     };
-  }, [addressId, coupon, locale, translate]);
+  }, [guest, debouncedCity, addressId, coupon, locale, translate]);
 
   function chooseAddress(id: string) {
     setAddressId(id);
@@ -102,6 +118,15 @@ export function CheckoutForm({ options, zones }: { options: Options; zones: { id
   }
 
   async function place() {
+    if (guest) {
+      const r = await call<{ id: string; token: string }>("/api/v1/orders/guest", {
+        body: { name: g.name, phone: g.phone, city: g.city, zoneId: g.zoneId || undefined, street: g.street || undefined, details: g.details || undefined, paymentMethod: method, requestedDeliveryDate: date, customerNote: note || undefined, couponCode: coupon, locale },
+      });
+      if (!r) return;
+      cart.setCount(0);
+      router.replace(`/order/${r.id}?k=${r.token}`);
+      return;
+    }
     const res = await call<{ id: string }>("/api/v1/orders", { body: { addressId, paymentMethod: method, requestedDeliveryDate: date, customerNote: note || undefined, couponCode: coupon } });
     if (!res) return;
     // Bestellung angelegt → Korb ist leer: Zähler sofort auf 0
@@ -121,7 +146,9 @@ export function CheckoutForm({ options, zones }: { options: Options; zones: { id
   const creditShort = onAccount && options.credit && preview ? preview.gross > options.credit.available : false;
   const fmtDay = (d: string, o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat(locale === "ar" ? "ar-u-nu-latn" : "en-GB", { ...o, timeZone: "UTC" }).format(new Date(`${d}T12:00:00Z`));
   const PM_ICON: Record<string, string> = { CASH_ON_DELIVERY: "💵", BANK_TRANSFER: "🏦", CARD_GATEWAY: "💳", ON_ACCOUNT: "🧾" };
-  const canPlace = !pending && !!preview && !preview.belowMinimum && !preview.hasProblems && preview.lines.length > 0 && !!date && !!method && !creditShort;
+  const guestReady = !guest || (g.name.trim().length >= 2 && g.phone.trim().length >= 6 && g.city.trim().length >= 2);
+  const canPlace = !pending && guestReady && !!preview && !preview.belowMinimum && !preview.hasProblems && preview.lines.length > 0 && !!date && !!method && !creditShort;
+  const dates = guest ? (preview?.deliveryDates ?? []) : (address?.deliveryDates ?? []);
   const section = (n: number, title: string, children: React.ReactNode, testId?: string) => (
     <section className="min-w-0 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-ink-200" data-testid={testId}>
       <h2 className="mb-4 flex items-center gap-3 text-base font-bold text-ink-900">
@@ -135,7 +162,29 @@ export function CheckoutForm({ options, zones }: { options: Options; zones: { id
   return (
     <div className="grid grid-cols-1 gap-6 pb-24 lg:grid-cols-3 lg:pb-0">
       <div className="min-w-0 space-y-4 lg:col-span-2">
-        {section(
+        {guest ? (
+          <p className="rounded-xl bg-sky-50 px-4 py-3 text-sm text-sky-900" data-testid="guest-hint">
+            {t("guest.hint")} <Link href="/login?next=/checkout" className="font-semibold underline">{t("guest.login")}</Link>
+          </p>
+        ) : null}
+        {guest ? section(
+          1,
+          t("guest.title"),
+          <div
+            className="grid gap-3 sm:grid-cols-2"
+            onChange={(e) => {
+              const el = e.target as HTMLInputElement;
+              if (el.name && el.name in EMPTY_GUEST) setG((x) => ({ ...x, [el.name]: el.value }));
+            }}
+          >
+            <Field label={t("guest.name")} htmlFor="g-name"><Input id="g-name" name="name" required minLength={2} autoComplete="name" data-testid="guest-name" /></Field>
+            <Field label={tc("phone")} htmlFor="g-phone" hint={t("guest.phoneHint")}><Input id="g-phone" name="phone" type="tel" inputMode="tel" dir="ltr" className="num" required autoComplete="tel" placeholder="059xxxxxxx" data-testid="guest-phone" /></Field>
+            <CityZoneFields zones={zones} idPrefix="g-" />
+            <Field label={tr("street")} htmlFor="g-street"><Input id="g-street" name="street" autoComplete="address-line1" /></Field>
+            <Field label={tr("details")} htmlFor="g-details"><Input id="g-details" name="details" /></Field>
+          </div>,
+          "co-guest",
+        ) : section(
           1,
           t("address"),
           <>
@@ -171,7 +220,8 @@ export function CheckoutForm({ options, zones }: { options: Options; zones: { id
           2,
           t("deliveryDay"),
           <div className="flex gap-2 overflow-x-auto pb-1">
-            {(address?.deliveryDates ?? []).map((d, i) => (
+            {dates.length === 0 && guest ? <p className="text-sm text-ink-500">{t("guest.cityFirst")}</p> : null}
+            {dates.map((d, i) => (
               <label key={d} className="relative shrink-0 cursor-pointer rounded-xl px-4 py-3 text-center text-sm ring-1 ring-ink-200 transition has-[:checked]:bg-ink-900 has-[:checked]:text-white has-[:checked]:ring-ink-900">
                 <input type="radio" name="date" value={d} checked={date === d} onChange={() => setDate(d)} className="sr-only" />
                 <span className="block font-semibold">{i === 0 ? t("soonest") : fmtDay(d, { weekday: "long" })}</span>
@@ -268,7 +318,7 @@ export function CheckoutForm({ options, zones }: { options: Options; zones: { id
               ) : null}
             </div>
           ) : (
-            <p className="text-sm text-ink-500">{tc("loading")}</p>
+            <p className="text-sm text-ink-500">{guest && debouncedCity.city.length < 2 ? t("guest.cityFirst") : tc("loading")}</p>
           )}
           {error ?? previewError ? <div className="mt-3"><Alert tone="red">{error ?? previewError}</Alert></div> : null}
           <Button className="mt-4 hidden w-full py-3 text-base lg:block" disabled={!canPlace} onClick={() => void place()} data-testid="place-order">

@@ -151,10 +151,13 @@ export function CartView({ cart, loggedIn, isB2B, offer }: { cart: PricedCart; l
               <Button className="w-full py-3 text-base" onClick={() => router.push("/checkout")} data-testid="to-checkout">{t("checkout")} →</Button>
             ) : (
               <div className="space-y-2" data-testid="guest-checkout">
-                <p className="text-center text-sm font-medium text-ink-800">{t("guestTitle")}</p>
-                <Button className="w-full py-3 text-base" onClick={() => router.push("/register?next=/checkout")} data-testid="cart-register">✨ {t("registerToOrder")}</Button>
-                <p className="text-center text-xs text-ink-500">{t("registerHint")}</p>
-                <Button variant="secondary" className="w-full py-2.5" onClick={() => router.push("/login?next=/checkout")} data-testid="cart-login">{t("haveAccount")}</Button>
+                {/* ohne Konto bestellen (Hauptweg) – Konto ist optional */}
+                <Button className="w-full py-3 text-base" onClick={() => router.push("/checkout")} data-testid="to-checkout">{t("checkout")} →</Button>
+                <p className="text-center text-xs text-ink-500">{t("guestNoAccount")}</p>
+                <div className="flex gap-2">
+                  <Button variant="secondary" className="flex-1 py-2" onClick={() => router.push("/register?next=/checkout")} data-testid="cart-register">✨ {t("guestRegister")}</Button>
+                  <Button variant="ghost" className="flex-1 py-2" onClick={() => router.push("/login?next=/checkout")} data-testid="cart-login">{t("guestLogin")}</Button>
+                </div>
               </div>
             )}
           </div>

@@ -2,7 +2,7 @@ import { useTranslations } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
 import { AddToCart } from "@/components/shop/AddToCart";
 import { PriceTag } from "@/components/shop/PriceTag";
-import { ProductImage } from "@/components/shop/ProductImage";
+import { ImageCarousel } from "@/components/shop/ImageCarousel";
 import { Link } from "@/i18n/navigation";
 import type { ProductDto } from "@/server/services/catalog";
 import { activePromotionInfo } from "@/server/services/promo-info";
@@ -23,7 +23,7 @@ export async function ProductCard({ product: p, vatBps }: { product: ProductDto;
   return (
     <li className="group flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-ink-200 transition hover:-translate-y-0.5 hover:shadow-md" data-testid="product-card">
       <Link href={`/products/${p.slug}`} className="relative block bg-gradient-to-b from-ink-50 to-white p-2 sm:p-3">
-        <ProductImage imageId={p.imageIds[0]} name={name} className="transition duration-300 group-hover:scale-[1.03]" />
+        <ImageCarousel imageIds={p.imageIds} name={name} />
         {badge ? <span className="num absolute start-2 top-2 rounded-full bg-red-600 px-2 py-0.5 text-xs font-bold text-white shadow sm:px-2.5 sm:py-1 sm:text-sm" data-testid="promo-badge">{badge}</span> : null}
         {v.availability !== "in_stock" ? (
           <span className={`absolute end-2 top-2 rounded-full px-2 py-0.5 text-[11px] font-semibold shadow-sm ${v.availability === "low" ? "bg-amber-100 text-amber-900" : "bg-ink-800 text-white"}`}>

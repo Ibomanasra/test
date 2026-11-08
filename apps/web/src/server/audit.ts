@@ -28,7 +28,7 @@ export async function audit(ctx: { user: { id: string } } | null, entry: AuditEn
   const meta = await getRequestMeta().catch(() => null);
   await (tx ?? prisma).auditLog.create({
     data: {
-      actorId: ctx?.user.id ?? null,
+      actorId: ctx?.user.id || null,
       action: entry.action,
       entityType: entry.entityType,
       entityId: entry.entityId ?? null,

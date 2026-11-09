@@ -262,7 +262,8 @@
       "offers": "מבצעים נוכחיים",
       "allOffers": "כל המבצעים ←",
       "showAll": "הצג הכול ({count}) ←",
-      "allProducts": "לכל המוצרים"
+      "allProducts": "לכל המוצרים",
+      "allTitle": "כל המוצרים"
     },
     "offers": {
       "title": "מבצעים בשבילך",

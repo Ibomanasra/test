@@ -262,7 +262,8 @@
       "offers": "العروض الحالية",
       "allOffers": "كل العروض ←",
       "showAll": "عرض الكل ({count}) ←",
-      "allProducts": "تصفح كل المنتجات"
+      "allProducts": "تصفح كل المنتجات",
+      "allTitle": "جميع المنتجات"
     },
     "offers": {
       "title": "عروض لك",

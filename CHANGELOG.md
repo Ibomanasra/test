@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.20.1] – 2026-11-09
+
+### Geändert
+- **Startseite: alle Produkte zuerst** – direkt unter dem Titelbild „جميع المنتجات“ mit Kategorie-Leiste (Alle · Angebote · Kategorien) und den ersten 12 Produkten, Knopf „عرض الكل (N)“. Die Angebote kommen danach. Die Kategorie-Kacheln und die Produktreihen je Kategorie (Wiederholungen) entfallen.
+
 ## [0.20.0] – 2026-11-08 – Bestellen ohne Konto, Foto-Galerie, Zurück-Pfeil
 
 ### Hinzugefügt

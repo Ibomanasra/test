@@ -262,7 +262,8 @@
       "offers": "Current offers",
       "allOffers": "All offers →",
       "showAll": "Show all ({count}) →",
-      "allProducts": "Browse all products"
+      "allProducts": "Browse all products",
+      "allTitle": "All products"
     },
     "offers": {
       "title": "Offers for you",

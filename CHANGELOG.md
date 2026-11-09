@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.22.0] – 2026-11-09 – Besucher-Statistik („الزوار“)
+
+### Hinzugefügt
+- **Neue Seite „الزوار“** im Admin (Recht „Berichte ansehen“): wie viele Leute den Shop besuchen – Heute / 7 / 30 / 90 Tage.
+  - Kennzahlen: **Besucher** (davon neu), **Seitenaufrufe**, **Bestellungen aus dem Shop** mit Kaufquote, **jetzt im Shop** (letzte 5 Minuten); neue Konten und „als App geöffnet“.
+  - **Besucher pro Tag** (Säulen, antippen für Details, Tabellenansicht).
+  - **Weg zum Kauf**: Shop besucht → Produkt geöffnet → in den Warenkorb → Kasse geöffnet → bestellt, mit „hier aufgehört“.
+  - **Herkunft**: WhatsApp, Instagram, Facebook, TikTok, Google, Telegram, direkt, andere – erkennt auch die In-App-Browser von Instagram/Facebook/TikTok und Links mit `?ref=…` bzw. `?utm_source=…` (Tipp auf der Seite).
+  - **Meistgesehene Produkte** (Aufrufe + in den Warenkorb), **Uhrzeiten** mit bester Zeit für Werbung, **Suchbegriffe**, Geräte, Sprachen.
+- **Anonym und kostenlos** (kein Google Analytics): zufällige Besucher-ID im Cookie `sa_vid`, keine Namen, Telefonnummern oder IP-Adressen. Mitarbeiter und Bots werden nicht gezählt; Einträge älter als 400 Tage werden automatisch gelöscht.
+- Migration `20261109010000_visit_events` (Tabelle `VisitEvent`).
+
 ## [0.21.0] – 2026-11-09 – Neuer Bestellablauf: Vorbereiten → Übergeben = erledigt
 
 ### Geändert

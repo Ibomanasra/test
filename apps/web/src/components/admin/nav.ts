@@ -22,6 +22,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { key: "purchasing", href: "/admin/purchasing", anyOf: ["purchase.view"] },
   { key: "delivery", href: "/admin/delivery", anyOf: ["delivery.plan", "delivery.view_all", "delivery.cash_closing"] },
   { key: "finance", href: "/admin/finance", anyOf: ["finance.view"] },
+  { key: "visitors", href: "/admin/visitors", anyOf: ["report.view"] },
   { key: "reports", href: "/admin/reports", anyOf: ["report.view"] },
   { key: "users", href: "/admin/users", anyOf: ["user.manage"] },
   { key: "roles", href: "/admin/roles", anyOf: ["user.manage"] },

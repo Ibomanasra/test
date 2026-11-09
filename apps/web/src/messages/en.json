@@ -539,7 +539,8 @@
       "toShop": "To shop",
       "menu": "Menu",
       "documents": "Documents",
-      "offers": "Offers"
+      "offers": "Offers",
+      "visitors": "Visitors"
     },
     "loggedInAs": "Logged in as {name}",
     "dashboard": {
@@ -2019,6 +2020,82 @@
         "stock_low": "⚠️ Low stock",
         "dealer_new": "🏪 New dealer"
       }
+    },
+    "visitors": {
+      "title": "Visitors",
+      "subtitle": "How many people visited the shop, where they came from and what they looked at – staff excluded",
+      "range": "Period",
+      "ranges": {
+        "1": "Today",
+        "7": "Last 7 days",
+        "30": "Last 30 days",
+        "90": "Last 3 months"
+      },
+      "empty": "No visitors in this period yet. Counting starts from when this page was activated.",
+      "kpi": {
+        "visitors": "Visitors",
+        "visitorsSub": "{n} of them for the first time",
+        "views": "Page views",
+        "viewsSub": "{n} pages per visitor",
+        "orders": "Shop orders",
+        "ordersSub": "{p}% of visitors ordered",
+        "online": "In the shop now",
+        "onlineSub": "Last 5 minutes"
+      },
+      "signups": "New accounts",
+      "appUsers": "Opened as app",
+      "daily": "Visitors per day",
+      "dailyHint": "Tap a bar for details",
+      "table": "Show as table",
+      "tipVisitors": "{n} visitors",
+      "tipViews": "{n} views",
+      "none": "No data yet",
+      "funnel": {
+        "title": "Path to purchase",
+        "hint": "How many visitors reached each step – see where people drop off",
+        "visitors": "Visited the shop",
+        "product": "Opened a product",
+        "cart": "Added to cart",
+        "checkout": "Opened checkout",
+        "orders": "Ordered",
+        "lost": "{n} stopped here"
+      },
+      "sources": {
+        "title": "Where they came from",
+        "whatsapp": "WhatsApp",
+        "instagram": "Instagram",
+        "facebook": "Facebook",
+        "tiktok": "TikTok",
+        "google": "Google (search)",
+        "telegram": "Telegram",
+        "direct": "Direct (bookmark or typed address)",
+        "other": "Other websites",
+        "tip": "Tip: to see which ad brings customers, add ?ref= to your link, e.g. on Instagram:"
+      },
+      "products": {
+        "title": "Most viewed products",
+        "product": "Product",
+        "views": "Views",
+        "adds": "To cart"
+      },
+      "hours": {
+        "title": "When do people visit?",
+        "hint": "Visitors by hour (Palestine time)",
+        "best": "Busiest hour: {h} – the best time to post ads"
+      },
+      "searches": {
+        "title": "What are people searching for?",
+        "none": "No searches yet",
+        "hint": "If people search for something you don't have – consider adding it"
+      },
+      "devices": {
+        "title": "Devices",
+        "mobile": "Mobile",
+        "tablet": "Tablet",
+        "desktop": "Computer"
+      },
+      "languages": "Shop language",
+      "privacy": "Statistics are anonymous: no names, phone numbers or IP addresses are stored. Staff are not counted."
     }
   },
   "driver": {

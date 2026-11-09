@@ -2,6 +2,7 @@ import { placeOrderSchema } from "@sa/contracts";
 import { requireCustomer } from "@/server/auth/context";
 import { apiRoute, parseJson } from "@/server/http";
 import { listOrders, placeOrder } from "@/server/services/orders";
+import { trackRequest } from "@/server/services/visits";
 
 export const GET = apiRoute(async (req) => {
   const ctx = await requireCustomer();
@@ -13,5 +14,6 @@ export const GET = apiRoute(async (req) => {
 export const POST = apiRoute(async (req) => {
   const ctx = await requireCustomer();
   const order = await placeOrder(ctx, await parseJson(req, placeOrderSchema));
+  await trackRequest(req, ctx.isStaff, { type: "order", path: "/checkout" });
   return { id: order.id, number: order.number, totalGross: order.totalGross };
 });

@@ -1944,3 +1944,38 @@ model OrderOfferRedemption {
   @@unique([offerId, orderId])
   @@index([offerId, customerId])
 }
+
+/// Anonyme Besucherstatistik des Shops (keine Namen/IPs; Besucher = zufällige Cookie-ID).
+/// Mitarbeiter und Bots werden nicht gezählt. Alte Einträge (> 400 Tage) werden automatisch gelöscht.
+model VisitEvent {
+  id        BigInt   @id @default(autoincrement())
+  at        DateTime @default(now())
+  /// Geschäftstag (Asia/Hebron)
+  day       DateTime @db.Date
+  /// Stunde 0–23 (Asia/Hebron)
+  hour      Int      @db.SmallInt
+  /// zufällige Besucher-ID (Cookie sa_vid)
+  vid       String   @db.VarChar(40)
+  /// view | cart
+  type      String   @db.VarChar(12)
+  path      String   @db.VarChar(200)
+  /// Produktseite (slug) bzw. Variante beim Warenkorb
+  slug      String?  @db.VarChar(160)
+  variantId String?  @db.VarChar(40)
+  /// Suchbegriff (/products?q=…)
+  query     String?  @db.VarChar(80)
+  /// erste Seite eines Besuchs + Herkunft (whatsapp, instagram, facebook, tiktok, google, direct, other)
+  entry     Boolean  @default(false)
+  source    String?  @db.VarChar(24)
+  /// mobile | tablet | desktop
+  device    String?  @db.VarChar(12)
+  /// als App (Startbildschirm) geöffnet
+  app       Boolean  @default(false)
+  locale    String?  @db.VarChar(5)
+  /// erster Besuch dieses Geräts
+  isNew     Boolean  @default(false)
+
+  @@index([day, type])
+  @@index([at])
+  @@index([vid])
+}

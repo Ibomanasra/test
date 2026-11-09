@@ -32,6 +32,8 @@ export default async function CourierAccountsPage({ params }: { params: Promise<
           customer: s.order.customer.displayName,
           tracking: s.trackingNumber ?? "",
           deliveredAt: s.deliveredAt ? day(s.deliveredAt) : "",
+          onTheWay: s.status === "LOADED",
+          handedOverAt: s.handedOverAt ? day(s.handedOverAt) : "",
           amount: s.codAmount ?? 0,
         })),
         settlements: a.settlements.map((x) => ({ id: x.id, at: dateTimeText(x.createdAt), amount: x.amount, count: x._count.shipments, note: x.note ?? "" })),

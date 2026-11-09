@@ -16,7 +16,8 @@ export const ORDER_STATUSES = [
 export type OrderStatusKey = (typeof ORDER_STATUSES)[number];
 
 const TRANSITIONS: Record<OrderStatusKey, readonly OrderStatusKey[]> = {
-  NEW: ["CONFIRMED", "CANCELLED"],
+  // „Vorbereitet“ direkt aus „Neu“ (Bestätigen ist im Vorbereiten enthalten)
+  NEW: ["CONFIRMED", "READY", "CANCELLED"],
   // „Vorbereitet“ in einem Schritt (Kommissionieren optional)
   CONFIRMED: ["PICKING", "READY", "CANCELLED"],
   PICKING: ["READY", "CANCELLED"],

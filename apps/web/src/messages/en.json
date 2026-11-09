@@ -607,7 +607,7 @@
         "total": "Total",
         "note": "By order date, without cancelled orders. Amounts as the customer pays them.",
         "courierTitle": "To collect from couriers",
-        "courierOwed": "Collected from customers – they must hand it over",
+        "courierOwed": "With the couriers – they must hand it over",
         "courierWay": "On the way (to be collected)",
         "courierNone": "No money with the couriers",
         "courierAction": "Collect the money"
@@ -1178,26 +1178,27 @@
         "next": {
           "CONFIRMED": "1 Confirm",
           "PICKING": "Start picking",
-          "READY": "2 Prepared"
+          "READY": "✓ Prepared"
         },
         "toDispatch": "Dispatch",
         "toDelivery": "Delivery",
         "open": "Open",
-        "handOver": "3 Hand over",
+        "handOver": "2 Hand over",
         "handOverSelected": "Hand over {count} to courier",
         "handOverText": "{count, plural, =1 {Creates the delivery note and invoice and hands the order to the courier.} other {Creates delivery notes and invoices and hands # orders to the courier.}}",
         "handedOver": "{count} order(s) handed over to the courier.",
         "markDelivered": "Delivered",
         "deliveredOne": "Marked as delivered.",
         "tab": {
-          "NEW": "1 To confirm",
+          "NEW": "1 To prepare",
           "CONFIRMED": "2 To prepare",
-          "READY": "3 Ready to hand over",
-          "OUT_FOR_DELIVERY": "With courier"
+          "READY": "2 Ready to hand over",
+          "OUT_FOR_DELIVERY": "✓ Handed to courier"
         },
         "goods": "Goods",
         "delivery": "Delivery",
-        "collects": "collects {amount}"
+        "collects": "collects {amount}",
+        "done": "Done"
       },
       "driver": "Driver",
       "noDriver": "No driver – assign later",
@@ -1221,7 +1222,21 @@
         "got": "Got it",
         "bigPhoto": "Show photo large"
       },
-      "partialOnly": "Partial delivery (optional)"
+      "partialOnly": "Partial delivery (optional)",
+      "flow": {
+        "s1": "Prepare",
+        "s2": "Hand to courier",
+        "s3": "Done",
+        "doPrepared": "Prepared – ready to hand over",
+        "doneHandedOver": "Handed to the courier – this order is done for us.",
+        "doneDelivered": "The order was delivered to the customer.",
+        "feedback": "Courier feedback (if needed):",
+        "notDeliverable": "Not deliverable",
+        "notDeliverableHint": "Goods go back to stock and the order returns to “ready to hand over” – it can be handed over again.",
+        "cancelReturn": "Cancel / returned",
+        "cancelReturnHint": "Goods go back to stock, the invoice is reversed with a credit note and the order is cancelled.",
+        "markDelivered": "Delivered to customer"
+      }
     },
     "products": {
       "title": "Products",
@@ -1745,16 +1760,18 @@
         "actTitle": "Collect money from courier",
         "actText": "Amounts they collected from customers",
         "none": "No couriers yet. Add them under Settings → Couriers.",
-        "intro": "The courier collects cash from the customer on delivery. When they hand the money to you, select the orders and press “Received” – payments are booked to the invoices automatically.",
-        "onTheWay": "On the way ({count})",
+        "intro": "The courier collects the money from the customer. Every order we handed over appears here until they give us the money. Then select the orders and press “Received” – payments are booked and the orders are closed as delivered.",
+        "onTheWay": "Of which on the way ({count})",
         "owes": "They owe us",
-        "collectedList": "Delivered and collected – waiting for the money:",
+        "collectedList": "Orders we handed over – waiting for the money:",
         "notePlaceholder": "Note (e.g. cash, transfer)",
         "received": "Received {amount}",
         "settled": "Recorded {amount} for {count} orders.",
         "nothingOwed": "They hold no money right now",
         "history": "Previous settlements",
-        "ordersCount": "{count} orders"
+        "ordersCount": "{count} orders",
+        "itemOnTheWay": "On the way",
+        "itemDelivered": "Delivered"
       }
     },
     "reports": {
@@ -2194,7 +2211,8 @@
     "telegram_not_connected": "The bot is not connected yet.",
     "telegram_unreachable": "Could not reach Telegram. Try again later.",
     "telegram_send_failed": "Could not send. Is the bot a member of this group?",
-    "phone_registered_login": "This number already has an account – please log in to place the order."
+    "phone_registered_login": "This number already has an account – please log in to place the order.",
+    "already_settled": "The courier already paid us for this order – it cannot be changed."
   },
   "permissions": {
     "dashboard_view": "View dashboard",

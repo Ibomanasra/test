@@ -12,13 +12,13 @@ import { dateTimeText, day, money } from "@/server/format";
 import { listDeliveryCompanies } from "@/server/services/delivery-companies";
 import { listOrders, orderStatusCounts } from "@/server/services/orders";
 
-const OPEN: OrderStatusKey[] = ["NEW", "CONFIRMED", "PICKING", "READY", "OUT_FOR_DELIVERY"];
+/** Zu erledigen: alles bis zur Übergabe an die Zustellfirma (danach gilt die Bestellung als erledigt) */
+const OPEN: OrderStatusKey[] = ["NEW", "CONFIRMED", "PICKING", "READY"];
 /** Reiter in Arbeitsschritten: „Vorbereiten“ zeigt auch alte „In Kommissionierung“-Bestellungen */
 const STEP_TABS: { key: OrderStatusKey; statuses: OrderStatusKey[] }[] = [
-  { key: "NEW", statuses: ["NEW"] },
-  { key: "CONFIRMED", statuses: ["CONFIRMED", "PICKING"] },
+  { key: "NEW", statuses: ["NEW", "CONFIRMED", "PICKING"] },
   { key: "READY", statuses: ["READY"] },
-  { key: "OUT_FOR_DELIVERY", statuses: ["OUT_FOR_DELIVERY"] },
+  { key: "OUT_FOR_DELIVERY", statuses: ["OUT_FOR_DELIVERY", "DELIVERED"] },
 ];
 
 export default async function OrdersPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
@@ -67,7 +67,6 @@ export default async function OrdersPage({ params, searchParams }: { params: Pro
   const tabs: { key: string; label: string; count: number }[] = [
     { key: "open", label: t("board.tabOpen"), count: OPEN.reduce((a, s) => a + n(s), 0) },
     ...STEP_TABS.map((x) => ({ key: x.key, label: t(`board.tab.${x.key}`), count: x.statuses.reduce((a, s) => a + n(s), 0) })),
-    { key: "DELIVERED", label: tAll("orderStatus.DELIVERED"), count: n("DELIVERED") },
     { key: "CANCELLED", label: tAll("orderStatus.CANCELLED"), count: n("CANCELLED") },
     { key: "all", label: tc("all"), count: ORDER_STATUSES.reduce((a, s) => a + n(s), 0) },
   ];

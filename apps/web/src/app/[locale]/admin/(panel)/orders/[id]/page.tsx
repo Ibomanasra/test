@@ -7,7 +7,6 @@ import { OrderActions } from "@/components/admin/OrderActions";
 import { OrderItemsEditor } from "@/components/admin/OrderItemsEditor";
 import { PickCheck } from "@/components/admin/PickCheck";
 import { PrintButton } from "@/components/print/PrintButton";
-import { OrderStatusTimeline } from "@/components/shop/OrderStatusTimeline";
 import { Alert, Badge, Card, Num, PageHeader, Table, Td, Th } from "@/components/ui";
 import { Link } from "@/i18n/navigation";
 import { staffPagePermission } from "@/server/auth/page-guards";
@@ -31,7 +30,7 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ loc
   const editable = isOrderEditable(o.status as OrderStatusKey) && can("order.edit");
   const editorOpts = editable ? await quoteEditorOptions(locale) : null;
   // beim Vorbereiten: Positionen abhaken
-  const preparing = o.status === "CONFIRMED" || o.status === "PICKING";
+  const preparing = o.status === "NEW" || o.status === "CONFIRMED" || o.status === "PICKING";
   const handOver = o.status === "READY" && can("order.status");
   const ownDrivers = handOver && (await ownDriversEnabled());
   const [drivers, companies] = handOver ? await Promise.all([ownDrivers ? listDrivers() : Promise.resolve([]), listDeliveryCompanies(true)]) : [[], []];
@@ -48,7 +47,6 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ loc
           </div>
         }
       />
-      <Card><OrderStatusTimeline status={o.status as OrderStatusKey} events={o.events.map((e) => ({ toStatus: e.toStatus, at: dateTimeText(e.createdAt) }))} /></Card>
       <OrderActions
         orderId={o.id}
         status={o.status}

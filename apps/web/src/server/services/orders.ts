@@ -494,14 +494,27 @@ export async function advanceOrder(ctx: AuthContext, orderId: string, to: "CONFI
   const o = await prisma.order.findUnique({ where: { id: orderId } });
   if (!o) throw notFound();
   await prisma.$transaction(async (tx) => {
-    await setStatus(tx, ctx, orderId, o.status, to, note, to === "CONFIRMED" ? { confirmedAt: new Date() } : {});
+    // „Vorbereitet“ direkt aus „Neu“ gilt zugleich als bestätigt
+    const confirming = to === "CONFIRMED" || (to === "READY" && o.status === "NEW");
+    await setStatus(tx, ctx, orderId, o.status, to, note, confirming ? { confirmedAt: new Date() } : {});
     if (to === "READY") {
       const items = await tx.orderItem.findMany({ where: { orderId } });
       for (const i of items) await tx.orderItem.update({ where: { id: i.id }, data: { qtyPickedBase: i.qtyBase - i.qtyCancelledBase - i.qtyDeliveredBase } });
     }
   });
-  if (to === "CONFIRMED") await notifyCustomer(orderId, "order.confirmed");
+  if (to === "CONFIRMED" || (to === "READY" && o.status === "NEW")) await notifyCustomer(orderId, "order.confirmed");
   await runHooks(orderId, to, ctx);
+}
+
+/**
+ * Rückmeldung der Zustellfirma „storniert / zurück“: Ware zurück ins Lager, Rechnung per Gutschrift
+ * ausgeglichen (wie „nicht zustellbar“), danach Bestellung storniert.
+ */
+export async function cancelAfterHandover(ctx: AuthContext, orderId: string, reason: string) {
+  const o = await prisma.order.findUnique({ where: { id: orderId }, select: { status: true } });
+  if (!o) throw notFound();
+  if (o.status === "OUT_FOR_DELIVERY") await failDelivery(ctx, orderId, reason);
+  await cancelOrder(ctx, orderId, reason);
 }
 
 export async function cancelOrder(ctx: AuthContext, orderId: string, reason: string) {
@@ -648,6 +661,8 @@ export async function markDelivered(ctx: AuthContext, orderId: string, receivedB
 
 /** Zustellung fehlgeschlagen: Ware zurück ins Lager und wieder reserviert, Status „Bereit“ */
 export async function failDelivery(ctx: AuthContext, orderId: string, reason: string) {
+  // Geld von der Zustellfirma schon verbucht → erst die Abrechnung klären
+  if (await prisma.shipment.count({ where: { orderId, status: { in: ["PENDING", "LOADED"] }, courierSettlementId: { not: null } } })) throw new AppError(409, "already_settled");
   const o = await prisma.order.findUnique({ where: { id: orderId }, include: { shipments: { where: { status: { in: ["PENDING", "LOADED"] } }, include: { items: true, invoice: { select: { id: true, status: true } } } }, items: true } });
   if (!o) throw notFound();
   const creditNotes = await prisma.$transaction(async (tx) => {

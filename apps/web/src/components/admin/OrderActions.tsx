@@ -35,7 +35,7 @@ export function OrderActions({
   const tc = useTranslations("common");
   const router = useRouter();
   const { call, pending, error } = useApi();
-  const [mode, setMode] = useState<"dispatch" | "cancel" | "fail" | "deliver" | null>(null);
+  const [mode, setMode] = useState<"dispatch" | "cancel" | "fail" | "deliver" | "return-cancel" | null>(null);
   const [qty, setQty] = useState<Record<string, string>>(Object.fromEntries(items.map((i) => [i.id, String(i.open)])));
   const [remainder, setRemainder] = useState<"BACKORDER" | "CANCEL">("BACKORDER");
   const [text, setText] = useState("");
@@ -51,36 +51,46 @@ export function OrderActions({
     }
   };
 
-  // 3 Schritte: 1 Bestätigen → 2 Vorbereitet → 3 An Zustellfirma übergeben
-  const next: Record<string, "CONFIRMED" | "READY" | undefined> = { NEW: "CONFIRMED", CONFIRMED: "READY", PICKING: "READY" };
-  const to = next[status];
-  const stepNo = status === "NEW" ? 1 : status === "CONFIRMED" || status === "PICKING" ? 2 : status === "READY" ? 3 : 0;
+  // 2 Schritte: 1 Vorbereiten (mit Fotos/Abhaken) → 2 An Zustellfirma übergeben → erledigt
+  const preparing = status === "NEW" || status === "CONFIRMED" || status === "PICKING";
+  const to: "READY" | undefined = preparing ? "READY" : undefined;
+  const handedOver = status === "OUT_FOR_DELIVERY" || status === "DELIVERED";
+  const stepNo = preparing ? 1 : status === "READY" ? 2 : handedOver ? 3 : 0;
   return (
     <div className="space-y-3">
       {stepNo ? (
         <ol className="flex flex-wrap gap-2 text-sm" aria-label={t("steps.title")} data-testid="order-steps">
           {[1, 2, 3].map((n) => (
-            <li key={n} className={n < stepNo ? "rounded-full bg-green-100 px-3 py-1 text-green-800" : n === stepNo ? "rounded-full bg-brand-700 px-3 py-1 font-semibold text-white" : "rounded-full bg-ink-100 px-3 py-1 text-ink-500"}>
-              {n < stepNo ? "✓" : n} · {t(`steps.s${n}`)}
+            <li key={n} className={n < stepNo || (n === 3 && handedOver) ? "rounded-full bg-green-100 px-3 py-1 text-green-800" : n === stepNo ? "rounded-full bg-brand-700 px-3 py-1 font-semibold text-white" : "rounded-full bg-ink-100 px-3 py-1 text-ink-500"}>
+              {n < stepNo || (n === 3 && handedOver) ? "✓" : n} · {t(`flow.s${n}`)}
             </li>
           ))}
         </ol>
       ) : null}
       <div className="flex flex-wrap gap-2">
-        {to && (to === "CONFIRMED" ? can.confirm : can.status) ? (
-          <Button onClick={() => void post("status", { to })} disabled={pending} data-testid={`to-${to}`}>{to === "CONFIRMED" ? `✓ ${t("steps.do1")}` : `📦 ${t("steps.do2")}`}</Button>
+        {to && can.status ? (
+          <Button onClick={() => void post("status", { to })} disabled={pending} data-testid="to-READY">✓ {t("flow.doPrepared")}</Button>
         ) : null}
         {status === "READY" && can.status ? <Button onClick={() => setMode("dispatch")} data-testid="open-dispatch">🚚 {t("steps.do3")}</Button> : null}
-        {status === "OUT_FOR_DELIVERY" && can.status ? (
-          <>
-            <Button onClick={() => setMode("deliver")} data-testid="open-deliver">{t("delivered")}</Button>
-            <Button variant="secondary" onClick={() => setMode("fail")}>{t("failed")}</Button>
-          </>
-        ) : null}
         {["NEW", "CONFIRMED", "PICKING", "READY"].includes(status) && can.cancel ? (
           <Button variant="danger" onClick={() => setMode("cancel")} data-testid="open-cancel">{t("cancel")}</Button>
         ) : null}
       </div>
+      {handedOver ? (
+        <div className="rounded-xl bg-green-50 p-4 ring-1 ring-green-200" data-testid="order-done">
+          <p className="font-semibold text-green-900">✓ {status === "DELIVERED" ? t("flow.doneDelivered") : t("flow.doneHandedOver")}</p>
+          {status === "OUT_FOR_DELIVERY" && can.status ? (
+            <div className="mt-3">
+              <p className="mb-2 text-sm text-green-900">{t("flow.feedback")}</p>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="secondary" onClick={() => setMode("fail")} data-testid="open-fail">↩️ {t("flow.notDeliverable")}</Button>
+                {can.cancel ? <Button size="sm" variant="secondary" onClick={() => setMode("return-cancel")} data-testid="open-return-cancel">✕ {t("flow.cancelReturn")}</Button> : null}
+                <Button size="sm" variant="ghost" onClick={() => setMode("deliver")} data-testid="open-deliver">{t("flow.markDelivered")}</Button>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
       {error ? <Alert tone="red">{error}</Alert> : null}
 
       {mode === "dispatch" ? (
@@ -142,8 +152,10 @@ export function OrderActions({
         </Card>
       ) : null}
 
-      {mode === "deliver" || mode === "cancel" || mode === "fail" ? (
-        <Card title={mode === "deliver" ? t("delivered") : mode === "cancel" ? t("cancel") : t("failed")}>
+      {mode === "deliver" || mode === "cancel" || mode === "fail" || mode === "return-cancel" ? (
+        <Card title={mode === "deliver" ? t("flow.markDelivered") : mode === "cancel" ? t("cancel") : mode === "return-cancel" ? t("flow.cancelReturn") : t("flow.notDeliverable")}>
+          {mode === "fail" ? <p className="mb-3 text-sm text-ink-600">{t("flow.notDeliverableHint")}</p> : null}
+          {mode === "return-cancel" ? <p className="mb-3 text-sm text-ink-600">{t("flow.cancelReturnHint")}</p> : null}
           <form
             method="post"
             className="flex flex-wrap items-end gap-2"
@@ -155,7 +167,7 @@ export function OrderActions({
             <Field label={mode === "deliver" ? t("receivedBy") : t("reason")} htmlFor="oa-text">
               <Input id="oa-text" value={text} onChange={(e) => setText(e.target.value)} required={mode !== "deliver"} minLength={mode !== "deliver" ? 3 : undefined} />
             </Field>
-            <Button type="submit" variant={mode === "cancel" ? "danger" : "primary"} disabled={pending} data-testid="confirm-action">{tc("save")}</Button>
+            <Button type="submit" variant={mode === "cancel" || mode === "return-cancel" ? "danger" : "primary"} disabled={pending} data-testid="confirm-action">{tc("save")}</Button>
             <Button type="button" variant="secondary" onClick={() => setMode(null)}>{tc("cancel")}</Button>
           </form>
         </Card>

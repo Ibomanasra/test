@@ -7,7 +7,7 @@ import type { AuthContext } from "../auth/context";
 import { AppError, badRequest, notFound } from "../errors";
 import { invoiceOpenAmount } from "@sa/core";
 import { recordPayment } from "./finance";
-import { dispatchOrder, type DispatchInput } from "./orders";
+import { dispatchOrder, markDelivered, type DispatchInput } from "./orders";
 
 /** Externe Zustellfirmen (Kuriere) */
 export function listDeliveryCompanies(activeOnly = false) {
@@ -66,9 +66,10 @@ export async function handOverOrder(ctx: AuthContext, orderId: string, input: Di
 // Abrechnung: Die Zustellfirma kassiert beim Kunden und gibt das Geld an uns weiter
 // ---------------------------------------------------------------------------
 
+// Ab Übergabe kassiert die Zustellfirma für uns (unterwegs oder schon zugestellt), bis wir das Geld erhalten
 const owedWhere = (companyId?: string) => ({
   ...(companyId ? { deliveryCompanyId: companyId } : { deliveryCompanyId: { not: null } }),
-  status: "DELIVERED" as const,
+  status: { in: ["LOADED" as const, "DELIVERED" as const] },
   codAmount: { gt: 0 },
   courierSettlementId: null,
 });
@@ -80,9 +81,9 @@ export async function courierAccounts() {
     prisma.shipment.findMany({
       where: owedWhere(),
       orderBy: { deliveredAt: "asc" },
-      select: { id: true, number: true, codAmount: true, deliveredAt: true, trackingNumber: true, deliveryCompanyId: true, order: { select: { id: true, number: true, customer: { select: { displayName: true } } } } },
+      select: { id: true, number: true, status: true, codAmount: true, handedOverAt: true, deliveredAt: true, trackingNumber: true, deliveryCompanyId: true, order: { select: { id: true, number: true, customer: { select: { displayName: true } } } } },
     }),
-    prisma.shipment.groupBy({ by: ["deliveryCompanyId"], where: { deliveryCompanyId: { not: null }, status: "LOADED", codAmount: { gt: 0 } }, _sum: { codAmount: true }, _count: { _all: true } }),
+    prisma.shipment.groupBy({ by: ["deliveryCompanyId"], where: { deliveryCompanyId: { not: null }, status: "LOADED", codAmount: { gt: 0 }, courierSettlementId: null }, _sum: { codAmount: true }, _count: { _all: true } }),
     prisma.courierSettlement.findMany({ orderBy: { createdAt: "desc" }, take: 30, include: { _count: { select: { shipments: true } } } }),
   ]);
   return companies
@@ -135,8 +136,15 @@ export async function settleCourier(ctx: AuthContext, companyId: string, shipmen
         await tx.shipment.update({ where: { id: s.id }, data: { courierSettlementId: settlement.id } });
       }
       await audit(ctx, { action: "courier.settle", entityType: "CourierSettlement", entityId: settlement.id, after: { company: company.name, amount: total, shipments: shipments.length } }, tx);
-      return { id: settlement.id, amount: total, count: shipments.length };
+      return { id: settlement.id, amount: total, count: shipments.length, toDeliver: [...new Set(shipments.filter((x) => x.status === "LOADED").map((x) => x.orderId))] };
     },
     { timeout: 30_000 },
-  );
+  ).then(async (r) => {
+    // Geld erhalten = Kunde hat die Ware: noch „unterwegs“ markierte Bestellungen als zugestellt abschließen
+    for (const orderId of r.toDeliver) {
+      const o = await prisma.order.findUnique({ where: { id: orderId }, select: { status: true } });
+      if (o?.status === "OUT_FOR_DELIVERY") await markDelivered(ctx, orderId).catch((err: unknown) => console.error("[settle-deliver]", err));
+    }
+    return { id: r.id, amount: r.amount, count: r.count };
+  });
 }

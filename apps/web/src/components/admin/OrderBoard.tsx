@@ -39,15 +39,15 @@ export interface OrderRow {
   cod?: string;
 }
 
-type Step = "CONFIRMED" | "READY";
-/** 3 Schritte: 1 Bestätigen → 2 Vorbereitet → 3 Übergeben (Dialog) */
-const NEXT: Partial<Record<OrderRow["status"], Step>> = { NEW: "CONFIRMED", CONFIRMED: "READY", PICKING: "READY" };
+type Step = "READY";
+/** 2 Schritte: 1 Vorbereitet → 2 an die Zustellfirma übergeben (Dialog) → erledigt */
+const NEXT: Partial<Record<OrderRow["status"], Step>> = { NEW: "READY", CONFIRMED: "READY", PICKING: "READY" };
 
 /**
  * Tagesarbeit: Zeilen mit „nächster Schritt“-Knopf, Mehrfachauswahl für
  * Sammel-Weiterschalten und Sammeldruck (A4-PDF mehrerer Bestellungen).
  */
-export function OrderBoard({ rows, canConfirm, canStatus, companies = [] }: { rows: OrderRow[]; canConfirm: boolean; canStatus: boolean; companies?: { id: string; name: string }[] }) {
+export function OrderBoard({ rows, canStatus, companies = [] }: { rows: OrderRow[]; canConfirm?: boolean; canStatus: boolean; companies?: { id: string; name: string }[] }) {
   const t = useTranslations("admin.orders");
   const tc = useTranslations("common");
   const router = useRouter();
@@ -59,7 +59,7 @@ export function OrderBoard({ rows, canConfirm, canStatus, companies = [] }: { ro
   const [handOver, setHandOver] = useState<string[] | null>(null);
   const [company, setCompany] = useState(() => emptyChoice(companies));
 
-  const allowed = (s: Step) => (s === "CONFIRMED" ? canConfirm : canStatus);
+  const allowed = (_s: Step) => canStatus;
   const toggle = (id: string) => setSel((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
   async function advance(ids: string[]) {
@@ -92,15 +92,7 @@ export function OrderBoard({ rows, canConfirm, canStatus, companies = [] }: { ro
     router.refresh();
   }
 
-  async function delivered(id: string) {
-    setBusy(id);
-    const ok = await call(`/api/v1/admin/orders/${id}/deliver`, { body: {} });
-    setBusy(null);
-    if (ok) {
-      setDone(t("board.deliveredOne"));
-      router.refresh();
-    }
-  }
+
 
   if (rows.length === 0) return <EmptyState>{tc("noResults")}</EmptyState>;
   const ids = [...sel].join(",");
@@ -227,13 +219,11 @@ export function OrderBoard({ rows, canConfirm, canStatus, companies = [] }: { ro
                       <Button size="sm" disabled={busy != null} onClick={() => setHandOver([r.id])} data-testid="row-handover" className="whitespace-nowrap">
                         🚚 {t("board.handOver")}
                       </Button>
-                    ) : r.status === "OUT_FOR_DELIVERY" && canStatus ? (
+                    ) : r.status === "OUT_FOR_DELIVERY" || r.status === "DELIVERED" ? (
                       <div className="flex flex-col items-end gap-1">
+                        <span className="whitespace-nowrap rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800" data-testid="row-done">✓ {t("board.done")}</span>
                         {r.company ? <span className="whitespace-nowrap text-xs text-ink-500">🚚 {r.company}</span> : null}
                         {r.cod ? <span className="whitespace-nowrap text-xs font-medium text-amber-800" data-testid="row-cod">💵 {t("board.collects", { amount: r.cod })}</span> : null}
-                        <Button size="sm" variant="secondary" disabled={busy != null} onClick={() => void delivered(r.id)} data-testid="row-delivered" className="whitespace-nowrap">
-                          {busy === r.id ? "…" : `✓ ${t("board.markDelivered")}`}
-                        </Button>
                       </div>
                     ) : (
                       <Link href={`/admin/orders/${r.id}`} className="text-sm text-ink-500 hover:text-ink-900">{t("board.open")}</Link>

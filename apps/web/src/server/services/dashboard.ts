@@ -172,8 +172,9 @@ export async function salesOverview() {
 /** Geld bei den Zustellfirmen: schon kassiert (schulden uns) und noch unterwegs – je Firma */
 export async function courierMoney() {
   const [owed, way, companies] = await Promise.all([
-    prisma.shipment.groupBy({ by: ["deliveryCompanyId"], where: { deliveryCompanyId: { not: null }, status: "DELIVERED", codAmount: { gt: 0 }, courierSettlementId: null }, _sum: { codAmount: true }, _count: { _all: true } }),
-    prisma.shipment.groupBy({ by: ["deliveryCompanyId"], where: { deliveryCompanyId: { not: null }, status: "LOADED", codAmount: { gt: 0 } }, _sum: { codAmount: true }, _count: { _all: true } }),
+    // ab Übergabe schuldet die Zustellfirma das kassierte Geld (unterwegs oder zugestellt), bis es verbucht ist
+    prisma.shipment.groupBy({ by: ["deliveryCompanyId"], where: { deliveryCompanyId: { not: null }, status: { in: ["LOADED", "DELIVERED"] }, codAmount: { gt: 0 }, courierSettlementId: null }, _sum: { codAmount: true }, _count: { _all: true } }),
+    prisma.shipment.groupBy({ by: ["deliveryCompanyId"], where: { deliveryCompanyId: { not: null }, status: "LOADED", codAmount: { gt: 0 }, courierSettlementId: null }, _sum: { codAmount: true }, _count: { _all: true } }),
     prisma.deliveryCompany.findMany({ select: { id: true, name: true } }),
   ]);
   const rows = companies

@@ -14,6 +14,9 @@ interface Item {
   customer: string;
   tracking: string;
   deliveredAt: string;
+  /** übergeben, Zustellung noch nicht bestätigt */
+  onTheWay: boolean;
+  handedOverAt: string;
   amount: number;
 }
 interface Account {
@@ -88,7 +91,10 @@ function CourierCard({ a, canSettle }: { a: Account; canSettle: boolean }) {
                   <div className="min-w-0 flex-1">
                     <Link href={`/admin/orders/${i.orderId}`} className="num font-medium text-ink-900 hover:underline">{i.orderNumber}</Link>
                     <span className="text-ink-600"> · {i.customer}</span>
-                    <p className="num text-xs text-ink-500">{i.deliveredAt}{i.tracking ? ` · #${i.tracking}` : ""}</p>
+                    <p className="text-xs text-ink-500">
+                      {i.onTheWay ? <span className="text-amber-700">🚚 {t("itemOnTheWay")}</span> : <span className="text-green-700">✓ {t("itemDelivered")}</span>}{" "}
+                      <span className="num">{i.onTheWay ? i.handedOverAt : i.deliveredAt}{i.tracking ? ` · #${i.tracking}` : ""}</span>
+                    </p>
                   </div>
                   <span className="num font-semibold">{formatMoney(i.amount)}</span>
                 </li>

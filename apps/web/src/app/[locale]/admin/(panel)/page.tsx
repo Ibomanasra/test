@@ -12,7 +12,11 @@ import { dateTimeText, money } from "@/server/format";
 import { courierMoney, getDashboard, salesOverview } from "@/server/services/dashboard";
 import { ownDriversEnabled } from "@/server/services/delivery-mode";
 
-const PIPELINE = ["NEW", "CONFIRMED", "PICKING", "READY", "OUT_FOR_DELIVERY"] as const;
+const PIPELINE: { key: string; statuses: string[]; tab: string; done?: boolean }[] = [
+  { key: "NEW", statuses: ["NEW", "CONFIRMED", "PICKING"], tab: "NEW" },
+  { key: "READY", statuses: ["READY"], tab: "READY" },
+  { key: "OUT_FOR_DELIVERY", statuses: ["OUT_FOR_DELIVERY"], tab: "OUT_FOR_DELIVERY", done: true },
+];
 
 export default async function DashboardPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -212,15 +216,15 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
 
       {/* Bestell-Pipeline */}
       <Card title={t("pipeline")} actions={<Link href="/admin/orders" className="text-sm text-brand-700 hover:underline">{t("openOrdersLink")}</Link>}>
-        <ol className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-          {PIPELINE.map((s, i) => {
-            const n = d.ordersByStatus[s] ?? 0;
+        <ol className="grid grid-cols-3 gap-2">
+          {PIPELINE.map((p, i) => {
+            const n = p.statuses.reduce((a, s) => a + (d.ordersByStatus[s] ?? 0), 0);
             return (
-              <li key={s} className="relative">
-                <Link href={`/admin/orders?status=${s}`} className={cn("block rounded-xl p-3 ring-1 transition hover:ring-ink-300", n > 0 ? "bg-white ring-ink-200" : "bg-ink-50 ring-transparent")}>
+              <li key={p.key} className="relative">
+                <Link href={`/admin/orders?status=${p.tab}`} className={cn("block rounded-xl p-3 ring-1 transition hover:ring-ink-300", p.done ? "bg-green-50 ring-green-200" : n > 0 ? "bg-white ring-ink-200" : "bg-ink-50 ring-transparent")}>
                   <p className="flex items-center gap-1.5 text-xs text-ink-500">
-                    <span className="num grid size-5 place-items-center rounded-full bg-ink-100 text-[10px] font-semibold text-ink-600">{i + 1}</span>
-                    {tAll(`orderStatus.${s}`)}
+                    <span className="num grid size-5 place-items-center rounded-full bg-ink-100 text-[10px] font-semibold text-ink-600">{p.done ? "✓" : i + 1}</span>
+                    {tAll(`admin.orders.board.tab.${p.key}`)}
                   </p>
                   <p className={cn("num mt-1 text-2xl font-bold", n > 0 ? "text-ink-900" : "text-ink-300")}>{n}</p>
                 </Link>

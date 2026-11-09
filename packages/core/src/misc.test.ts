@@ -74,7 +74,9 @@ describe("order status", () => {
     expect(canTransition("DELIVERED", "CANCELLED")).toBe(false);
     expect(canTransition("CANCELLED", "NEW")).toBe(false);
     expect(canTransition("OUT_FOR_DELIVERY", "CANCELLED")).toBe(false);
-    expect(() => assertTransition("NEW", "READY")).toThrow(OrderStatusError);
+    expect(() => assertTransition("NEW", "OUT_FOR_DELIVERY")).toThrow(OrderStatusError);
+    // Vorbereiten direkt aus „Neu“ ist erlaubt
+    expect(canTransition("NEW", "READY")).toBe(true);
     expect(allowedTransitions("DELIVERED")).toEqual([]);
   });
 

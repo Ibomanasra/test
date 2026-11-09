@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.21.0] – 2026-11-09 – Neuer Bestellablauf: Vorbereiten → Übergeben = erledigt
+
+### Geändert
+- **Nur noch 2 Schritte**: **1 Vorbereiten** – die Bestellseite zeigt alle Positionen mit Foto, Name, Beschreibung, Lagerplatz und Abhak-Kästchen (schon bei „neu“); „✓ تم التجهيز“ setzt die Bestellung direkt auf „bereit“ (gilt zugleich als bestätigt, Kunde wird informiert). **2 An die Zustellfirma übergeben** → für uns **erledigt**.
+- **Bestellliste**: Reiter „1 للتجهيز“, „2 جاهزة للتسليم“, „✓ تم التسليم لشركة التوصيل“, „ملغاة“, „الكل“. „Offen“ = nur noch, was zu tun ist (übergebene Bestellungen verschwinden daraus). Übergebene zeigen „✓ منتهٍ“, Zustellfirma und zu kassierenden Betrag.
+- Dashboard-Pipeline mit denselben 3 Schritten. Die alte 6-Felder-Statusanzeige auf der Admin-Bestellseite entfällt.
+- **Zustellfirma**: ab Übergabe gilt das Geld als „bei der Zustellfirma“. „استلمنا“ (Geld erhalten) bucht die Zahlung und schließt die Bestellung automatisch als **zugestellt** ab.
+
+### Hinzugefügt
+- **Rückmeldung der Zustellfirma später eintragen** (auf übergebenen Bestellungen): **„لم يتم التسليم“** (nicht zustellbar → Ware zurück ins Lager, Bestellung wieder „bereit“ zum erneuten Übergeben), **„إلغاء / مرتجع“** (Storno/Rücksendung → Ware zurück, Rechnung per Gutschrift ausgeglichen, Bestellung storniert), optional „وصل للزبون“. Nach bereits erhaltenem Geld gesperrt.
+
 ## [0.20.1] – 2026-11-09
 
 ### Geändert

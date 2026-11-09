@@ -22,7 +22,8 @@ test("orders board: status tabs and one-click next step", async ({ page }) => {
   const row = page.getByTestId("order-row").first();
   const number = (await row.locator("a").first().textContent())!.trim();
   await row.getByTestId("row-advance").click();
-  await expect.poll(async () => (await db.order.findUniqueOrThrow({ where: { number } })).status).toBe("CONFIRMED");
+  // „Vorbereitet“ in einem Klick direkt aus „Neu“
+  await expect.poll(async () => (await db.order.findUniqueOrThrow({ where: { number } })).status).toBe("READY");
 });
 
 test("admin edits customer master data and adds an address with a free city", async ({ page }) => {
@@ -144,7 +145,7 @@ test("products: hide/show with one click, delete unused, archive used", async ({
   expect((await db.product.findUniqueOrThrow({ where: { id: used.id } })).archivedAt).toBeNull();
 });
 
-test("3-step flow: confirm → prepared → hand over to a courier company → delivered", async ({ page, browser }) => {
+test("flow: prepare → hand over to a courier (= done) → money received closes it as delivered", async ({ page, browser }) => {
   const B2C = { local: "0599100001", e164: "+970599100001" };
   const shop = await browser.newPage();
   await customerLogin(shop, B2C);
@@ -153,33 +154,31 @@ test("3-step flow: confirm → prepared → hand over to a courier company → d
 
   await staffLogin(page, OWNER.phone, OWNER.password);
   const row = () => page.getByTestId("order-row").filter({ hasText: number });
-  // Schritt 1 + 2 direkt in der Liste
+  // Schritt 1: vorbereitet (direkt aus „Neu“, gilt zugleich als bestätigt)
   await page.goto(`/ar/admin/orders?q=${number}`);
   await row().getByTestId("row-advance").click();
-  await expect.poll(async () => (await db.order.findUniqueOrThrow({ where: { id: orderId } })).status).toBe("CONFIRMED");
-  await expect(row().getByTestId("row-advance")).toContainText("2");
-  await row().getByTestId("row-advance").click();
   await expect.poll(async () => (await db.order.findUniqueOrThrow({ where: { id: orderId } })).status).toBe("READY");
+  expect((await db.order.findUniqueOrThrow({ where: { id: orderId } })).confirmedAt).not.toBeNull();
 
-  // Schritt 3: an (neue) Zustellfirma übergeben
+  // Schritt 2: an (neue) Zustellfirma übergeben → erledigt
   const company = `Courier E2E ${Date.now()}`;
   await row().getByTestId("row-handover").click();
   await page.getByTestId("company-new").click();
   await page.getByTestId("company-new-name").fill(company);
   await page.getByTestId("handover-confirm").click();
   await expect.poll(async () => (await db.order.findUniqueOrThrow({ where: { id: orderId } })).status).toBe("OUT_FOR_DELIVERY");
+  await expect.poll(async () => (await db.shipment.findFirst({ where: { orderId } }))?.deliveryCompanyId ?? null).not.toBeNull();
   const shipment = await db.shipment.findFirstOrThrow({ where: { orderId }, include: { deliveryCompany: true } });
   expect(shipment.deliveryCompany?.name).toBe(company);
   expect(shipment.handedOverAt).not.toBeNull();
+  // nicht mehr bei „offen“, sondern unter „übergeben ✓“ – mit Firma und Nachnahme-Betrag
+  await page.goto(`/ar/admin/orders?q=${number}`);
+  await expect(page.getByTestId("order-row").filter({ hasText: number })).toHaveCount(0);
+  await page.goto(`/ar/admin/orders?status=OUT_FOR_DELIVERY&q=${number}`);
   await expect(row()).toContainText(company);
-
-  // Nachnahme: die Firma kassiert den Rechnungsbetrag
   expect(shipment.codAmount).toBeGreaterThan(0);
   await expect(row().getByTestId("row-cod")).toBeVisible();
-
-  // Zugestellt direkt aus der Liste
-  await row().getByTestId("row-delivered").click();
-  await expect.poll(async () => (await db.order.findUniqueOrThrow({ where: { id: orderId } })).status).toBe("DELIVERED");
+  await expect(row().getByTestId("row-done")).toBeVisible();
 
   // Abrechnung: Die Firma schuldet uns das Geld → „استلمنا“ bucht die Zahlung auf die Rechnung
   await page.goto("/ar/admin/finance/couriers");
@@ -189,6 +188,8 @@ test("3-step flow: confirm → prepared → hand over to a courier company → d
   await expect.poll(async () => (await db.shipment.findUniqueOrThrow({ where: { id: shipment.id } })).courierSettlementId).not.toBeNull();
   const inv = await db.invoice.findFirstOrThrow({ where: { orderId } });
   expect(inv.status).toBe("PAID");
+  // Geld erhalten → Bestellung automatisch als zugestellt und bezahlt abgeschlossen
+  await expect.poll(async () => (await db.order.findUniqueOrThrow({ where: { id: orderId } })).status).toBe("DELIVERED");
   expect((await db.order.findUniqueOrThrow({ where: { id: orderId } })).paymentStatus).toBe("PAID");
   // Dashboard: Verkauf/Lieferung getrennt und Karte „von Zustellfirmen kassieren“
   await page.goto("/ar/admin");
@@ -196,6 +197,39 @@ test("3-step flow: confirm → prepared → hand over to a courier company → d
   await expect(page.getByTestId("courier-card")).toBeVisible();
   // Testfirma ausschalten (bleibt wegen der Abrechnungs-Historie erhalten)
   await db.deliveryCompany.update({ where: { name: company }, data: { active: false } });
+});
+
+test("courier feedback after hand-over: not deliverable (back to ready), then cancel/returned (stock back)", async ({ page, browser }) => {
+  const B2C = { local: "0599100001", e164: "+970599100001" };
+  const shop = await browser.newPage();
+  await customerLogin(shop, B2C);
+  const orderId = await placeCodOrder(shop.request, B2C.e164, "BA-001", 3);
+  await staffLogin(page, OWNER.phone, OWNER.password);
+  expect((await page.request.post(`/api/v1/admin/orders/${orderId}/status`, { data: { to: "READY" }, headers: ORIGIN })).ok()).toBe(true);
+  expect((await page.request.post(`/api/v1/admin/orders/${orderId}/dispatch`, { data: { remainder: "CANCEL" }, headers: ORIGIN })).ok()).toBe(true);
+  const v = await db.productVariant.findFirstOrThrow({ where: { sku: "BA-001" }, include: { stockLevels: true } });
+  const onHandAfterShip = v.stockLevels[0]!.onHand;
+
+  // „Nicht zustellbar“ → wieder bereit, Ware zurück im Lager
+  await page.goto(`/ar/admin/orders/${orderId}`);
+  await expect(page.getByTestId("order-done")).toBeVisible();
+  await page.getByTestId("open-fail").click();
+  await page.locator("#oa-text").fill("الزبون غير موجود");
+  await page.getByTestId("confirm-action").click();
+  await expect.poll(async () => (await db.order.findUniqueOrThrow({ where: { id: orderId } })).status).toBe("READY");
+  const back = await db.stockLevel.findFirstOrThrow({ where: { variantId: v.id } });
+  expect(back.onHand).toBe(onHandAfterShip + 3);
+
+  // erneut übergeben, dann „Storno/Rücksendung“ → storniert, Ware zurück
+  expect((await page.request.post(`/api/v1/admin/orders/${orderId}/dispatch`, { data: { remainder: "CANCEL" }, headers: ORIGIN })).ok()).toBe(true);
+  await page.goto(`/ar/admin/orders/${orderId}`);
+  await page.getByTestId("open-return-cancel").click();
+  await page.locator("#oa-text").fill("الزبون ألغى الطلب");
+  await page.getByTestId("confirm-action").click();
+  await expect.poll(async () => (await db.order.findUniqueOrThrow({ where: { id: orderId } })).status).toBe("CANCELLED");
+  const final = await db.stockLevel.findFirstOrThrow({ where: { variantId: v.id } });
+  expect(final.onHand).toBe(onHandAfterShip + 3);
+  expect(final.reserved).toBe(back.reserved - 3);
 });
 
 test("preparing an order: lines show description, bin and a tick box that is remembered", async ({ page, browser }) => {

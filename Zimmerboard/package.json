@@ -1,0 +1,9 @@
+{
+  "name": "zimmerboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Zimmerboard mit Team-Chat ohne Benutzerkonten",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=18" }
+}

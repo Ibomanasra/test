@@ -1,0 +1,804 @@
+<!doctype html><html lang="de"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Zimmerboard Hotel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: Kopfzeile mit Tageszahlen und Zustandsübersicht, darunter je Etage ein Raster aus Zimmerkacheln plus Duschen & WCs; Klick öffnet ein Detailfenster (Desktop rechts, Handy unten). */
+:root{
+  --bg:#eef1f3; --surface:#ffffff; --surface-2:#f6f8f9; --line:#d5dbe0; --fg:#18232c; --muted:#5b6872;
+  --accent:#1d5c74; --accent-fg:#ffffff;
+  --dirty:#c2412d; --dirty-bg:#fbe7e3;
+  --work:#a9640c; --work-bg:#fbf0d9;
+  --clean:#2d6fb3; --clean-bg:#e2eefa;
+  --ok:#2f7d4f; --ok-bg:#e1f2e7;
+  --z2:#d0612a; --z4:#6a9a2e; --on-st:#ffffff;
+  --blocked:#6b7480; --blocked-bg:#e6e9ec;
+  --overlay:rgba(16,24,30,.42);
+  --f-display:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:"Source Sans 3","Segoe UI",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111820; --surface:#18222b; --surface-2:#1e2a34; --line:#2c3a46; --fg:#e4eaee; --muted:#93a1ac;
+  --accent:#5fb0cc; --accent-fg:#0d1a20;
+  --dirty:#f0846f; --dirty-bg:#3a201b; --work:#e3b05a; --work-bg:#36291a;
+  --clean:#7fb3ea; --clean-bg:#1b2b3d; --ok:#74c896; --ok-bg:#16301f;
+  --z2:#f09a62; --z4:#a6cf6a; --on-st:#0d141a;
+  --blocked:#9aa4ae; --blocked-bg:#26303a; --overlay:rgba(0,0,0,.6); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111820; --surface:#18222b; --surface-2:#1e2a34; --line:#2c3a46; --fg:#e4eaee; --muted:#93a1ac;
+  --accent:#5fb0cc; --accent-fg:#0d1a20;
+  --dirty:#f0846f; --dirty-bg:#3a201b; --work:#e3b05a; --work-bg:#36291a;
+  --clean:#7fb3ea; --clean-bg:#1b2b3d; --ok:#74c896; --ok-bg:#16301f;
+  --z2:#f09a62; --z4:#a6cf6a; --on-st:#0d141a;
+  --blocked:#9aa4ae; --blocked-bg:#26303a; --overlay:rgba(0,0,0,.6); color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;letter-spacing:.01em}
+h1{font-size:30px;font-weight:700}
+h2{font-size:20px;font-weight:600}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.top .date{color:var(--muted);font-size:14px}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 14px;font-weight:600}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.banner{border:1px solid var(--work);background:var(--work-bg);border-radius:10px;padding:12px 14px}
+.banner.info{border-color:var(--line);background:var(--surface)}
+.grouplab{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;margin-bottom:6px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:8px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;text-align:left;display:flex;flex-direction:column;gap:2px}
+.stat .n{font-family:var(--f-display);font-size:28px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.stat .l{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.stat.active{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.stat .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px}
+.zbar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--line);margin-top:8px}
+.zbar span{display:block;height:100%}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:none;padding:7px 12px;font-weight:600;color:var(--muted);border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}
+.seglab{font-size:13px;color:var(--muted)}
+.search{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 10px;width:150px}
+.floor{display:flex;flex-direction:column;gap:10px}
+.floor-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 10px;border-bottom:1px solid var(--line);padding-bottom:6px}
+.floor-head .meta{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.subhead{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;margin-top:4px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:8px}
+.tile{position:relative;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 10px 9px 14px;display:flex;flex-direction:column;gap:3px;min-height:100px;overflow:hidden}
+.tile::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--st)}
+.tile:hover{border-color:var(--st)}
+.tile .nr{font-family:var(--f-mono);font-size:20px;font-weight:500;line-height:1.1}
+.tile .nrow{display:flex;justify-content:space-between;align-items:center;gap:4px}
+.rtag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 5px;border-radius:4px;background:var(--fg);color:var(--bg);white-space:nowrap}
+.tile.sf .rtag{background:var(--on-st);color:var(--sc)}
+.abbox.rauch{border-color:var(--fg)}
+.tile .nr.fac{font-family:var(--f-display);font-size:18px;font-weight:700}
+.tile .st{font-size:12px;font-weight:700;color:var(--st)}
+.tile .sub{font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:4px;align-items:center}
+.zchip{font-size:12px;font-weight:700;color:var(--zc);display:inline-flex;align-items:center;gap:5px}
+.zchip::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--zc)}
+.z-0{--zc:var(--muted)}.z-1{--zc:var(--dirty)}.z-2{--zc:var(--z2)}.z-3{--zc:var(--work)}.z-4{--zc:var(--z4)}.z-5{--zc:var(--ok)}
+.badge{font-size:11px;font-weight:700;border-radius:999px;padding:0 6px;background:var(--dirty-bg);color:var(--dirty)}
+.k-frei{--sc:var(--ok)}.k-belegt{--sc:var(--clean)}.k-schmutzig{--sc:var(--dirty)}.k-inArbeit{--sc:var(--work)}
+.tile.sf{--st:var(--sc);background:var(--sc);border-color:var(--sc);color:var(--on-st)}
+.tile.sf::before{display:none}
+.tile.sf:hover{border-color:var(--fg)}
+.tile.sf .st{color:var(--on-st);font-size:14px}
+.tile.sf .sub{color:var(--on-st);opacity:.92}
+.tile.sf .zchip{background:var(--surface);padding:1px 8px;border-radius:999px;align-self:flex-start}
+.tile.sf .badge{background:var(--surface);color:var(--dirty)}
+.tile.mz{--st:var(--zc);background:color-mix(in srgb,var(--zc) 13%,var(--surface))}
+.tile.mz.z-0{background:var(--surface)}
+.tile.ab{--st:var(--blocked);background:repeating-linear-gradient(135deg,var(--blocked-bg) 0 6px,var(--surface) 6px 12px)}
+.tile.dim{opacity:.3}
+.empty{color:var(--muted);padding:16px;border:1px dashed var(--line);border-radius:10px;text-align:center}
+.dlist{display:flex;flex-direction:column;gap:6px}
+.drow{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 12px}
+.drow .t{min-width:0;overflow-wrap:anywhere}
+.drow .t small{display:block;color:var(--muted);font-size:12px}
+.prio{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:1px 7px;border-radius:999px}
+.prio-hoch{background:var(--dirty-bg);color:var(--dirty)}
+.prio-mittel{background:var(--work-bg);color:var(--work)}
+.prio-niedrig{background:var(--surface-2);color:var(--muted)}
+.overlay{position:fixed;inset:0;background:var(--overlay);z-index:20}
+.panel{position:fixed;z-index:21;background:var(--surface);display:flex;flex-direction:column;
+  top:0;right:0;bottom:0;width:min(440px,100%);border-left:1px solid var(--line);
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-right:env(safe-area-inset-right,0px)}
+@media (max-width:640px){.panel{top:auto;left:0;width:100%;max-height:88%;border-left:0;border-top:1px solid var(--line);border-radius:14px 14px 0 0;padding-left:env(safe-area-inset-left,0px)}}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.panel-head .nr{font-family:var(--f-mono);font-size:26px}
+.panel-head .nr.fac{font-family:var(--f-display);font-weight:700}
+.panel-head small{display:block;color:var(--muted);font-size:13px}
+.panel-body{overflow:auto;padding:16px 18px 24px;display:flex;flex-direction:column;gap:18px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field>label,.field>.lab{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:6px}
+.opt{border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:8px 6px;font-weight:600;font-size:13px}
+.opt[aria-pressed="true"]{border-color:var(--st,var(--accent));box-shadow:inset 0 0 0 1px var(--st,var(--accent));background:var(--surface)}
+.opt.c-schmutzig{--st:var(--dirty)}.opt.c-inArbeit{--st:var(--work)}.opt.c-sauber{--st:var(--clean)}.opt.c-kontrolliert{--st:var(--ok)}
+.stars{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.stars .opt{display:flex;flex-direction:column;align-items:center;gap:0;padding:6px 2px;--st:var(--zc)}
+.stars .opt b{font-family:var(--f-display);font-size:20px;color:var(--zc)}
+.stars .opt span{font-size:10px;color:var(--muted);font-weight:500}
+.abbox{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.abbox.on{border-color:var(--blocked);background:var(--blocked-bg)}
+.toggle{display:flex;align-items:center;gap:10px;font-weight:600}
+.toggle input{width:18px;height:18px}
+textarea,.inp,select{border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:8px 10px;width:100%}
+textarea{min-height:70px;resize:vertical}
+.addrow{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.addrow .inp,.addrow .btn{grid-column:1/-1}
+.mlist{display:flex;flex-direction:column;gap:6px}
+.mitem{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.mitem .t{min-width:0;overflow-wrap:anywhere}
+.mitem small{color:var(--muted);font-size:12px;display:block}
+.mitem.done .t{text-decoration:line-through;color:var(--muted)}
+.mini{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600;white-space:nowrap}
+.facts{font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:2px}
+.close{border:1px solid var(--line);background:var(--surface-2);border-radius:8px;width:36px;height:36px;font-size:18px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:8px;font-weight:600;z-index:30;max-width:calc(100% - 32px)}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--muted)}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--c);margin-right:5px;vertical-align:-1px}
+
+.hist{display:flex;flex-direction:column;gap:6px}
+.hday{font-family:var(--f-display);font-size:17px;font-weight:600;margin-top:10px;border-bottom:1px solid var(--line);padding-bottom:4px}
+.hrow{display:grid;grid-template-columns:52px auto 1fr;gap:10px;align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 12px}
+.hrow .tm{font-family:var(--f-mono);font-size:13px;color:var(--muted);padding-top:3px;font-variant-numeric:tabular-nums}
+.hrow ul,.pentry ul{margin:0;padding-left:16px;min-width:0;overflow-wrap:anywhere}
+.hrow li,.pentry li{margin:1px 0}
+.pentry{border-left:3px solid var(--line);padding:2px 0 2px 10px;font-size:13px}
+.pentry .tm{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+.hfilter{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+@media (max-width:480px){.hrow{grid-template-columns:auto 1fr}.hrow ul{grid-column:1/-1}}
+.login{position:fixed;inset:0;z-index:40;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:16px}
+.login form{width:min(380px,100%);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px;display:flex;flex-direction:column;gap:12px}
+.login .err{color:var(--dirty);font-weight:600;min-height:1.2em}
+.who-me{font-size:13px;color:var(--muted)}
+.who-me button{border:0;background:none;color:var(--accent);font-weight:600;padding:0 4px;text-decoration:underline}
+.chat{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.chat-log{display:flex;flex-direction:column;gap:8px;padding:14px;max-height:min(60vh,560px);overflow:auto;background:var(--surface-2)}
+.chat-day{align-self:center;font-size:12px;color:var(--muted);font-weight:600;padding:2px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface)}
+.msg{max-width:min(78%,560px);align-self:flex-start;display:flex;flex-direction:column;gap:2px}
+.msg.me{align-self:flex-end;align-items:flex-end}
+.msg .who{font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.msg .who b{color:var(--fg);font-weight:600}
+.msg .bub{background:var(--surface);border:1px solid var(--line);border-radius:12px 12px 12px 4px;padding:7px 11px;overflow-wrap:anywhere;white-space:pre-wrap}
+.msg.me .bub{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);border-radius:12px 12px 4px 12px}
+.msg .mini{align-self:inherit}
+.role{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:1px 6px;border-radius:4px;background:var(--surface);border:1px solid var(--line);color:var(--muted)}
+.chat-form{display:grid;grid-template-columns:auto auto 1fr auto;gap:8px;padding:10px;border-top:1px solid var(--line);align-items:end}
+.chat-form textarea{min-height:40px;height:40px;resize:none}
+.chat-form select{width:auto}
+@media (max-width:640px){.chat-form{grid-template-columns:1fr 1fr}.chat-form textarea{grid-column:1/-1;order:-1}.chat-form .btn{grid-column:1/-1}}
+.ubadge{display:inline-block;min-width:18px;margin-left:6px;padding:0 5px;border-radius:999px;background:var(--dirty);color:#fff;font-size:11px;line-height:18px;text-align:center}
+.uchat{display:flex;flex-direction:column;gap:6px}
+.uchat .row{display:grid;grid-template-columns:1fr auto;gap:6px}
+.uchat textarea{min-height:40px;height:40px;resize:none}
+@media (prefers-reduced-motion:no-preference){.tile,.btn,.opt{transition:border-color .15s,background .15s}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Zimmerboard</h1>
+      <div class="date" id="today"></div>
+    </div>
+    <div class="actions">
+      <span class="who-me" id="whoMe"></span>
+      <button class="btn primary" id="btnPrint" type="button" hidden>Reinigungsliste drucken</button>
+      <button class="btn" id="btnCsv" type="button" hidden>CSV für Excel</button>
+    </div>
+  </header>
+
+  <div id="banner"></div>
+  <section aria-label="Status heute"><div class="grouplab">Status heute</div><div class="stats" id="stats"></div></section>
+  <section aria-label="Zustand"><div class="grouplab">Zustand (Zimmer, Duschen, WCs)</div><div class="stats" id="zstats"></div><div class="zbar" id="zbar"></div></section>
+
+  <div class="bar">
+    <div class="seg" id="viewSeg" role="group" aria-label="Ansicht">
+      <button type="button" data-view="board" aria-pressed="true">Übersicht</button>
+      <button type="button" data-view="maengel" aria-pressed="false">Offene Mängel</button>
+      <button type="button" data-view="verlauf" aria-pressed="false">Änderungen</button>
+      <button type="button" data-view="chat" aria-pressed="false">Chat<span id="chatBadge"></span></button>
+    </div>
+    <div class="actions">
+      <span class="seglab">Farbe nach</span>
+      <div class="seg" id="colorSeg" role="group" aria-label="Kacheln einfärben nach"></div>
+    </div>
+    <div class="actions">
+      <div class="seg" id="floorSeg" role="group" aria-label="Etage"></div>
+      <input class="search" id="search" type="search" placeholder="Nr., Dusche, WC, Raucher" aria-label="Suchen">
+    </div>
+  </div>
+
+  <div class="legend" id="legend"></div>
+  <main id="main"></main>
+</div>
+
+<div id="panelHost"></div>
+<div id="toastHost"></div>
+<div class="login" id="login" hidden>
+  <form id="loginForm" autocomplete="on">
+    <h1>Zimmerboard</h1>
+    <div class="field"><label for="lName">Dein Name</label><input class="inp" id="lName" name="name" maxlength="40" required placeholder="z. B. Anna"></div>
+    <div class="field"><label for="lPin">Team-PIN</label><input class="inp" id="lPin" name="pin" type="password" inputmode="numeric" autocomplete="current-password" required></div>
+    <div class="err" id="lErr" role="alert"></div>
+    <button class="btn primary" type="submit">Anmelden</button>
+  </form>
+</div>
+
+<script>
+(function(){
+const FLOORS=[
+  {id:'EG',name:'Erdgeschoss',short:'EG',from:101,to:119,duschen:3,wcs:3},
+  {id:'2OG',name:'2. Obergeschoss',short:'2. OG',from:201,to:219,duschen:4,wcs:4},
+  {id:'3OG',name:'3. Obergeschoss',short:'3. OG',from:301,to:325,duschen:4,wcs:4}
+];
+const UNITS=[];
+FLOORS.forEach(f=>{
+  for(let n=f.from;n<=f.to;n++)UNITS.push({id:String(n),label:String(n),typ:'zimmer',floor:f});
+  for(let i=1;i<=f.duschen;i++)UNITS.push({id:f.id+'-D'+i,label:'Dusche '+i,typ:'dusche',floor:f});
+  for(let i=1;i<=f.wcs;i++)UNITS.push({id:f.id+'-WC'+i,label:'WC '+i,typ:'wc',floor:f});
+});
+const U=Object.fromEntries(UNITS.map(u=>[u.id,u]));
+const fullName=u=>u.typ==='zimmer'?'Zimmer '+u.label:u.label+' · '+u.floor.short;
+const CLEAN={schmutzig:'Zu reinigen',inArbeit:'In Reinigung',sauber:'Sauber',kontrolliert:'Kontrolliert'};
+const OCC={frei:'Frei',belegt:'Belegt / Bleibe',abreise:'Abreise'};
+const OCC_SHORT={frei:'frei',belegt:'belegt',abreise:'Abreise'};
+const ZUSTAND={5:'Sehr gut',4:'Gut',3:'Mittel',2:'Schlecht',1:'Sehr schlecht',0:'Nicht bewertet'};
+const ZCOL={5:'var(--ok)',4:'var(--z4)',3:'var(--work)',2:'var(--z2)',1:'var(--dirty)',0:'var(--line)'};
+const AREAS=['Zimmer','Bad / Dusche','WC','Möbel','Elektrik','Fenster / Tür','Heizung / Lüftung','Sanitär / Abfluss','Sonstiges'];
+const PRIO={hoch:'hoch',mittel:'mittel',niedrig:'niedrig'};
+const AB='Außer Betrieb';
+
+let data={}, meta=null, db=null, dbState='loading', canWrite=true, downloads=null;
+let histRange='7';
+let chat=[], chatState='loading', myId=null, myName='', chatUnit='', chatSending=false;
+let role='', lastSeen='';
+try{role=localStorage.getItem('zb-role')||'';lastSeen=localStorage.getItem('zb-chatseen')||'';myName=localStorage.getItem('zb-name')||'';myId=localStorage.getItem('zb-uid')}catch(e){}
+if(!myId){myId='c'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);try{localStorage.setItem('zb-uid',myId)}catch(e){}}
+const ROLES={'':'Ohne Rolle',rezeption:'Rezeption',reinigung:'Reinigung',technik:'Technik',leitung:'Leitung'};
+let view='board', floorF='alle', statF=null, query='', openId=null, dayConfirm=false, busy=false, colorBy='status';
+try{const c=localStorage.getItem('zb-color');if(c==='zustand'||c==='status')colorBy=c}catch(e){}
+const STATUS={frei:'Frei',belegt:'Belegt',schmutzig:'Zu reinigen',inArbeit:'In Reinigung',ab:'Außer Betrieb'};
+const SCOL={frei:'var(--ok)',belegt:'var(--clean)',schmutzig:'var(--dirty)',inArbeit:'var(--work)',ab:'var(--blocked)'};
+function statusOf(u,r){
+  if(r.gesperrt)return 'ab';
+  if(r.reinigung==='schmutzig')return 'schmutzig';
+  if(r.reinigung==='inArbeit')return 'inArbeit';
+  if(u.typ==='zimmer'&&r.belegung!=='frei')return 'belegt';
+  return 'frei';
+}
+const chains={};
+
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const todayStr=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const fmtDate=iso=>{if(!iso)return '–';const d=new Date(iso.length<=10?iso+'T12:00:00':iso);return d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'})};
+const fmtDT=iso=>{if(!iso)return '–';const d=new Date(iso);return d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})};
+
+function unit(id){
+  const d=data[id]||{};
+  return {belegung:'frei',reinigung:'sauber',gesperrt:false,raucher:false,grund:'',zustand:null,notiz:'',geaendert:null,gereinigt:null,...d,maengel:Array.isArray(d.maengel)?d.maengel:[]};
+}
+const openDefects=r=>r.maengel.filter(m=>!m.erledigt);
+
+function toast(msg){
+  const h=$('#toastHost');h.innerHTML='<div class="toast" role="status">'+esc(msg)+'</div>';
+  clearTimeout(toast.t);toast.t=setTimeout(()=>{h.innerHTML=''},2600);
+}
+
+function write(id,next){
+  if(!db){toast('Nicht gespeichert: keine Verbindung zur Datenbank.');return Promise.resolve(false)}
+  const body=JSON.parse(JSON.stringify(next));
+  const ref=()=>db.collection('rooms').doc(id).set(body);
+  const p=(chains[id]||Promise.resolve()).then(ref).then(()=>true).catch(e=>{
+    if(e&&e.code==='invalid_argument'){canWrite=false;toast('Du hast hier nur Leserechte.');render();return false}
+    if(e&&e.code==='unavailable')return new Promise(r=>setTimeout(r,600+Math.random()*600)).then(ref).then(()=>true).catch(()=>{toast('Speichern fehlgeschlagen. Bitte erneut versuchen.');return false});
+    toast('Speichern fehlgeschlagen. Bitte erneut versuchen.');return false;
+  });
+  chains[id]=p;return p;
+}
+function save(id,patch){
+  if(!canWrite){toast('Du hast hier nur Leserechte.');return}
+  const old=unit(id);
+  const next={...old,...patch,geaendert:new Date().toISOString()};
+  if(patch.reinigung==='sauber'||patch.reinigung==='kontrolliert'){
+    next.gereinigt=todayStr();
+    if(next.belegung==='abreise')next.belegung='frei';
+  }
+  const changes=describe(U[id],old,next);
+  if(changes.length){
+    const v=Array.isArray(old.verlauf)?old.verlauf:[];
+    next.verlauf=[...v,{t:next.geaendert,a:changes}].slice(-150);
+  }
+  data[id]=next;render();write(id,next);
+}
+function describe(u,o,n){
+  const a=[];
+  const zs=z=>z?ZUSTAND[z]+' ('+z+')':'nicht bewertet';
+  if(o.reinigung!==n.reinigung)a.push('Reinigung: '+CLEAN[o.reinigung]+' → '+CLEAN[n.reinigung]);
+  if(u.typ==='zimmer'&&o.belegung!==n.belegung)a.push('Belegung: '+OCC[o.belegung]+' → '+OCC[n.belegung]);
+  if((o.zustand||null)!==(n.zustand||null))a.push('Zustand: '+zs(o.zustand)+' → '+zs(n.zustand));
+  if(!!o.gesperrt!==!!n.gesperrt)a.push(n.gesperrt?'Außer Betrieb gesetzt':'Wieder in Betrieb');
+  if((o.grund||'')!==(n.grund||'')&&n.gesperrt)a.push(n.grund?'Grund: „'+n.grund+'“':'Grund entfernt');
+  if(!!o.raucher!==!!n.raucher)a.push(n.raucher?'Als Raucherzimmer markiert':'Raucherzimmer-Markierung entfernt');
+  if((o.notiz||'')!==(n.notiz||''))a.push(n.notiz?'Notiz: „'+n.notiz+'“':'Notiz gelöscht');
+  const om=Object.fromEntries((o.maengel||[]).map(m=>[m.id,m])), nm=Object.fromEntries((n.maengel||[]).map(m=>[m.id,m]));
+  for(const id in nm){const m=nm[id],p=om[id];
+    if(!p)a.push('Mangel eingetragen: '+m.text+' ('+m.bereich+', '+(PRIO[m.prio]||m.prio)+')');
+    else if(!p.erledigt&&m.erledigt)a.push('Mangel erledigt: '+m.text);
+    else if(p.erledigt&&!m.erledigt)a.push('Mangel wieder geöffnet: '+m.text);}
+  for(const id in om)if(!nm[id])a.push('Mangel gelöscht: '+om[id].text);
+  return a;
+}
+
+/* ---------- Filter ---------- */
+function filtered(){
+  const q=query.toLowerCase();
+  return UNITS.filter(u=>{
+    if(floorF!=='alle'&&u.floor.id!==floorF)return false;
+    if(q){
+      if(q.startsWith('rauch')){if(!(u.typ==='zimmer'&&unit(u.id).raucher))return false}
+      else if(/^\d+$/.test(q)){if(!(u.typ==='zimmer'&&u.id.startsWith(q)))return false}
+      else if(!u.label.toLowerCase().includes(q)&&!(q.startsWith('du')&&u.typ==='dusche')&&!(q==='wc'&&u.typ==='wc'))return false;
+    }
+    return true;
+  });
+}
+function matchesStat(u,r){
+  if(!statF)return true;
+  if(statF==='maengel')return openDefects(r).length>0;
+  if(statF==='raucher')return u.typ==='zimmer'&&!!r.raucher;
+  if(statF.startsWith('z'))return (r.zustand||0)===Number(statF.slice(1));
+  return statusOf(u,r)===statF;
+}
+
+/* ---------- Render ---------- */
+function statBtn(k,l,n,col){
+  return `<button type="button" class="stat${statF===k?' active':''}" data-f="${k}" aria-pressed="${statF===k}"><span class="n">${n}</span><span class="l"><span class="dot" style="background:${col}"></span>${l}</span></button>`;
+}
+function renderStats(){
+  const all=UNITS.map(u=>unit(u.id));
+  const sc=k=>UNITS.filter(u=>statusOf(u,unit(u.id))===k).length;
+  $('#stats').innerHTML=['frei','belegt','schmutzig','inArbeit','ab'].map(k=>statBtn(k,STATUS[k],sc(k),SCOL[k])).join('')+
+    statBtn('maengel','Offene Mängel',all.reduce((a,r)=>a+openDefects(r).length,0),'var(--dirty)')+
+    statBtn('raucher','Raucherzimmer',UNITS.filter(u=>u.typ==='zimmer'&&unit(u.id).raucher).length,'var(--fg)');
+  const rated=all.filter(r=>r.zustand);
+  const avg=rated.length?rated.reduce((a,r)=>a+r.zustand,0)/rated.length:null;
+  const cnt=z=>all.filter(r=>(r.zustand||0)===z).length;
+  $('#zstats').innerHTML=[5,4,3,2,1,0].map(z=>statBtn('z'+z,ZUSTAND[z],cnt(z),ZCOL[z])).join('')+
+    `<div class="stat"><span class="n">${avg?avg.toFixed(1).replace('.',','):'–'}</span><span class="l">Ø Note (1–5)</span></div>`;
+  $('#zbar').innerHTML=[5,4,3,2,1].map(z=>{const n=cnt(z);return n?`<span style="width:${n/all.length*100}%;background:${ZCOL[z]}" title="${ZUSTAND[z]}: ${n}"></span>`:''}).join('');
+}
+
+function renderBanner(){
+  const b=$('#banner');
+  if(dbState==='none'){b.innerHTML='<div class="banner info">Keine Verbindung zum Server. Änderungen werden gerade nicht gespeichert – die Seite verbindet sich automatisch neu.</div>';return}
+  if(dbState==='loading'){b.innerHTML='<div class="banner info">Daten werden geladen …</div>';return}
+  if(dbState==='offline'){b.innerHTML='<div class="banner">Verbindung unterbrochen. Neu verbinden …</div>';return}
+  if(!canWrite){b.innerHTML='<div class="banner info">Nur-Lese-Ansicht: Du kannst den Stand sehen, aber nichts ändern.</div>';return}
+  if(false){
+    b.innerHTML=`<div class="banner"><b>Neuer Tag.</b> ${meta?'Letzter Tagesstart: '+fmtDate(meta.datum)+'.':'Noch kein Tagesstart ausgeführt.'} „Tagesstart“ setzt alle belegten Zimmer, Abreisen sowie alle Duschen und WCs auf „Zu reinigen“. Was außer Betrieb ist, bleibt unverändert.</div>`;
+    return;
+  }
+  b.innerHTML='';
+}
+
+function renderLegend(){
+  $('#legend').innerHTML=(colorBy==='status'
+    ?[['var(--ok)','Frei (sauber, bezugsfertig)'],['var(--clean)','Belegt'],['var(--dirty)','Zu reinigen'],['var(--work)','In Reinigung']]
+    :[5,4,3,2,1].map(z=>[ZCOL[z],ZUSTAND[z]]).concat([['var(--line)','Nicht bewertet']])
+  ).concat([['var(--blocked)',AB+' (schraffiert)']]).map(([c,l])=>`<span style="--c:${c}">${l}</span>`).join('');
+}
+
+function tile(u){
+  const r=unit(u.id), od=openDefects(r).length, z=r.zustand||0, s=statusOf(u,r);
+  const st=STATUS[s];
+  const cls=['tile','z-'+z];
+  if(s==='ab')cls.push('ab'); else if(colorBy==='zustand')cls.push('mz'); else cls.push('sf','k-'+s);
+  if(!matchesStat(u,r))cls.push('dim');
+  let second='';
+  if(s==='ab')second=r.grund?esc(r.grund):'';
+  else if(u.typ==='zimmer'&&(s==='schmutzig'||s==='inArbeit'))second=r.belegung==='abreise'?'Abreise':r.belegung==='belegt'?'Bleibe':'frei';
+  else if(r.reinigung==='kontrolliert')second='✓ kontrolliert';
+  else if(s==='belegt'&&r.belegung==='abreise')second='Abreise';
+  return `<button type="button" class="${cls.join(' ')}" data-unit="${u.id}" aria-label="${fullName(u)}${r.raucher&&u.typ==='zimmer'?', Raucherzimmer':''}, ${st}, Zustand ${ZUSTAND[z]}${od?', '+od+' offene Mängel':''}">
+    <span class="nrow"><span class="nr${u.typ==='zimmer'?'':' fac'}">${u.label}</span>${r.raucher&&u.typ==='zimmer'?'<span class="rtag" title="Raucherzimmer">Raucher</span>':''}</span>
+    <span class="st">${st}</span>
+    <span class="zchip">${ZUSTAND[z]}</span>
+    <span class="sub"><span>${second}</span>${od?`<span class="badge" title="Offene Mängel">${od} Mängel</span>`:''}</span>
+  </button>`;
+}
+
+function renderBoard(){
+  const list=filtered();
+  if(!list.length)return '<div class="empty">Nichts passt zu dieser Suche.</div>';
+  return FLOORS.map(f=>{
+    const us=list.filter(u=>u.floor.id===f.id);
+    if(!us.length)return '';
+    const rooms=us.filter(u=>u.typ==='zimmer'), fac=us.filter(u=>u.typ!=='zimmer');
+    const cnt=k=>us.filter(u=>statusOf(u,unit(u.id))===k).length;
+    return `<section class="floor"><div class="floor-head"><h2>${f.name}</h2><span class="meta">${f.to-f.from+1} Zimmer · ${f.duschen} Duschen · ${f.wcs} WCs — ${cnt('frei')} frei · ${cnt('belegt')} belegt · ${cnt('schmutzig')+cnt('inArbeit')} zu reinigen</span></div>
+      ${rooms.length?`<div class="grid">${rooms.map(tile).join('')}</div>`:''}
+      ${fac.length?`<div class="subhead">Duschen &amp; WCs</div><div class="grid">${fac.map(tile).join('')}</div>`:''}</section>`;
+  }).join('<div style="height:8px"></div>');
+}
+
+function renderDefects(){
+  const order={hoch:0,mittel:1,niedrig:2};
+  const rows=[];
+  filtered().forEach(u=>{unit(u.id).maengel.forEach(m=>{if(!m.erledigt)rows.push({u,m})})});
+  rows.sort((a,b)=>(order[a.m.prio]??1)-(order[b.m.prio]??1)||UNITS.indexOf(a.u)-UNITS.indexOf(b.u));
+  if(!rows.length)return '<div class="empty">Keine offenen Mängel. Mängel trägst du so ein: Zimmer, Dusche oder WC antippen, dann „Mangel hinzufügen“.</div>';
+  return `<div class="dlist">${rows.map(({u,m})=>`<div class="drow">
+    <button type="button" class="mini" data-unit="${u.id}">${u.typ==='zimmer'?u.label:u.label+' '+u.floor.short}</button>
+    <div class="t">${esc(m.text)}<small>${esc(m.bereich||'')} · seit ${fmtDate(m.datum)}</small></div>
+    <span class="prio prio-${m.prio||'mittel'}">${PRIO[m.prio]||'mittel'}</span></div>`).join('')}</div>`;
+}
+
+
+function renderHistory(){
+  const now=new Date();
+  const start=histRange==='1'?todayStr():histRange==='7'?new Date(now-6*864e5).toISOString().slice(0,10):'';
+  const rows=[];
+  filtered().forEach(u=>{(unit(u.id).verlauf||[]).forEach(e=>{
+    const d=new Date(e.t);const day=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    if(!start||day>=start)rows.push({u,e,day})})});
+  rows.sort((a,b)=>b.e.t.localeCompare(a.e.t));
+  const seg=`<div class="hfilter"><div class="seg" role="group" aria-label="Zeitraum">${[['1','Heute'],['7','7 Tage'],['all','Alle']].map(([k,l])=>`<button type="button" data-hr="${k}" aria-pressed="${histRange===k}">${l}</button>`).join('')}</div><span class="seglab">${rows.length} Änderungen</span></div>`;
+  if(!rows.length)return seg+'<div class="empty" style="margin-top:10px">Keine Änderungen in diesem Zeitraum. Aufgezeichnet wird ab jetzt jede Änderung an Zimmern, Duschen und WCs.</div>';
+  let out='',last='';
+  rows.forEach(({u,e,day})=>{
+    if(day!==last){out+=`<div class="hday">${new Date(day+'T12:00:00').toLocaleDateString('de-DE',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'})}</div>`;last=day}
+    out+=`<div class="hrow"><span class="tm">${new Date(e.t).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}</span><button type="button" class="mini" data-unit="${u.id}">${u.typ==='zimmer'?u.label:u.label+' '+u.floor.short}</button><ul>${e.a.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`;
+  });
+  return seg+`<div class="hist">${out}</div>`;
+}
+
+function renderPanel(){
+  const host=$('#panelHost');
+  if(!openId){host.innerHTML='';return}
+  const keep=['notiz','grund','mText','mArea','mPrio','uText'];
+  const prev={};keep.forEach(k=>{const el=document.getElementById(k);if(el)prev[k]=el.value});
+  const focus=document.activeElement?.id, scroll=$('.panel-body')?.scrollTop;
+  const u=U[openId], r=unit(openId);
+  const dis=canWrite&&db?'':' disabled';
+  const optBtns=(obj,cur,field,cls)=>Object.entries(obj).map(([k,l])=>`<button type="button" class="opt${cls?' c-'+k:''}" data-set="${field}" data-val="${k}" aria-pressed="${cur===k}"${dis}>${l}</button>`).join('');
+  const ms=[...r.maengel].sort((a,b)=>(a.erledigt?1:0)-(b.erledigt?1:0));
+  host.innerHTML=`<div class="overlay" data-close="1"></div>
+  <aside class="panel" role="dialog" aria-modal="true" aria-label="${fullName(u)}">
+    <div class="panel-head"><div><span class="nr${u.typ==='zimmer'?'':' fac'}">${u.label}</span><small>${u.floor.name}${u.typ==='zimmer'?'':' · Gemeinschaftsbereich'}</small></div>
+      <button type="button" class="close" data-close="1" aria-label="Schließen">×</button></div>
+    <div class="panel-body">
+      <div class="abbox${r.gesperrt?' on':''}">
+        <label class="toggle"><input type="checkbox" id="gesperrt" ${r.gesperrt?'checked':''}${dis}> ${AB}</label>
+        ${r.gesperrt?`<input class="inp" id="grund" type="text" maxlength="120" placeholder="Grund, z. B. Wasserschaden, Renovierung" value="${esc(r.grund)}"${dis}>`:''}
+      </div>
+      ${u.typ==='zimmer'?`<div class="abbox${r.raucher?' rauch':''}"><label class="toggle"><input type="checkbox" id="raucher" ${r.raucher?'checked':''}${dis}> Raucherzimmer</label></div>`:''}
+      <div class="field"><span class="lab">Reinigung</span><div class="opts">${optBtns(CLEAN,r.reinigung,'reinigung',true)}</div></div>
+      ${u.typ==='zimmer'?`<div class="field"><span class="lab">Belegung</span><div class="opts">${optBtns(OCC,r.belegung,'belegung')}</div></div>`:''}
+      <div class="field"><span class="lab">Zustand</span>
+        <div class="stars">${[5,4,3,2,1].map(i=>`<button type="button" class="opt z-${i}" data-set="zustand" data-val="${i}" aria-pressed="${r.zustand===i}"${dis}><b>${i}</b><span>${ZUSTAND[i]}</span></button>`).join('')}</div></div>
+      <div class="field"><span class="lab">Mängel (${openDefects(r).length} offen)</span>
+        <div class="mlist">${ms.length?ms.map(m=>`<div class="mitem${m.erledigt?' done':''}"><div class="t">${esc(m.text)}<small>${esc(m.bereich||'')} · <span class="prio prio-${m.prio||'mittel'}">${PRIO[m.prio]||'mittel'}</span> · ${fmtDate(m.datum)}${m.erledigt?' · erledigt '+fmtDate(m.erledigt):''}</small></div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">${m.erledigt?`<button type="button" class="mini" data-mreopen="${m.id}"${dis}>Wieder öffnen</button><button type="button" class="mini" data-mdel="${m.id}"${dis}>Löschen</button>`:`<button type="button" class="mini" data-mdone="${m.id}"${dis}>Erledigt</button>`}</div></div>`).join(''):'<div class="facts">Keine Mängel erfasst.</div>'}</div>
+        <div class="addrow">
+          <input class="inp" id="mText" type="text" placeholder="${u.typ==='zimmer'?'z. B. Duschkopf tropft':u.typ==='dusche'?'z. B. Abfluss verstopft':'z. B. Spülung läuft nach'}" maxlength="200"${dis}>
+          <select id="mArea" aria-label="Bereich"${dis}>${AREAS.map(a=>`<option${(u.typ==='dusche'&&a==='Bad / Dusche')||(u.typ==='wc'&&a==='WC')?' selected':''}>${a}</option>`).join('')}</select>
+          <select id="mPrio" aria-label="Priorität"${dis}><option value="mittel">Priorität mittel</option><option value="hoch">Priorität hoch</option><option value="niedrig">Priorität niedrig</option></select>
+          <button type="button" class="btn" id="mAdd"${dis}>Mangel hinzufügen</button>
+        </div></div>
+      ${unitChat(openId)}
+      <div class="field"><label for="notiz">Notiz</label><textarea id="notiz" placeholder="z. B. Extra-Handtücher gewünscht"${dis}>${esc(r.notiz)}</textarea></div>
+      <div class="facts"><span>Zuletzt gereinigt: ${fmtDate(r.gereinigt)}</span><span>Letzte Änderung: ${fmtDT(r.geaendert)}</span></div>
+      <div class="field"><span class="lab">Verlauf</span>${(r.verlauf||[]).length?`<div class="hist">${[...r.verlauf].reverse().slice(0,30).map(e=>`<div class="pentry"><span class="tm">${fmtDT(e.t)}</span><ul>${e.a.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`).join('')}</div>`:'<div class="facts">Noch keine Änderungen aufgezeichnet. Der Verlauf beginnt mit der nächsten Änderung.</div>'}</div>
+    </div></aside>`;
+  ['mText','mArea','mPrio','uText'].forEach(k=>{if(prev[k]!=null&&document.getElementById(k))document.getElementById(k).value=prev[k]});
+  ['notiz','grund'].forEach(k=>{if(focus===k&&prev[k]!=null&&document.getElementById(k))document.getElementById(k).value=prev[k]});
+  if(focus&&document.getElementById(focus))document.getElementById(focus).focus();
+  if(scroll!=null)$('.panel-body').scrollTop=scroll;
+}
+
+/* ---------- Chat ---------- */
+function nameOf(m){return m.uid&&m.uid===myId?'Du':(m.name||'Kollege/Kollegin')}
+function unitTag(id){const u=U[id];return u?(u.typ==='zimmer'?'Zimmer '+u.label:u.label+' '+u.floor.short):''}
+function msgHtml(m,withUnit){
+  const me=m.uid&&m.uid===myId;
+  return `<div class="msg${me?' me':''}"><span class="who"><b>${esc(nameOf(m))}</b>${m.rolle&&ROLES[m.rolle]?`<span class="role">${ROLES[m.rolle]}</span>`:''}<span>${new Date(m.t).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}</span></span>
+    <div class="bub">${esc(m.text)}</div>${withUnit&&m.unit&&U[m.unit]?`<button type="button" class="mini" data-unit="${m.unit}">${esc(unitTag(m.unit))}</button>`:''}</div>`;
+}
+function chatNote(){
+  if(dbState==='none'||chatState==='none')return 'Keine Verbindung zum Server. Nachrichten können gerade nicht gesendet werden.';
+  if(!canWrite)return 'Nur-Lese-Ansicht: Du kannst mitlesen, aber nicht schreiben.';
+  return '';
+}
+function renderChat(){
+  const msgs=[...chat].sort((a,b)=>a.t.localeCompare(b.t)).slice(-300);
+  let out='',last='';
+  msgs.forEach(m=>{const d=m.t.slice(0,10);
+    if(d!==last){out+=`<div class="chat-day">${new Date(m.t).toLocaleDateString('de-DE',{weekday:'long',day:'2-digit',month:'2-digit'})}</div>`;last=d}
+    out+=msgHtml(m,true)});
+  const note=chatNote(), dis=note?' disabled':'';
+  const opts=UNITS.map(u=>`<option value="${u.id}"${chatUnit===u.id?' selected':''}>${esc(unitTag(u.id))}</option>`).join('');
+  return `<div class="chat">
+    <div class="chat-log" id="chatLog">${out||`<div class="empty">${chatState==='loading'&&dbState!=='none'?'Nachrichten werden geladen …':'Noch keine Nachrichten. Schreib die erste, z. B. „Zimmer 204 kann früher bezogen werden“.'}</div>`}</div>
+    ${note?`<div class="banner info" style="margin:10px">${note}</div>`:''}
+    <div class="chat-form">
+      <select id="chatRole" aria-label="Deine Rolle"${dis}>${Object.entries(ROLES).map(([k,l])=>`<option value="${k}"${role===k?' selected':''}>${l}</option>`).join('')}</select>
+      <select id="chatUnit" aria-label="Bezieht sich auf"${dis}><option value="">Allgemein</option>${opts}</select>
+      <textarea id="chatText" maxlength="1000" placeholder="Nachricht schreiben … (Enter sendet)"${dis}></textarea>
+      <button type="button" class="btn primary" id="chatSend"${dis}>Senden</button>
+    </div></div>`;
+}
+function unitChat(id){
+  const ms=chat.filter(m=>m.unit===id).sort((a,b)=>a.t.localeCompare(b.t)).slice(-20);
+  const dis=chatNote()?' disabled':'';
+  return `<div class="field"><span class="lab">Nachrichten zu diesem ${U[id].typ==='zimmer'?'Zimmer':'Bereich'}</span><div class="uchat">
+    ${ms.length?ms.map(m=>msgHtml(m,false)).join(''):'<div class="facts">Noch keine Nachrichten. Sie erscheinen auch im Chat.</div>'}
+    <div class="row"><textarea id="uText" maxlength="1000" placeholder="z. B. Gast reist erst 14 Uhr ab"${dis}></textarea><button type="button" class="btn" id="uSend"${dis}>Senden</button></div></div></div>`;
+}
+async function sendMsg(text,unitId){
+  text=(text||'').trim();if(!text)return false;
+  if(!db){toast('Nicht gesendet: keine Verbindung zur Datenbank.');return false}
+  if(!canWrite){toast('Du hast hier nur Leserechte.');return false}
+  if(chatSending)return false;chatSending=true;
+  const t=new Date().toISOString();
+  const doc={text,uid:myId,name:myName,rolle:role||'',unit:unitId||'',t};
+  const id=t.replace(/[^0-9]/g,'')+'-'+Math.random().toString(36).slice(2,8);
+  try{await db.collection('chat').doc(id).set(doc);chatSending=false;return true}
+  catch(e){chatSending=false;
+    if(e&&e.code==='invalid_argument'){canWrite=false;render();toast('Du hast hier nur Leserechte.')}
+    else toast('Senden fehlgeschlagen. Bitte erneut versuchen.');
+    return false}
+}
+function updateBadge(){
+  const b=$('#chatBadge');if(!b)return;
+  if(view==='chat'){const top=chat.reduce((a,m)=>m.t>a?m.t:a,'');if(top&&top!==lastSeen){lastSeen=top;try{localStorage.setItem('zb-chatseen',top)}catch(e){}}b.innerHTML='';return}
+  const n=chat.filter(m=>m.t>lastSeen&&m.uid!==myId).length;
+  b.innerHTML=n?`<span class="ubadge" aria-label="${n} neue Nachrichten">${n>99?'99+':n}</span>`:'';
+}
+
+function render(){
+  $('#today').textContent=new Date().toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  $('#floorSeg').innerHTML=[['alle','Alle'],...FLOORS.map(f=>[f.id,f.short])].map(([k,l])=>`<button type="button" data-floor="${k}" aria-pressed="${floorF===k}">${l}</button>`).join('');
+  $('#colorSeg').innerHTML=[['status','Status'],['zustand','Zustand']].map(([k,l])=>`<button type="button" data-color="${k}" aria-pressed="${colorBy===k}">${l}</button>`).join('');
+  document.querySelectorAll('#viewSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.view===view));
+  renderBanner();renderStats();renderLegend();
+  const ct=$('#chatText'), ctv=ct?ct.value:null, ctf=document.activeElement===ct;
+  const log=$('#chatLog'), atBottom=!log||log.scrollHeight-log.scrollTop-log.clientHeight<40, oldTop=log?log.scrollTop:0;
+  $('#main').innerHTML=view==='board'?renderBoard():view==='maengel'?renderDefects():view==='chat'?renderChat():renderHistory();
+  if(view==='chat'){const nt=$('#chatText');if(nt&&ctv!=null){nt.value=ctv;if(ctf)nt.focus()}
+    const nl=$('#chatLog');if(nl)nl.scrollTop=atBottom?nl.scrollHeight:oldTop}
+  updateBadge();
+  renderPanel();
+}
+
+/* ---------- Tagesstart ---------- */
+async function dayStart(){
+  busy=true;dayConfirm=false;render();
+  let n=0;
+  for(const u of UNITS){
+    const r=unit(u.id);
+    if(r.gesperrt||r.reinigung==='schmutzig')continue;
+    const needs=u.typ!=='zimmer'||r.belegung==='belegt'||r.belegung==='abreise';
+    if(!needs)continue;
+    const next={...r,reinigung:'schmutzig',geaendert:new Date().toISOString()};
+    data[u.id]=next;await write(u.id,next);n++;
+  }
+  try{await db.doc('meta/tag').set({datum:todayStr(),ausgefuehrt:new Date().toISOString()});meta={datum:todayStr()}}catch(e){}
+  busy=false;render();
+  toast(n?`${n} Einheiten auf „Zu reinigen“ gesetzt.`:'Tagesstart erledigt. Nichts musste geändert werden.');
+}
+
+/* ---------- CSV ---------- */
+async function exportCsv(){
+  const head=['Etage','Typ','Nr./Bezeichnung','Raucher','Belegung','Reinigung','Außer Betrieb','Grund','Zustand (1-5)','Zustand','Offene Mängel','Mängel (offen)','Notiz','Zuletzt gereinigt','Letzte Änderung'];
+  const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const typ={zimmer:'Zimmer',dusche:'Dusche',wc:'WC'};
+  const lines=[head.map(q).join(';')];
+  UNITS.forEach(u=>{const r=unit(u.id);const od=openDefects(r);
+    lines.push([u.floor.short,typ[u.typ],u.label,u.typ==='zimmer'?(r.raucher?'ja':'nein'):'',u.typ==='zimmer'?OCC[r.belegung]:'',CLEAN[r.reinigung],r.gesperrt?'ja':'nein',r.gesperrt?r.grund:'',r.zustand||'',ZUSTAND[r.zustand||0],od.length,od.map(m=>`${m.bereich}: ${m.text} (${m.prio})`).join(' | '),r.notiz,fmtDate(r.gereinigt),fmtDT(r.geaendert)].map(q).join(';'))});
+  try{await downloads.save({filename:`Zimmerstatus_${todayStr()}.csv`,data:'﻿'+lines.join('\r\n')});toast('CSV gespeichert.')}
+  catch(e){toast('Export wurde nicht gespeichert.')}
+}
+
+/* ---------- Reinigungsliste (Druck) ---------- */
+function buildPrintList(){
+  const now=new Date();
+  const datum=now.toLocaleDateString('de-DE',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'});
+  const art=(u,r)=>{
+    if(u.typ!=='zimmer')return 'Tägliche Reinigung';
+    if(r.belegung==='abreise')return '<b>Abreise</b> – Komplettreinigung';
+    if(r.belegung==='belegt')return 'Bleibe – Zwischenreinigung';
+    return 'Reinigung (frei)';
+  };
+  let total=0, abreise=0;
+  const sections=FLOORS.map(f=>{
+    const rows=UNITS.filter(u=>u.floor.id===f.id).map(u=>({u,r:unit(u.id)})).filter(({u,r})=>{const s=statusOf(u,r);return s==='schmutzig'||s==='inArbeit'});
+    if(!rows.length)return `<h2>${f.name}</h2><p class="none">Nichts zu reinigen.</p>`;
+    total+=rows.length;abreise+=rows.filter(x=>x.u.typ==='zimmer'&&x.r.belegung==='abreise').length;
+    return `<h2>${f.name} <span>${rows.length} zu reinigen</span></h2>
+    <table><thead><tr><th class="c">✓</th><th>Nr.</th><th>Art</th><th>Hinweise</th><th class="w">Uhrzeit</th><th class="w">Kürzel</th></tr></thead><tbody>
+    ${rows.map(({u,r})=>{
+      const h=[];
+      if(u.typ==='zimmer'&&r.raucher)h.push('<b>Raucherzimmer</b>');
+      if(r.reinigung==='inArbeit')h.push('bereits begonnen');
+      if(r.notiz)h.push(esc(r.notiz));
+      const od=openDefects(r);
+      if(od.length)h.push('Mängel: '+od.map(m=>esc(m.text)).join('; '));
+      return `<tr><td class="c"><span class="box"></span></td><td class="nr">${u.typ==='zimmer'?u.label:u.label}</td><td>${art(u,r)}</td><td>${h.join(' · ')||''}</td><td></td><td></td></tr>`;
+    }).join('')}</tbody></table>`;
+  }).join('');
+  const ab=UNITS.filter(u=>unit(u.id).gesperrt).map(u=>u.typ==='zimmer'?u.label:u.label+' ('+u.floor.short+')');
+  return `<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Reinigungsliste ${todayStr()}</title><style>
+@page{size:A4;margin:12mm}
+*{box-sizing:border-box}
+body{font-family:Arial,Helvetica,sans-serif;color:#000;background:#fff;font-size:11pt;margin:0;padding:12px}
+header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #000;padding-bottom:6px;margin-bottom:10px;gap:12px;flex-wrap:wrap}
+h1{font-size:20pt;margin:0}
+.sum{font-size:11pt}
+.name{margin:6px 0 4px;font-size:11pt}
+h2{font-size:13pt;margin:14px 0 4px;display:flex;justify-content:space-between;border-bottom:1px solid #000;padding-bottom:2px}
+h2 span{font-weight:normal;font-size:10pt}
+table{width:100%;border-collapse:collapse;page-break-inside:auto}
+tr{page-break-inside:avoid}
+th,td{border:1px solid #555;padding:5px 6px;text-align:left;vertical-align:top}
+th{background:#e8e8e8;font-size:9pt;text-transform:uppercase}
+td.nr{font-weight:bold;font-size:12pt;white-space:nowrap}
+.c{width:28px;text-align:center}.w{width:62px}
+.box{display:inline-block;width:14px;height:14px;border:1.5px solid #000}
+.none{color:#444;margin:2px 0 6px}
+.foot{margin-top:16px;font-size:10pt}
+.sign{display:flex;gap:30px;margin-top:22px;flex-wrap:wrap}
+.sign div{flex:1;min-width:200px;border-top:1px solid #000;padding-top:3px;font-size:9pt}
+.bar{margin-bottom:12px}
+.bar button{font-size:14px;padding:10px 18px;border:1px solid #000;background:#fff;border-radius:6px;cursor:pointer}
+@media print{.bar{display:none}body{padding:0}}
+</style></head><body>
+<div class="bar"><button onclick="window.print()">Drucken</button></div>
+<header><div><h1>Reinigungsliste</h1><div class="sum">${datum}</div></div>
+<div class="sum"><b>${total}</b> zu reinigen · davon <b>${abreise}</b> Abreisen</div></header>
+<div class="name">Reinigungskraft: ________________________________</div>
+${sections}
+<div class="foot">${ab.length?'<b>Außer Betrieb (nicht reinigen):</b> '+ab.map(esc).join(', '):''}</div>
+<div class="sign"><div>Kontrolliert durch</div><div>Datum / Unterschrift</div></div>
+<script>window.addEventListener('load',function(){setTimeout(function(){try{window.print()}catch(e){}},400)})<\/script>
+</body></html>`;
+}
+function exportPrint(){
+  const url=URL.createObjectURL(new Blob([buildPrintList()],{type:'text/html'}));
+  const w=window.open(url,'_blank');
+  if(!w){downloads.save({filename:`Reinigungsliste_${todayStr()}.html`,data:buildPrintList()});toast('Liste heruntergeladen. Datei öffnen, dann druckt sie automatisch.')}
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
+
+/* ---------- Events ---------- */
+document.addEventListener('click',e=>{
+  const t=e.target.closest('button,[data-close]');if(!t)return;
+  if(t.dataset.close){openId=null;render();return}
+  if(t.dataset.unit){openId=t.dataset.unit;render();setTimeout(()=>$('.panel .close')?.focus(),0);return}
+  if(t.dataset.view){view=t.dataset.view;render();if(view==='chat')setTimeout(()=>$('#chatText')?.focus(),0);return}
+  if(t.id==='chatSend'){const el=$('#chatText');const v=el.value;sendMsg(v,$('#chatUnit').value).then(ok=>{if(ok){const e2=$('#chatText');if(e2){e2.value='';e2.focus()}}});return}
+  if(t.dataset.floor){floorF=t.dataset.floor;render();return}
+  if(t.dataset.hr){histRange=t.dataset.hr;render();return}
+  if(t.dataset.color){colorBy=t.dataset.color;try{localStorage.setItem('zb-color',colorBy)}catch(e){}render();return}
+  if(t.dataset.f){
+    statF=statF===t.dataset.f?null:t.dataset.f;
+    if(statF==='maengel')view='maengel';else if(statF)view='board';
+    if(statF&&statF.startsWith('z'))colorBy='zustand';
+    else if(statF&&statF!=='maengel')colorBy='status';
+    render();return}
+  if(t.id==='btnCsv'){exportCsv();return}
+  if(t.id==='btnPrint'){exportPrint();return}
+  if(t.id==='btnName'){const n=prompt('Dein Name im Chat:',myName);if(n&&n.trim()){myName=n.trim().slice(0,40);try{localStorage.setItem('zb-name',myName)}catch(x){}renderWho()}return}
+  if(t.id==='btnLogout'){fetch('/api/logout',{method:'POST'}).finally(()=>location.reload());return}
+  if(!openId)return;
+  if(t.id==='uSend'){const v=$('#uText').value;const id=openId;sendMsg(v,id).then(ok=>{if(ok){const e2=$('#uText');if(e2)e2.value=''}});return}
+  const r=unit(openId);
+  if(t.dataset.set){
+    let v=t.dataset.val;if(t.dataset.set==='zustand'){v=Number(v);if(r.zustand===v)v=null}
+    save(openId,{[t.dataset.set]:v});return}
+  if(t.id==='mAdd'){
+    const text=$('#mText').value.trim();if(!text){$('#mText').focus();toast('Bitte beschreibe den Mangel.');return}
+    const m={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),text,bereich:$('#mArea').value,prio:$('#mPrio').value,datum:todayStr(),erledigt:null};
+    $('#mText').value='';save(openId,{maengel:[...r.maengel,m]});toast('Mangel eingetragen.');return}
+  if(t.dataset.mdone){save(openId,{maengel:r.maengel.map(m=>m.id===t.dataset.mdone?{...m,erledigt:todayStr()}:m)});return}
+  if(t.dataset.mreopen){save(openId,{maengel:r.maengel.map(m=>m.id===t.dataset.mreopen?{...m,erledigt:null}:m)});return}
+  if(t.dataset.mdel){save(openId,{maengel:r.maengel.filter(m=>m.id!==t.dataset.mdel)});return}
+});
+document.addEventListener('change',e=>{
+  if(e.target.id==='chatRole'){role=e.target.value;try{localStorage.setItem('zb-role',role)}catch(x){}return}
+  if(e.target.id==='chatUnit'){chatUnit=e.target.value;return}
+  if(!openId)return;
+  if(e.target.id==='gesperrt')save(openId,{gesperrt:e.target.checked});
+  if(e.target.id==='raucher')save(openId,{raucher:e.target.checked});
+  if(e.target.id==='notiz'){const v=e.target.value;if(v!==unit(openId).notiz)save(openId,{notiz:v})}
+  if(e.target.id==='grund'){const v=e.target.value.trim();if(v!==unit(openId).grund)save(openId,{grund:v})}
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&openId){openId=null;render()}
+  if(e.key==='Enter'&&!e.shiftKey&&(e.target.id==='chatText'||e.target.id==='uText')&&!e.isComposing){e.preventDefault();(e.target.id==='chatText'?$('#chatSend'):$('#uSend'))?.click();return}
+  if(e.key==='Enter'&&e.target.id==='mText'){e.preventDefault();$('#mAdd').click()}
+  if(e.key==='Enter'&&e.target.id==='grund'){e.preventDefault();e.target.blur()}
+});
+$('#search').addEventListener('input',e=>{query=e.target.value.trim();render()});
+
+render();
+
+/* ---------- Daten (eigener Server) ---------- */
+async function api(method,url,body){
+  const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:body==null?undefined:JSON.stringify(body),credentials:'same-origin'});
+  if(r.status===401){showLogin();throw {code:'unauthenticated'}}
+  if(!r.ok){let m='';try{m=(await r.json()).error}catch(e){}throw {code:r.status>=500?'unavailable':'failed',message:m}}
+  return r.json();
+}
+const ref=p=>({set:b=>api('PUT','/api/'+p,b)});
+db={collection:c=>({doc:id=>ref(c+'/'+encodeURIComponent(id))}),doc:p=>ref(p)};
+downloads={save:async({filename,data:d})=>{
+  const url=URL.createObjectURL(new Blob([d],{type:filename.endsWith('.csv')?'text/csv;charset=utf-8':'text/html'}));
+  const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),60000);return {status:'saved'}}};
+$('#btnCsv').hidden=false;$('#btnPrint').hidden=false;
+
+function renderWho(){
+  $('#whoMe').innerHTML=`Angemeldet als <b>${esc(myName||'?')}</b><button type="button" id="btnName">Name ändern</button><button type="button" id="btnLogout">Abmelden</button>`;
+}
+function showLogin(){
+  if(es){es.close();es=null}
+  $('#login').hidden=false;$('#lName').value=myName;
+  setTimeout(()=>($('#lName').value?$('#lPin'):$('#lName')).focus(),0);
+}
+$('#loginForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const name=$('#lName').value.trim(), pin=$('#lPin').value.trim();
+  if(!name||!pin)return;
+  $('#lErr').textContent='';
+  try{
+    const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin}),credentials:'same-origin'});
+    if(!r.ok){let m='Anmeldung fehlgeschlagen.';try{m=(await r.json()).error||m}catch(x){}$('#lErr').textContent=m;return}
+    myName=name.slice(0,40);try{localStorage.setItem('zb-name',myName)}catch(x){}
+    $('#lPin').value='';$('#login').hidden=true;connect();
+  }catch(x){$('#lErr').textContent='Server nicht erreichbar.'}
+});
+
+let es=null;
+function applyInit(d){
+  data=d.rooms||{};meta=(d.meta&&d.meta.tag)||null;
+  chat=Object.entries(d.chat||{}).map(([id,m])=>({id,...m})).filter(m=>typeof m.text==='string'&&typeof m.t==='string');
+  dbState='ready';chatState='ready';canWrite=true;render();
+}
+async function connect(){
+  // Erst prüfen, ob die Sitzung gültig ist (EventSource meldet 401 nicht sauber).
+  try{const r=await fetch('/api/state',{credentials:'same-origin'});
+    if(r.status===401){showLogin();return}
+    if(r.ok)applyInit(await r.json());
+  }catch(e){dbState='offline';render();setTimeout(connect,4000);return}
+  if(!myName){showLogin();return}
+  renderWho();
+  if(es)es.close();
+  es=new EventSource('/api/events');
+  es.onmessage=ev=>{
+    let m;try{m=JSON.parse(ev.data)}catch(e){return}
+    if(m.type==='init')applyInit(m.db);
+    else if(m.type==='room'){data[m.id]=m.data;render()}
+    else if(m.type==='chat'){if(!chat.some(x=>x.id===m.id))chat.push({id:m.id,...m.data});if(chat.length>2000)chat=chat.slice(-2000);render()}
+    else if(m.type==='meta'){meta=m.data;render()}
+  };
+  es.onerror=()=>{if(es&&es.readyState===EventSource.CLOSED){es=null;dbState='offline';render();setTimeout(connect,4000)}else if(dbState==='ready'){dbState='offline';render()}};
+  es.onopen=()=>{if(dbState==='offline'){dbState='ready';render()}};
+}
+connect();
+})();
+</script>
+
+</body></html>

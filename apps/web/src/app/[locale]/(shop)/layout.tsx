@@ -90,7 +90,10 @@ export default async function ShopLayout({ children, params }: { children: React
             © <span className="num">{new Date().getFullYear()}</span> {t("appName")} – {ts("footer.rights")}
           </p>
           <p>{auth?.channel === "B2B" ? ts("footer.priceNoteB2B") : ts("footer.priceNoteB2C")}</p>
-          <Link href="/admin/login" className="hover:text-ink-700">{(await getTranslations("auth"))("staffLink")}</Link>
+          <span className="flex flex-wrap gap-x-4 gap-y-1">
+            <Link href="/privacy" className="hover:text-ink-700" data-testid="footer-privacy">{ts("footer.privacy")}</Link>
+            <Link href="/admin/login" className="hover:text-ink-700">{(await getTranslations("auth"))("staffLink")}</Link>
+          </span>
         </div>
       </footer>
       {guest ? <SignupInvite welcome={welcome} /> : null}

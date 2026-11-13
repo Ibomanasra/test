@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.22.1] – 2026-11-13 – Datenschutzerklärung
+
+### Hinzugefügt
+- **Seite „سياسة الخصوصية“** (`/privacy`) auf Arabisch, Englisch und Hebräisch: welche Daten (Bestellung, Konto, Händler, anonyme Statistik), wofür, Cookies, Lieferung & Zahlung (bar bei Lieferung, Gebühr je Gebiet vor Bestätigung), Weitergabe nur an die Zustellfirma, Schutz/Aufbewahrung, Rechte (ändern, Konto löschen), Kontakt. Telefon, E-Mail und Adresse kommen automatisch aus den Firmen-Einstellungen. Text: `apps/web/src/content/privacy.ts`.
+- Link im Fußbereich des Shops und Hinweis unter „Konto erstellen“.
+
+### Geändert
+- E2E: Besucher-Test wartet auf die Zählung, bevor weitergeklickt wird.
+
 ## [0.22.0] – 2026-11-09 – Besucher-Statistik („الزوار“)
 
 ### Hinzugefügt

@@ -4,7 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { CityZoneFields } from "@/components/shared/CityZoneFields";
 import { useState } from "react";
 import { Alert, Button, Field, Input, cn } from "@/components/ui";
-import { useRouter } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { apiFetch, useApi } from "@/lib/api-client";
 import { useHydrated } from "@/lib/use-hydrated";
 
@@ -153,6 +153,9 @@ export function RegisterForm({
       <Button type="submit" className="w-full sm:w-auto" disabled={!hydrated || pending}>
         {t("submit")}
       </Button>
+      <p className="text-xs text-ink-500" data-testid="register-privacy">
+        {t.rich("privacyNote", { link: (c) => <Link href="/privacy" target="_blank" className="font-medium text-brand-700 underline underline-offset-2">{c}</Link> })}
+      </p>
     </form>
   );
 }

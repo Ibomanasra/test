@@ -230,3 +230,19 @@ test("product photos swipe; back arrow returns to the same place in the list", a
     await db.productImage.delete({ where: { id: added.id } });
   }
 });
+
+test("privacy policy: public page in all languages, linked in the footer and on sign-up", async ({ page }) => {
+  await page.goto("/ar");
+  await page.getByTestId("footer-privacy").click();
+  await expect(page).toHaveURL(/\/ar\/privacy$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("سياسة الخصوصية");
+  await expect(page.getByTestId("privacy-page")).toContainText("لا نبيع ولا نؤجر");
+  await expect(page.getByTestId("privacy-contact")).toBeVisible();
+  await page.goto("/he/privacy");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("מדיניות פרטיות");
+  await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+  await page.goto("/en/privacy");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Privacy Policy");
+  await page.goto("/ar/register");
+  await expect(page.getByTestId("register-privacy").getByRole("link")).toHaveAttribute("href", "/ar/privacy");
+});

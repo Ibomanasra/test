@@ -12,7 +12,9 @@ async function eventsFor(vid: string) {
 test("a visitor from an Instagram link is counted: entry with source, product view, search, add to cart", async ({ browser }) => {
   const ctx = await browser.newContext({ userAgent: PHONE_UA });
   const page = await ctx.newPage();
+  const counted = page.waitForResponse((r) => r.url().includes("/api/v1/t"));
   await page.goto("/ar?ref=instagram");
+  await counted;
   await expect.poll(async () => (await ctx.cookies()).find((c) => c.name === "sa_vid")?.value ?? "").not.toBe("");
   const vid = (await ctx.cookies()).find((c) => c.name === "sa_vid")!.value;
   await page.locator('a[href*="/products/"]').first().click();
@@ -60,7 +62,9 @@ test("in-app browsers are recognised without a ref; bots and staff are not count
 test("visitors page shows KPIs, funnel, sources and top products", async ({ browser, page }) => {
   const ctx = await browser.newContext({ userAgent: PHONE_UA });
   const v = await ctx.newPage();
+  const counted = v.waitForResponse((r) => r.url().includes("/api/v1/t"));
   await v.goto("/ar?utm_source=whatsapp");
+  await counted; // erst zählen lassen, dann weiterklicken
   await v.locator('a[href*="/products/"]').first().click();
   await v.waitForURL(/\/products\/[^/?]+$/);
   await v.waitForTimeout(800);
